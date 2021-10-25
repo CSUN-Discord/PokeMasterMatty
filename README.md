@@ -1,4 +1,4 @@
 # PokeMasterMatty
 Pokemon bot for CSUN discord 
 
-[State Diagrams](https://lucid.app/publicSegments/view/76396ba0-e67c-4021-8e72-b20f04b8f426/image.jpeg)
+[State Diagrams](https://lucid.app/publicSegments/view/a309719f-fbc6-45e6-8e7a-3b1bb9933c04/image.png)
