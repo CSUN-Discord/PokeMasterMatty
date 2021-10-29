@@ -10,7 +10,11 @@ const pokemonGameSchema = new Schema({
   playing: Boolean,
   spawnTime: Number,
   messageCounter: Number,
-  users: Map
+  users: Map,
+  spawned: {
+    amount: Number,
+    pokemon: Schema.Types.Mixed
+  }
 });
 
 module.exports = mongoose.model("pokemonGame", pokemonGameSchema);
