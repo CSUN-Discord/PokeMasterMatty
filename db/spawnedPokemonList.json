@@ -1,0 +1,33 @@
+[
+  {
+    "level": null,
+    "owner": null,
+    "nickname": null,
+    "exp": null,
+    "traded": false,
+    "IVStats": {
+      "hp": null,
+      "atk": null,
+      "def": null,
+      "spAtk": null,
+      "spDef": null,
+      "speed": null
+    },
+    "EVStats": {
+      "hp": 0,
+      "atk": 0,
+      "def": 0,
+      "spAtk": 0,
+      "spDef": 0,
+      "speed": 0
+    },
+    "currentHP": null,
+    "status": "normal",
+    "teamNumber": null,
+    "boxNumber": null,
+    "item": null,
+    "shiny": null,
+    "ball": null,
+    "currentMoves": null
+  }
+]
