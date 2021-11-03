@@ -14,6 +14,10 @@ const pokemonGameSchema = new Schema({
     spawned: {
         amount: Number,
         pokemon: Schema.Types.Mixed
+    },
+    temporaryShop: {
+        users: Map,
+        items: Map,
     }
 });
 

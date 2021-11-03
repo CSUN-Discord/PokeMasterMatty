@@ -203,7 +203,7 @@
     "description": "A spray-type medicine for treating poisoning. It can be used to lift the effects of being poisoned from a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 100,
     "sell": 50
@@ -214,7 +214,7 @@
     "description": "A spray-type medicine to wake the sleeping. It can be used to rouse a single Pokemon from the clutches of sleep.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 250,
     "sell": 125
@@ -225,7 +225,7 @@
     "description": "A spray-type medicine for treating burns. It can be used to heal a single Pokemon suffering from a burn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 250,
     "sell": 125
@@ -236,7 +236,7 @@
     "description": "This medicine can be used to restore 10 PP to each of the moves that have been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 3000,
     "sell": 1500
@@ -247,7 +247,7 @@
     "description": "This medicine can be used to restore 10 PP to a single selected move that has been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 1200,
     "sell": 600
@@ -258,7 +258,7 @@
     "description": "Water with high mineral content. It can be used to restore 30 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 200,
     "sell": 100
@@ -269,7 +269,7 @@
     "description": "A spray-type medicine that is broadly effective. It can be used to heal all the status conditions of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 600,
     "sell": 300
@@ -280,7 +280,7 @@
     "description": "A medicine that can be used to fully restore the HP of a single Pokemon and heal any status conditions it has.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 3000,
     "sell": 1500
@@ -291,7 +291,7 @@
     "description": "A spray-type medicine for treating wounds. It can be used to restore 120 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 1200,
     "sell": 600
@@ -302,7 +302,7 @@
     "description": "A spray-type medicine for treating freezing. It can be used to thaw out a single Pokemon that has been frozen solid.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 250,
     "sell": 125
@@ -313,7 +313,7 @@
     "description": "A very sweet and refreshing drink. It can be used to restore 70 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 350,
     "sell": 175
@@ -324,7 +324,7 @@
     "description": "This medicine can be used to fully restore the PP of all of the moves that have been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 4500,
     "sell": 2250
@@ -335,7 +335,7 @@
     "description": "This medicine can be used to fully restore the PP of a single selected move that has been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 2000,
     "sell": 1000
@@ -346,7 +346,7 @@
     "description": "A spray-type medicine for treating wounds. It can be used to completely restore the max HP of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 2500,
     "sell": 1250
@@ -357,7 +357,7 @@
     "description": "A medicine that can be used to revive a single Pokemon that has fainted. It also fully restores the Pokemon's max HP.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 4000,
     "sell": 2000
@@ -368,7 +368,7 @@
     "description": "A bottle of highly nutritious milk. It can be used to restore 100 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 500,
     "sell": 250
@@ -379,7 +379,7 @@
     "description": "A spray-type medicine for treating paralysis. It can be used to free a single Pokemon that has been paralyzed.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 200,
     "sell": 100
@@ -390,7 +390,7 @@
     "description": "A spray-type medicine for treating wounds. It can be used to restore 20 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 300,
     "sell": 150
@@ -401,7 +401,7 @@
     "description": "null",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 1500,
     "sell": 750
@@ -412,7 +412,7 @@
     "description": "A highly carbonated soda drink. It can be used to restore 50 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 300,
     "sell": 150
@@ -423,7 +423,7 @@
     "description": "A spray-type medicine for treating wounds. It can be used to restore 60 HP to a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "recovery",
     "purchase": 700,
     "sell": 350
@@ -434,7 +434,7 @@
     "description": "An item to be held by a Pokemon. It boosts Sp. Atk if the holder is hit with a Water-type attack. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -445,7 +445,7 @@
     "description": "A brightly gleaming orb to be held by Dialga. It boosts the power of Dragon- and Steel-type moves when it is held.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 10000,
     "sell": 5000
@@ -456,7 +456,7 @@
     "description": "An item to be held by a Pokemon. The holder will float in the air until hit. Once the holder is hit, this item will burst.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -467,7 +467,7 @@
     "description": "null",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -478,7 +478,7 @@
     "description": "An item to be held by a Pokemon. This offensive vest raises Sp. Def but prevents the use of status moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -489,7 +489,7 @@
     "description": "An item to be held by a Pokemon. It boosts the amount of HP the holder restores from HP-stealing moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -500,7 +500,7 @@
     "description": "An item to be held by a Pokemon. It's a band that increases the power of binding moves used by the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -511,7 +511,7 @@
     "description": "An item to be held by a Pokemon. This belt helps the wearer to focus and boosts the power of Fighting-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -522,7 +522,7 @@
     "description": "An item to be held by a Pokemon. It's a pair of shady-looking glasses that boost the power of Dark-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -533,7 +533,7 @@
     "description": "An item to be held by a Pokemon. It gradually restores HP to Poison-type Pokemon. It damages any other type.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -544,7 +544,7 @@
     "description": "An item to be held by a Pokemon. It casts a tricky glare that lowers the opposing Pokemon's accuracy.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 10,
     "sell": 5
@@ -566,7 +566,7 @@
     "description": "An item to be held by a Pokemon. It boosts Attack if the holder is hit with an Electric-type attack. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -577,7 +577,7 @@
     "description": "An item to be held by a Pokemon. It's a combustible fuel that boosts the power of Fire-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 9800,
     "sell": 4900
@@ -588,7 +588,7 @@
     "description": "An item to be held by a Pokemon. This curious headband boosts Attack but only allows the use of one move.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -599,7 +599,7 @@
     "description": "An item to be held by a Pokemon. This curious scarf boosts Speed but only allows the use of one move.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -610,7 +610,7 @@
     "description": "An item to be held by a Pokemon. These curious glasses boost Sp. Atk but only allow the use of one move.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -621,7 +621,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of the move Rain Dance when used by the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -643,7 +643,7 @@
     "description": "An item to be held by Clamperl. This scale shines with a faint pink and raises the holder's Sp. Def stat.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -654,7 +654,7 @@
     "description": "An item to be held by Clamperl. This fang gleams a sharp silver and raises the holder's Sp. Atk stat.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -665,7 +665,7 @@
     "description": "An item to be held by a Pokemon. If the holder becomes infatuated, the opposing Pokemon will be, too.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -676,7 +676,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Dragon-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -687,7 +687,7 @@
     "description": "An item to be held by a Pokemon. This hard and sharp fang boosts the power of Dragon-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -709,7 +709,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Dark-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -720,7 +720,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Ground-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -731,7 +731,7 @@
     "description": "An item to be held by a Pokemon. If the holder is hit by an attack, it will be switched out of battle.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -742,7 +742,7 @@
     "description": "An item to be held by a Pokemon. When the holder's stats are lowered, it will be switched out of battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 50,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -764,7 +764,7 @@
     "description": "An item to be held by a Pokemon. A Pokemon holding this peculiar stone is prevented from evolving.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -775,7 +775,7 @@
     "description": "A mysterious evolutionary lump. When held by a Pokemon that can still evolve, it raises both Defense and Sp. Def.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 40,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -786,10 +786,10 @@
     "description": "Turning on this special device will allow all the Pokemon on your team to receive Exp. Points from battles.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
-    "purchase": 3000,
-    "sell": 1500
+    "purchase": 0,
+    "sell": 0
   },
   {
     "name": "Expert Belt",
@@ -797,7 +797,7 @@
     "description": "An item to be held by a Pokemon. It's a well-worn belt that slightly boosts the power of supereffective moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -841,7 +841,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Fighting-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -852,7 +852,7 @@
     "description": "An item to be held by a Pokemon. It's a bizarre orb that will afflict the holder with a burn during battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -863,7 +863,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Fire-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -874,7 +874,7 @@
     "description": "An item to be held by a Pokemon. This very light stone reduces the weight of a Pokemon when held.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -896,7 +896,7 @@
     "description": "An item to be held by a Pokemon. The holder may endure a potential KO attack, leaving it with just 1 HP.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -907,7 +907,7 @@
     "description": "An item to be held by a Pokemon. If the holder has full HP, it will endure a potential KO attack with 1 HP. The item then disappears.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -918,7 +918,7 @@
     "description": "An item to be held by a Pokemon. This exotic-smelling incense makes the holder bloated and slow moving.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -951,7 +951,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of multi-turn attacks, such as Bind and Wrap.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -962,7 +962,7 @@
     "description": "A glowing orb to be held by Giratina. It boosts the power of Dragon- and Ghost-type moves when it is held.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 10000,
     "sell": 5000
@@ -984,7 +984,7 @@
     "description": "An item to be held by a Pokemon. It's a durable stone that boosts the power of Rock-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 100,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -995,7 +995,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of the move Sunny Day when used by the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1017,7 +1017,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Ice-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1028,7 +1028,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of the move Hail when used by the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 40,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1039,7 +1039,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Bug-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1050,7 +1050,7 @@
     "description": "An item to be held by a Pokemon. It lowers Speed and allows Ground-type moves to hit Flying types and holders that are levitating.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 130,
     "category": "hold-items",
     "purchase": 100,
     "sell": 200
@@ -1061,7 +1061,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Steel-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1072,7 +1072,7 @@
     "description": "An item to be held by a Pokemon. When the holder successfully inflicts damage, the target may also flinch.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1083,7 +1083,7 @@
     "description": "An item to be held by a Pokemon. It is tremendously heavy and makes the holder move slower than usual.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1094,7 +1094,7 @@
     "description": "An item to be held by a Pokemon. The beguiling aroma of this incense may cause attacks to miss its holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1105,7 +1105,7 @@
     "description": "An item to be held by Farfetch'd. This very long and stiff stalk of leek boosts its critical-hit ratio.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1116,7 +1116,7 @@
     "description": "An item to be held by a Pokemon. The holder's HP is slowly but steadily restored throughout every battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1127,7 +1127,7 @@
     "description": "An item to be held by a Pokemon. It boosts the power of moves but at the cost of some HP on each hit.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1138,7 +1138,7 @@
     "description": "An item to be held by Pikachu. It's a puzzling orb that boosts its Attack and Sp. Atk stats.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1149,7 +1149,7 @@
     "description": "An item to be held by a Pokemon. Protective moves like Light Screen and Reflect will be effective longer.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1160,7 +1160,7 @@
     "description": "An item to be held by a Pokemon. It doubles any prize money received if the holding Pokemon joins a battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1171,7 +1171,7 @@
     "description": "An item to be held by a Pokemon. It's an egg filled with happiness that earns the holder extra Exp. Points in battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1182,7 +1182,7 @@
     "description": "An item to be held by Chansey. This pair of lucky boxing gloves will boost Chansey's critical-hit ratio.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 40,
     "category": "hold-items",
     "purchase": 10,
     "sell": 5
@@ -1193,7 +1193,7 @@
     "description": "An item to be held by a Pokemon. It boosts Sp. Def if the holder is hit with a Water-type attack. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1204,7 +1204,7 @@
     "description": "A beautifully glowing orb to be held by Palkia. It boosts the power of Dragon- and Water-type moves when it is held.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 10000,
     "sell": 5000
@@ -1215,7 +1215,7 @@
     "description": "An item to be held by a Pokemon. This stiff, heavy brace helps Pokemon grow strong but cuts Speed in battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1226,7 +1226,7 @@
     "description": "An item to be held by a Pokemon. It's a powerful magnet that boosts the power of Electric-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1237,7 +1237,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Grass-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1248,7 +1248,7 @@
     "description": "An item to be held by a Pokemon. The holder shakes off move-binding effects to move freely. It can be used only once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1259,7 +1259,7 @@
     "description": "An item to be held by a Pokemon. It's a special metallic film that can boost the power of Steel-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1270,7 +1270,7 @@
     "description": "An item to be held by Ditto. Extremely fine yet hard, this odd powder boosts the Defense stat.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 10,
     "sell": 5
@@ -1281,7 +1281,7 @@
     "description": "An item to be held by a Pokemon. It boosts moves used consecutively but only until a different move is used.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1292,7 +1292,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Psychic-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1303,7 +1303,7 @@
     "description": "An item to be held by a Pokemon. It's a seed imbued with life-force that boosts the power of Grass-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1314,7 +1314,7 @@
     "description": "An item to be held by a Pokemon. This headband exudes strength, slightly boosting the power of physical moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1325,7 +1325,7 @@
     "description": "An item to be held by a Pokemon. This teardrop-shaped gem boosts the power of Water-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1336,14 +1336,14 @@
     "description": "An item to be held by a Pokemon. It's a heat- repelling piece of ice that boosts the power of Ice-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
   },
   {
     "name": "Normal Gem",
-    "sprite": "null",
+    "sprite": "normalgem.png",
     "description": "A gem with an ordinary essence. When held, it strengthens the power of a Normal-type move one time.",
     "uses": 1,
     "usable": false,
@@ -1358,7 +1358,7 @@
     "description": "An item to be held by a Pokemon. This exotic-smelling incense boosts the power of Psychic-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1369,7 +1369,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Fairy-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1380,7 +1380,7 @@
     "description": "An item to be held by a Pokemon. This small, poisonous barb boosts the power of Poison-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1402,7 +1402,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's Speed stat to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1413,7 +1413,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's Sp. Def stat to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1424,7 +1424,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's Defense stat to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1435,7 +1435,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's Attack stat to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1446,7 +1446,7 @@
     "description": "A single-use item to be held by a Pokemon. It allows the holder to immediately use a move that normally requires a turn to charge.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1457,7 +1457,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's Sp. Atk stat to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1468,7 +1468,7 @@
     "description": "An item to be held by a Pokemon. It reduces Speed but allows the holder's max HP to grow more after battling.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 70,
     "category": "hold-items",
     "purchase": 3000,
     "sell": 1500
@@ -1490,7 +1490,7 @@
     "description": "An item to be held by a Pokemon. This light, sharp claw lets the bearer move first occasionally.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1501,7 +1501,7 @@
     "description": "An item to be held by Ditto. Extremely fine yet hard, this odd powder boosts the Speed stat.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 10,
     "sell": 5
@@ -1512,7 +1512,7 @@
     "description": "An item to be held by a Pokemon. This sharply hooked claw increases the holder's critical-hit ratio.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 2100,
     "sell": 1050
@@ -1523,7 +1523,7 @@
     "description": "An item to be held by a Pokemon. When the holder successfully inflicts damage, the target may also flinch.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 2100,
     "sell": 1050
@@ -1534,7 +1534,7 @@
     "description": "An item to be held by a Pokemon. When the holder is hit by an attack, the attacker is removed from battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1545,7 +1545,7 @@
     "description": "An item to be held by a Pokemon. Moves that normally have no effect will land on a Pokemon holding it.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1567,7 +1567,7 @@
     "description": "An item to be held by a Pokemon. This exotic-smelling incense boosts the power of Rock-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1578,7 +1578,7 @@
     "description": "An item to be held by a Pokemon. It boosts Defense on Electric Terrain. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1589,7 +1589,7 @@
     "description": "An item to be held by a Pokemon. It boosts Defense on Grassy Terrain. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1600,7 +1600,7 @@
     "description": "An item to be held by a Pokemon. It boosts Sp. Def on Misty Terrain. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1611,7 +1611,7 @@
     "description": "An item to be held by a Pokemon. It boosts Sp. Def on Psychic Terrain. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1622,7 +1622,7 @@
     "description": "An item to be held by a Pokemon. If the holder is hit, the attacker will also be damaged upon contact.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1633,7 +1633,7 @@
     "description": "An item to be held by a Pokemon. This exotic-smelling incense boosts the power of Grass-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1644,7 +1644,7 @@
     "description": "An item to be held by a Pokemon. These goggles protect the holder from both weather-related damage and powder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1655,7 +1655,7 @@
     "description": "An item to be held by a Pokemon. It's a lens for scoping out weak points. It boosts the holder's critical-hit ratio.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1666,7 +1666,7 @@
     "description": "An item to be held by a Pokemon. This incense has a curious aroma that boosts the power of Water-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1677,7 +1677,7 @@
     "description": "An item to be held by a Pokemon. It's a long, sharp beak that boosts the power of Flying-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 50,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1688,7 +1688,7 @@
     "description": "An item to be held by a Pokemon. This discarded carapace enables the holder to switch out of battle without fail.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1699,7 +1699,7 @@
     "description": "An item to be held by a Pokemon. The holder restores a little HP every time it inflicts damage on others.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1710,7 +1710,7 @@
     "description": "An item to be held by a Pokemon. It's a sumptuous scarf that boosts the power of Normal-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1721,7 +1721,7 @@
     "description": "An item to be held by a Pokemon. It's a shiny silver powder that will boost the power of Bug-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1732,7 +1732,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Flying-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1743,7 +1743,7 @@
     "description": "An item to be held by a Pokemon. It enables the holder to flee from any wild Pokemon encounter without fail.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1754,7 +1754,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of the move Sandstorm when used by the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1765,7 +1765,7 @@
     "description": "An item to be held by a Pokemon. It boosts Attack if the holder is hit with an Ice-type attack. It can only be used once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1776,7 +1776,7 @@
     "description": "An item to be held by a Pokemon. It's a loose, silky sand that boosts the power of Ground-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1787,7 +1787,7 @@
     "description": "An item to be held by a Pokemon. The comforting chime of this bell calms the holder, making it friendly.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1798,7 +1798,7 @@
     "description": "A wondrous orb to be held by either Latios or Latias. It raises the power of Psychic- and Dragon-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1809,7 +1809,7 @@
     "description": "An item to be held by a Pokemon. It's a sinister, eerie tag that boosts the power of Ghost-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1820,7 +1820,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Water-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1831,7 +1831,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Ghost-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1853,7 +1853,7 @@
     "description": "An item to be held by a Pokemon. It damages the holder every turn and may latch on to Pokemon that touch the holder.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1864,7 +1864,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Rock-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1875,7 +1875,7 @@
     "description": "An item to be held by a Pokemon. It extends the duration of the terrain caused by the holder's move or Ability.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 0,
     "sell": 0
@@ -1886,7 +1886,7 @@
     "description": "An item to be held by a Pokemon. It's a bizarre orb that will badly poison the holder during battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 500,
     "sell": 250
@@ -1897,7 +1897,7 @@
     "description": "An item to be held by a Pokemon. It's a bizarre orb that will badly poison the holder during battle.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1908,7 +1908,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Poison-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1919,7 +1919,7 @@
     "description": "An item to be held by a Pokemon. This spoon is imbued with telekinetic power and boosts Psychic-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1930,7 +1930,7 @@
     "description": "An item to be held by a Pokemon. This sturdy umbrella protects the holder from the effects of weather.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 60,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1952,7 +1952,7 @@
     "description": "An item to be held by a Pokemon. This incense has a curious aroma that boosts the power of Water-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 9600,
     "sell": 4800
@@ -1963,7 +1963,7 @@
     "description": "An item to be held by a Pokemon. Attack and Sp. Atk sharply increase if the holder is hit with a move it's weak to.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 80,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -1974,7 +1974,7 @@
     "description": "An item to be held by a Pokemon. It will restore any lowered stat in battle. It can be used only once.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 100,
     "sell": 50
@@ -1985,7 +1985,7 @@
     "description": "An item to be held by a Pokemon. It's a magnifying lens that slightly boosts the accuracy of moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -1996,7 +1996,7 @@
     "description": "An item to be held by a Pokemon. This thick pair of glasses slightly boosts the power of special moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "hold-items",
     "purchase": 200,
     "sell": 100
@@ -2007,7 +2007,7 @@
     "description": "An item to be held by a Pokemon. It's a stone tablet that boosts the power of Electric-type moves.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 90,
     "category": "hold-items",
     "purchase": 1000,
     "sell": 500
@@ -2018,7 +2018,7 @@
     "description": "An item to be held by a Pokemon. If the holder moves after its target moves, its accuracy will be boosted.",
     "uses": -1,
     "usable": false,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 200,
     "sell": 100
@@ -2029,7 +2029,7 @@
     "description": "When a Pokemon smells this mint, its Speed will grow more easily, but its Defense will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2040,7 +2040,7 @@
     "description": "When a Pokemon smells this mint, its Defense will grow more easily, but its Sp. Atk will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2051,7 +2051,7 @@
     "description": "When a Pokemon smells this mint, its Speed will grow more easily, but its Sp. Atk will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2062,7 +2062,7 @@
     "description": "When a Pokemon smells this mint, its Defense will grow more easily, but its Sp. Def will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2073,7 +2073,7 @@
     "description": "When a Pokemon smells this mint, its Attack will grow more easily, but its Defense will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2084,7 +2084,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Atk will grow more easily, but its Defense will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2095,7 +2095,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Atk will grow more easily, but its Attack will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2106,7 +2106,7 @@
     "description": "When a Pokemon smells this mint, its Speed will grow more easily, but its Sp. Def will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2117,7 +2117,7 @@
     "description": "When a Pokemon smells this mint, its Attack will grow more easily, but its Sp. Def will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2128,7 +2128,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Atk will grow more easily, but its Speed will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2139,7 +2139,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Atk will grow more easily, but its Sp. Def will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2150,7 +2150,7 @@
     "description": "When a Pokemon smells this mint, its Defense will grow more easily, but its Speed will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2161,7 +2161,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Def will grow more easily, but its Speed will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2172,7 +2172,7 @@
     "description": "When a Pokemon smells this mint, all of its stats will grow at an equal rate.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2183,7 +2183,7 @@
     "description": "When a Pokemon smells this mint, its Speed will grow more easily, but its Attack will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2194,7 +2194,7 @@
     "description": "When a Pokemon smells this mint, its Defense will grow more easily, but its Attack will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2205,7 +2205,7 @@
     "description": "When a Pokemon smells this mint, its Attack will grow more easily, but its Speed will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2216,7 +2216,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Def will grow more easily, but its Attack will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2227,7 +2227,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Def will grow more easily, but its Sp. Atk will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2238,7 +2238,7 @@
     "description": "When a Pokemon smells this mint, its Sp. Def will grow more easily, but its Defense will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2249,7 +2249,7 @@
     "description": "If held by a Pokemon, it boosts Speed when intimidated.",
     "uses": 1,
     "usable": false,
-    "fling": null,
+    "fling": 30,
     "category": "hold-items",
     "purchase": 300,
     "sell": 150
@@ -2271,7 +2271,7 @@
     "description": "When a Pokemon smells this mint, its Attack will grow more easily, but its Sp. Atk will grow more slowly.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 10,
     "category": "miscellaneous",
     "purchase": 0,
     "sell": 0
@@ -2282,7 +2282,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the Sp. Atk base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2293,7 +2293,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the HP base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2304,7 +2304,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the Attack base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2315,7 +2315,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the Defense base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2326,7 +2326,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the Sp. Def base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2337,7 +2337,7 @@
     "description": "An item for use on a Pokemon. It slightly increases the Speed base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 20,
     "category": "Vitamins",
     "purchase": 3000,
     "sell": 1500
@@ -2348,7 +2348,7 @@
     "description": "A nutritious drink for Pokemon. When consumed, it raises the HP base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2359,7 +2359,7 @@
     "description": "A nutritious drink for Pokemon. When consumed, it raises the Defense base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2370,7 +2370,7 @@
     "description": "A medicine that optimally raises the max PP of a single selected move that has been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2381,7 +2381,7 @@
     "description": "A medicine that slightly raises the max PP of a single selected move that has been learned by a Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2392,7 +2392,7 @@
     "description": "A nutritious drink for Pokemon. When consumed, it raises the Attack base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2403,7 +2403,7 @@
     "description": "A nutritious drink for Pokemon. When consumed, it raises the Sp. Def base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2411,10 +2411,10 @@
   {
     "name": "Calcium",
     "sprite": "calcium.png",
-    "description": "null",
+    "description": "A nutritious drink for Pokémon. When consumed, it raises the Sp. Atk base points of a single Pokémon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2425,7 +2425,7 @@
     "description": "A nutritious drink for Pokemon. When consumed, it raises the Speed base points of a single Pokemon.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 9600,
     "sell": 4900
@@ -2436,7 +2436,7 @@
     "description": "A candy that is packed with energy. When consumed, it will instantly raise the level of a single Pokemon by one.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "Vitamins",
     "purchase": 4800,
     "sell": 2400
@@ -2447,7 +2447,7 @@
     "description": "An item that greatly raises the critical-hit ratio of a Pokemon during a battle. It can be used only once and wears off if the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 650,
     "sell": 325
@@ -2458,7 +2458,7 @@
     "description": "An item that prevents stat reduction among the Trainer's party Pokemon for five turns after it is used in battle.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 700,
     "sell": 350
@@ -2469,7 +2469,7 @@
     "description": "An item that sharply boosts the accuracy of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 950,
     "sell": 475
@@ -2480,7 +2480,7 @@
     "description": "An item that sharply boosts the Attack stat of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 500,
     "sell": 250
@@ -2491,7 +2491,7 @@
     "description": "An item that sharply boosts the Defense stat of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 550,
     "sell": 275
@@ -2502,7 +2502,7 @@
     "description": "An item that sharply boosts the Sp. Atk stat of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 350,
     "sell": 175
@@ -2513,7 +2513,7 @@
     "description": "An item that sharply boosts the Sp. Def stat of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 350,
     "sell": 175
@@ -2524,7 +2524,7 @@
     "description": "An item that sharply boosts the Speed stat of a Pokemon during a battle. It wears off once the Pokemon is withdrawn.",
     "uses": 1,
     "usable": true,
-    "fling": null,
+    "fling": 30,
     "category": "battle-effect",
     "purchase": 350,
     "sell": 175
