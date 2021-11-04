@@ -26,40 +26,37 @@ module.exports = {
     async execute(interaction) {
         interaction.reply({content: "checking stuff", ephemeral: true});
 
-        for (let i = 1; i < 151; i++) {
-            try {
-                let name;
-                try {
-                    name = pokemonName.getName(i).toLowerCase();
-                } catch (e) {
-                    console.log(e + " " + name)
-                }
-
-                try {
-                    await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani/${name}.gif`), `./media/pokemon/normal-gif/front/${i}.gif`, function () {
-                        // console.log('done');
-                    });
-                    await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-back/${name}.gif`), `./media/pokemon/normal-gif/back/${i}.gif`, function () {
-                        // console.log('done');
-                    });
-
-                    await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-shiny/${name}.gif`), `./media/pokemon/shiny-gif/front/${i}.gif`, function () {
-                        // console.log('done');
-                    });
-
-                    await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-back-shiny/${name}.gif`), `./media/pokemon/shiny-gif/back/${i}.gif`, function () {
-                        // console.log('done');
-                    });
-                } catch (e) {
-                    console.log(e + " " + name)
-                }
-
-
-                // await interaction.channel.send({files: [`https://www.smogon.com/dex/media/sprites/xy/${name}.gif`]})
-            } catch (e) {
-                console.log(e + " pokemon id " + i)
-            }
-        }
+        // for (let i = 1; i < 151; i++) {
+        //     try {
+        //         let name;
+        //         try {
+        //             name = pokemonName.getName(i).toLowerCase();
+        //         } catch (e) {
+        //             console.log(e + " " + name)
+        //         }
+        //
+        //         try {
+        //             await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani/${name}.gif`), `./media/pokemon/normal-gif/front/${i}.gif`, function () {
+        //                 // console.log('done');
+        //             });
+        //             await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-back/${name}.gif`), `./media/pokemon/normal-gif/back/${i}.gif`, function () {
+        //                 // console.log('done');
+        //             });
+        //
+        //             await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-shiny/${name}.gif`), `./media/pokemon/shiny-gif/front/${i}.gif`, function () {
+        //                 // console.log('done');
+        //             });
+        //
+        //             await download(encodeURI(`http://play.pokemonshowdown.com/sprites/ani-back-shiny/${name}.gif`), `./media/pokemon/shiny-gif/back/${i}.gif`, function () {
+        //                 // console.log('done');
+        //             });
+        //         } catch (e) {
+        //             console.log(e + " " + name)
+        //         }
+        //     } catch (e) {
+        //         console.log(e + " pokemon id " + i)
+        //     }
+        // }
 
         // const item = {
         //     name: "Beast Ball",

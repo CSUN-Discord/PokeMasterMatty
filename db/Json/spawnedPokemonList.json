@@ -28,6 +28,8 @@
     "item": null,
     "shiny": null,
     "ball": null,
-    "currentMoves": null
+    "currentMoves": null,
+    "caughtTimestamp": null,
+    "receivedTimestamp": null
   }
 ]
