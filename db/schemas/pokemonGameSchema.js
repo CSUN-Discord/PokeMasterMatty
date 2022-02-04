@@ -10,11 +10,7 @@ const pokemonGameSchema = new Schema({
     playing: Boolean,
     spawnTime: Number,
     messageCounter: Number,
-    users: Map,
-    spawned: {
-        amount: Number,
-        pokemon: Schema.Types.Mixed
-    },
+    spawnedPokemon: Schema.Types.Mixed,
     temporaryShop: {
         users: Map,
         items: Map,

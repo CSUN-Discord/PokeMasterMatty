@@ -21,4 +21,28 @@ module.exports = {
             console.log(e);
         }
     },
+
+    getPokemonFromId: async function (id) {
+        try {
+            return await pokemonListSchema
+                .findOne(
+                    {
+                        pokeId: id
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    getPokemonFromRarity: async function (spawnRate) {
+        try {
+            return await pokemonListSchema
+                .find(
+                    {
+                        spawnRate: spawnRate
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
 }
