@@ -46,4 +46,26 @@ module.exports = {
             console.log(e);
         }
     },
+
+    setBattling: async function (userId, inBattle) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $set: {
+                            battling: inBattle
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
 }

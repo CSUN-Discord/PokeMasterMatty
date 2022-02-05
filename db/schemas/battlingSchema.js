@@ -9,7 +9,7 @@ const battlingSchema = new Schema({
     userOneBag: Map,
     userOneMove: {
         type: String,
-        move: Number,
+        move: String,
         pokemonSwap: Number,
         bag: {
             item: String,
@@ -22,15 +22,15 @@ const battlingSchema = new Schema({
     userTwoBag: Map,
     userTwoMove: {
         type: String,
-        move: Number,
+        move: String,
         pokemonSwap: Number,
         bag: {
             item: String,
             pokemonTeamNumber: Number
         }
     },
-    battleType: String,
-    userTwoCurrentPokemon: Number
+    userTwoCurrentPokemon: Number,
+    battleType: String
 });
 
 module.exports = mongoose.model("battling", battlingSchema);
