@@ -5,6 +5,10 @@ This command adds a user to the game
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
+const {MessageActionRow, MessageButton} = require("discord.js");
+const pokemonFunctions = require("../globals/pokemonFunctions");
+const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-join")
@@ -35,10 +39,59 @@ module.exports = {
             ephemeral: true
         });
 
-        await trainerFunctions.addUser(interaction.user);
-        return interaction.reply({
-            content: "You have been added to the game.",
-            ephemeral: true
+        const row = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${interaction.user.id}bulbasaur`)
+                    .setLabel('bulbasaur')
+                    .setStyle('SUCCESS'),
+            )
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${interaction.user.id}charmander`)
+                    .setLabel('charmander')
+                    .setStyle('DANGER'),
+            )
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${interaction.user.id}squirtle`)
+                    .setLabel('squirtle')
+                    .setStyle('PRIMARY'),
+            );
+
+        interaction.reply({
+            content: "Choose your starter.",
+            components: [row]
+        })
+
+        const filter = i => i.user.id === interaction.user.id;
+        const starterCollector = interaction.channel.createMessageComponentCollector({filter, time: 60000});
+
+        starterCollector.on('collect', async i => {
+            if (i.customId === `${i.user.id}bulbasaur`) {
+
+                const bulbasaur = await pokemonListFunctions.getPokemonFromId(1);
+                const userBulbasaur = pokemonFunctions.createStarterPokemonDetails(10, bulbasaur, i.user);
+
+                await trainerFunctions.addPokemonToUser(i.user, userBulbasaur);
+
+                await i.update({content: 'You have been added to the game.', components: []});
+            } else if (i.customId === `${i.user.id}charmander`) {
+                const charmander = await pokemonListFunctions.getPokemonFromId(4);
+                const userCharmander = pokemonFunctions.createStarterPokemonDetails(10, charmander, i.user);
+
+                await trainerFunctions.addPokemonToUser(i.user, userCharmander);
+
+                await i.update({content: 'You have been added to the game.', components: []});
+            } else if (i.customId === `${i.user.id}squirtle`) {
+
+                const squirtle = await pokemonListFunctions.getPokemonFromId(7);
+                const userSquirtle = pokemonFunctions.createStarterPokemonDetails(10, squirtle, i.user);
+
+                await trainerFunctions.addPokemonToUser(i.user, userSquirtle);
+
+                await i.update({content: 'You have been added to the game.', components: []});
+            }
         });
     },
 };

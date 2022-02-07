@@ -51,6 +51,7 @@ process.on("SIGINT", () => {
         process.exit();
     }
 });
+
 process.on("SIGTERM", () => {
     if (dbObjects.mongoo)
         dbObjects.mongoo.connection.close().then(() => {

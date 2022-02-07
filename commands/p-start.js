@@ -8,6 +8,8 @@ const schedule = require('node-schedule');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const {MessageEmbed, MessageAttachment, MessageActionRow, MessageButton} = require("discord.js");
 const trainerFunctions = require("../db/functions/trainerFunctions");
+const pokemonFunctions = require("../globals/pokemonFunctions");
+const battlingFunctions = require("../db/functions/battlingFunctions");
 let spawnJob;
 let spawnedMessage;
 let collector;
@@ -98,7 +100,7 @@ module.exports = {
                             }
 
                             const pokemon = shuffleBag.splice(Math.floor(Math.random() * shuffleBag.length), 1);
-                            let quantity = getQuantity(pokemon[0].spawnRate);
+                            let quantity = pokemonFunctions.setQuantity(pokemon[0].spawnRate);
                             await pokemonGameFunctions.setSpawned(interaction.guild.id, pokemon[0]);
 
                             const row = new MessageActionRow()
@@ -146,12 +148,9 @@ module.exports = {
                                             //check if user is in battle
                                             //check if user has a usable pokemon
 
-
                                             await trainerFunctions.setBattling(interaction.user.id, true)
 
                                             quantity--;
-
-                                            // console.log(createPokemonDetails(5, pokemon[0]));
 
                                             const thread = await channel.threads.create({
                                                 name: `${pokemon[0].name} vs ${i.user.username}`,
@@ -194,11 +193,16 @@ module.exports = {
                                                 message = msg;
                                             })
 
+                                            const battlePokemon = pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
+
+                                            await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
+
+
                                             const battleFilter = input => (input.customId === `${input.user.id}spawnBattleAttack` || input.customId === `${input.user.id}spawnBattlePokemon`);
 
                                             const battleCollector = thread.createMessageComponentCollector({
                                                 battleFilter,
-                                                time: 600000
+                                                time: 300000
                                                 // time: 5000
                                             });
 
@@ -283,8 +287,7 @@ module.exports = {
                 interaction.reply({content: "There was an error with the game.", ephemeral: true});
             }
         }
-    }
-    ,
+    },
 
     cancelJob: function () {
         try {
@@ -292,130 +295,5 @@ module.exports = {
         } catch (e) {
             console.log(`Problem while cancelling job. ${e}`)
         }
-    }
+    },
 };
-
-function getQuantity(spawnRate) {
-    switch (spawnRate) {
-        case "common":
-            return 10;
-        case "uncommon":
-            return 5;
-        case "rare":
-            return 3;
-        case "very rare":
-            return 1;
-        case "epic":
-            return 1;
-    }
-}
-
-function createPokemonDetails(level, defaultPokemon) {
-    let fullDetailsPokemon = {
-        "pokeId": defaultPokemon.pokeId,
-        "name": defaultPokemon.name,
-        "level": level,
-        "owner": null,
-        "nickname": null,
-        "exp": 0,
-        "traded": false,
-        "ivStats": {
-            "hp": randomIntFromInterval(0, 31),
-            "atk": randomIntFromInterval(0, 31),
-            "def": randomIntFromInterval(0, 31),
-            "spAtk": randomIntFromInterval(0, 31),
-            "spDef": randomIntFromInterval(0, 31),
-            "speed": randomIntFromInterval(0, 31)
-        },
-        "damageTaken": 0,
-        "status": "normal",
-        "teamNumber": null,
-        "boxNumber": null,
-        "item": null,
-        "shiny": false,
-        "ball": null,
-        "currentMoves": null,
-        "caughtTimestamp": null,
-        "receivedTimestamp": null,
-        "nature": getNature(),
-        "male": isMale(defaultPokemon.genderPercentage.male),
-        "friendship": defaultPokemon.baseFriendship
-    }
-
-    fullDetailsPokemon.shiny = isShiny(fullDetailsPokemon.ivStats)
-    fullDetailsPokemon.currentMoves = getMoves(level, defaultPokemon);
-
-    return fullDetailsPokemon;
-}
-
-function isMale(malePercentage) {
-    return (Math.floor(Math.random() * (99) + 1) / 100) <= malePercentage;
-}
-
-function getMoves(currentLevel, defaultPokemon) {
-    let moves = defaultPokemon.moves.filter(obj => {
-        return obj.level <= currentLevel;
-    })
-    let currentMoves = [];
-    while (moves.length > 0 && currentMoves.length < 4) {
-        currentMoves.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
-    }
-    return currentMoves;
-}
-
-function isShiny(ivStats) {
-    return ((ivStats.def === ivStats.speed === ivStats.spAtk === ivStats.spDef) &&
-        (ivStats.atk === 2 || ivStats.atk === 3 || ivStats.atk === 6 || ivStats.atk === 7 || ivStats.atk === 10 ||
-            ivStats.atk === 11 || ivStats.atk === 14 || ivStats.atk === 15 || ivStats.atk === 18 || ivStats.atk === 19 ||
-            ivStats.atk === 22 || ivStats.atk === 23 || ivStats.atk === 26 || ivStats.atk === 27 || ivStats.atk === 30));
-}
-
-function getNature() {
-    let natures = ["adamant", "bashful", "bold", "brave", "calm", "careful", "docile", "gentle", "hardy", "hasty", "impish", "jolly", "lax",
-        "lonely", "mild", "modest", "naive", "naughty", "quiet", "quirky", "rash", "relaxed", "sassy", "serious", "timid"];
-
-    return natures[Math.floor(Math.random() * natures.length)];
-}
-
-function randomIntFromInterval(min, max) { // min and max included
-    return Math.floor(Math.random() * (max - min + 1) + min)
-}
-
-function hpCalculation(level, base, elb) {
-    return (((level / 100 + 1) * base + level) + elb)
-}
-
-function otherStateCalculation(level, base, nature, elb) {
-    return (((((level / 50 + 1) * base) / 1.5) * nature) + elb)
-}
-
-function elbCalculation(base, multiplier, level) {
-    return ((Math.sqrt(base) * multiplier + level) / 2.5)
-}
-
-function multiplierCalculation(effortLevel) {
-    switch (effortLevel) {
-        case 0:
-            return 0;
-        case 1:
-            return 2;
-        case 2:
-            return 3;
-        case 3:
-            return 4;
-        case 4:
-            return 7;
-        case 5:
-            return 8;
-        case 6:
-            return 9;
-        case 7:
-            return 14;
-        case 8:
-            return 15;
-        case 9:
-            return 16;
-        case 10:
-            return 25;
-    }
-}
