@@ -20,6 +20,7 @@ module.exports = {
                 "speed": generalFunctions.randomIntFromInterval(0, 31)
             },
             "evLevels": null,
+            "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
             "teamNumber": null,
@@ -68,6 +69,7 @@ module.exports = {
                 "speed": generalFunctions.randomIntFromInterval(0, 31)
             },
             "evLevels": null,
+            "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
             "teamNumber": null,
@@ -192,7 +194,7 @@ function setMoves(currentLevel, defaultPokemon) {
     while (moves.length > 0 && currentMoves.length < 4) {
         currentMoves.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
     }
-    console.log(currentMoves)
+    // console.log(currentMoves)
     return currentMoves;
 }
 

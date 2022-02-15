@@ -23,8 +23,10 @@
   "homepage": "https://github.com/CSUN-Discord/PokeMasterMatty#readme",
   "dependencies": {
     "@discordjs/builders": "^0.7.0",
+    "base64-img": "^1.0.4",
     "discord.js": "^13.2.0",
     "glob": "^7.2.0",
+    "merge-images": "^2.0.0",
     "mongoose": "^6.0.12",
     "node-fetch": "^2.6.1",
     "node-schedule": "^2.0.0",
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@discordjs/rest": "^0.1.0-canary.0",
     "ascii-table": "^0.0.9",
+    "canvas": "^2.9.0",
     "discord-api-types": "^0.24.0",
     "request": "^2.88.2"
   }

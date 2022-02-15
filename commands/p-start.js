@@ -9,6 +9,7 @@ const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const {MessageEmbed, MessageAttachment, MessageActionRow, MessageButton} = require("discord.js");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
+const battleFunctions = require("../globals/battleFunctions");
 const battlingFunctions = require("../db/functions/battlingFunctions");
 let spawnJob;
 let spawnedMessage;
@@ -152,6 +153,10 @@ module.exports = {
 
                                             quantity--;
 
+                                            const battlePokemon = pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
+
+                                            await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
+
                                             const thread = await channel.threads.create({
                                                 name: `${pokemon[0].name} vs ${i.user.username}`,
                                                 autoArchiveDuration: 60,
@@ -189,24 +194,28 @@ module.exports = {
                                             thread.send({content: "You have 10 minutes for this battle."})
                                             let message;
 
-                                            thread.send({content: "_ _", components: [row]}).then(msg => {
+                                            const battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+
+                                            thread.send({
+                                                // content: "test",
+                                                embeds: [battleFunctions.createEmbedPVM(battlingDetails[0])],
+                                                components: [row]
+                                            }).then(msg => {
                                                 message = msg;
                                             })
 
-                                            const battlePokemon = pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
-
-                                            await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
-
-
-                                            const battleFilter = input => (input.customId === `${input.user.id}spawnBattleAttack` || input.customId === `${input.user.id}spawnBattlePokemon`);
+                                            // const battleFilter = inp => inp.customId === 'primary' && inp.user.id === '122157285790187530';
+                                            // const battleFilter = userin => userin.customId === `${i.user.id}spawnBattleAttack` || userin.customId === `${i.user.id}spawnBattlePokemon` ||
+                                            //     userin.customId === `${i.user.id}spawnBattleBag` || userin.customId === `${i.user.id}spawnBattleBag`;
 
                                             const battleCollector = thread.createMessageComponentCollector({
-                                                battleFilter,
+                                                // battleFilter,
                                                 time: 300000
                                                 // time: 5000
                                             });
 
                                             battleCollector.on('collect', async inp => {
+                                                if (inp.user.id !== i.user.id) return;
                                                 message.delete();
                                                 inp.channel.send("Battle option");
                                                 if (inp.customId === `${inp.user.id}spawnBattleAttack`) {

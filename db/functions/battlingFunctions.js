@@ -24,7 +24,8 @@ module.exports = {
                             //     }
                             // },
                             userOneCurrentPokemon: 1,
-                            userTwo: pokemon,
+                            userTwoTeam: [pokemon],
+                            userTwoCurrentPokemon: 1,
                             battleType: "pokemonRandomEncounter"
                         },
                     },
@@ -37,5 +38,17 @@ module.exports = {
             console.log(e);
         }
     },
+
+    getBattleFromUserId: async function (userId) {
+        try {
+            return await battlingSchema
+                .find(
+                    {
+                        'userOne.userId': userId
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    }
 
 }
