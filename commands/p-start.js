@@ -166,39 +166,15 @@ module.exports = {
                                             });
                                             thread.members.add(i.user.id);
                                             await thread.setLocked(true);
-                                            const row = new MessageActionRow()
-                                                .addComponents(
-                                                    new MessageButton()
-                                                        .setCustomId(`${i.user.id}spawnBattleAttack`)
-                                                        .setLabel('attack')
-                                                        .setStyle('PRIMARY'),
-                                                )
-                                                .addComponents(
-                                                    new MessageButton()
-                                                        .setCustomId(`${i.user.id}spawnBattlePokemon`)
-                                                        .setLabel('pokemon')
-                                                        .setStyle('PRIMARY'),
-                                                )
-                                                .addComponents(
-                                                    new MessageButton()
-                                                        .setCustomId(`${i.user.id}spawnBattleBag`)
-                                                        .setLabel('bag')
-                                                        .setStyle('PRIMARY'),
-                                                )
-                                                .addComponents(
-                                                    new MessageButton()
-                                                        .setCustomId(`${i.user.id}spawnBattleRun`)
-                                                        .setLabel('run')
-                                                        .setStyle('DANGER'),
-                                                );
+                                            let row = battleFunctions.setRowDefault(new MessageActionRow(), i)
                                             thread.send({content: "You have 10 minutes for this battle."})
                                             let message;
 
-                                            const battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
-
+                                            let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                            battlingDetails = battlingDetails[0];
                                             thread.send({
                                                 // content: "test",
-                                                embeds: [battleFunctions.createEmbedPVM(battlingDetails[0])],
+                                                embeds: [battleFunctions.createEmbedPVM(battlingDetails)],
                                                 components: [row]
                                             }).then(msg => {
                                                 message = msg;
@@ -217,17 +193,14 @@ module.exports = {
                                             battleCollector.on('collect', async inp => {
                                                 if (inp.user.id !== i.user.id) return;
                                                 message.delete();
-                                                inp.channel.send("Battle option");
-                                                if (inp.customId === `${inp.user.id}spawnBattleAttack`) {
-                                                    console.log(`${inp.user.id} spawnBattleAttack`)
-                                                } else if (inp.customId === `${inp.user.id}spawnBattlePokemon`) {
-                                                    console.log(`${inp.user.id} spawnBattlePokemon`)
-                                                } else if (inp.customId === `${inp.user.id}spawnBattleBag`) {
-                                                    console.log(`${inp.user.id} spawnBattleBag`)
-                                                } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
-                                                    console.log(`${inp.user.id} spawnBattleRun`)
-                                                }
-                                                thread.send({content: "_ _", components: [row]}).then(msg => {
+
+                                                const messageValues = battleFunctions.battlingOptions(inp, battlingDetails);
+
+                                                thread.send({
+                                                    content: messageValues.content,
+                                                    embeds: messageValues.embeds,
+                                                    components: messageValues.components
+                                                }).then(msg => {
                                                     message = msg;
                                                 })
                                             });

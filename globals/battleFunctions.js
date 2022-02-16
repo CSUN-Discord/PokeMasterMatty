@@ -1,4 +1,4 @@
-const {MessageEmbed} = require('discord.js');
+const {MessageEmbed, MessageActionRow, MessageButton} = require('discord.js');
 const pokemonFunctions = require("./pokemonFunctions");
 
 module.exports = {
@@ -7,22 +7,16 @@ module.exports = {
         //player, playerCurrentPokemonNumber, playerTeam, pokemonCurrentPokemonNumber, pokemonTeam
 
         const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
-        console.log(userTwoHpMultiplier);
 
         const userTwoElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoHpMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
-        console.log(userTwoElb);
 
         const userTwoTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoElb));
-        console.log(userTwoTotalHp);
 
         const userOneHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.hp));
-        console.log(userOneHpMultiplier);
 
-        const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userTwoHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
-        console.log(userOneElb);
+        const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
 
-        const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userTwoElb));
-        console.log(userOneTotalHp);
+        const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
         return new MessageEmbed()
             .setColor('RANDOM')
@@ -35,14 +29,91 @@ module.exports = {
                 {name: '\u200B', value: '\u200B'},
                 {
                     name: `Current Pokemon: ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`,
-                    value: `HP: ${getEmojiHp(userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken, userOneTotalHp)}`
+                    value: `HP: ${getEmojiHp(userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken, userOneTotalHp)}\n
+                        ${userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken}/${userOneTotalHp}
+                    `
                 },
             )
             .setTimestamp()
+    },
 
+    battlingOptions: function (inp, battlingDetails) {
+
+        let row = new MessageActionRow();
+        inp.channel.send("Battle option");
+
+        if (inp.customId === `${inp.user.id}spawnBattleAttack`) {
+            row = setRowAttacks(row, battlingDetails, inp);
+            console.log(`${inp.user.id} spawnBattleAttack`)
+        } else if (inp.customId === `${inp.user.id}spawnBattlePokemon`) {
+            console.log(`${inp.user.id} spawnBattlePokemon`)
+        } else if (inp.customId === `${inp.user.id}spawnBattleBag`) {
+            console.log(`${inp.user.id} spawnBattleBag`)
+        } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
+            console.log(`${inp.user.id} spawnBattleRun`)
+        } else if (inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}` ||
+            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}` ||
+            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
+            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`
+        ) {
+            console.log("used attack")
+            row = setRowAttacks(row, battlingDetails, inp);
+        } else if (inp.customId === `${inp.user.id}back`) {
+            row = module.exports.setRowDefault(row, inp)
+        }
+
+        return {
+            content: "_ _",
+            embeds: [module.exports.createEmbedPVM(battlingDetails)],
+            components: [row]
+        };
+    },
+
+    setRowDefault: function (row, inp) {
+        return new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${inp.user.id}spawnBattleAttack`)
+                    .setLabel('attack')
+                    .setStyle('PRIMARY'),
+            )
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${inp.user.id}spawnBattlePokemon`)
+                    .setLabel('pokemon')
+                    .setStyle('PRIMARY'),
+            )
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${inp.user.id}spawnBattleBag`)
+                    .setLabel('bag')
+                    .setStyle('PRIMARY'),
+            )
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${inp.user.id}spawnBattleRun`)
+                    .setLabel('run')
+                    .setStyle('DANGER'),
+            );
     }
+}
 
-
+function setRowAttacks(row, battlingDetails, inp) {
+    for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.length; j++) {
+        row.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`)
+                .setLabel(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`)
+                .setStyle('PRIMARY'),
+        )
+    }
+    row.addComponents(
+        new MessageButton()
+            .setCustomId(`${inp.user.id}back`)
+            .setLabel(`back`)
+            .setStyle('DANGER'),
+    )
+    return row;
 }
 
 function getEmojiHp(currentHp, totalHp) {
