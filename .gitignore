@@ -2,3 +2,8 @@
 /config.json
 /.idea/
 /node_modules/
+/python/battle_image_outputs/battle_gifs/*
+/python/battle_image_outputs/enemy_health_bar_backgrounds/*
+/python/battle_image_outputs/enemy_health_bars/*
+/python/battle_image_outputs/team_health_bars/*
+/python/battle_image_outputs/battle_png/*

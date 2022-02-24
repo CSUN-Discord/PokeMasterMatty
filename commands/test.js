@@ -13,6 +13,8 @@ const itemListFunctions = require("../db/functions/itemListFunctions")
 const mergeImages = require('merge-images');
 const {Canvas, Image} = require('canvas');
 const base64Img = require('base64-img');
+const PythonShell = require('python-shell').PythonShell;
+
 
 // const fs = require("fs");
 
@@ -30,22 +32,33 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async execute(interaction) {
+
         interaction.reply({content: "checking stuff", ephemeral: true});
 
+        // const spawn = require("child_process").spawn;
+        // const pythonProcess = spawn('python', ["python/battle_image.py"]);
 
-        const hp = 35;
-        const testEmbed = new MessageEmbed()
-            .setColor('RANDOM')
-            .setTitle(`test`)
-            .addFields(
-                {name: 'Regular field title', value: 'Some value here'},
-                {name: '\u200B', value: '\u200B'},
-                {name: 'Inline field title', value: '<:kami:789730583944757319>', inline: true},
-                {name: 'Inline field title', value: 'Some value here', inline: true},
-            )
-            .setTimestamp()
+        PythonShell.run('./python/battle_image.py', null, function (err, results) {
+            if (err)
+                throw err;
+            // Results is an array consisting of messages collected during execution
+            console.log('results: %j', results);
+        });
 
-        interaction.channel.send({embeds: [testEmbed]})
+
+        // const hp = 35;
+        // const testEmbed = new MessageEmbed()
+        //     .setColor('RANDOM')
+        //     .setTitle(`test`)
+        //     .addFields(
+        //         {name: 'Regular field title', value: 'Some value here'},
+        //         {name: '\u200B', value: '\u200B'},
+        //         {name: 'Inline field title', value: '<:kami:789730583944757319>', inline: true},
+        //         {name: 'Inline field title', value: 'Some value here', inline: true},
+        //     )
+        //     .setTimestamp()
+        //
+        // interaction.channel.send({embeds: [testEmbed]})
 
 
         // mergeImages(['/body.png', '/eyes.png', '/mouth.png'])

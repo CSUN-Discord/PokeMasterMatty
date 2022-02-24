@@ -31,7 +31,8 @@
     "node-fetch": "^2.6.1",
     "node-schedule": "^2.0.0",
     "pokemon": "^2.3.0",
-    "pokemon.js": "^1.1.8"
+    "pokemon.js": "^1.1.8",
+    "python-shell": "^3.0.1"
   },
   "devDependencies": {
     "@discordjs/rest": "^0.1.0-canary.0",
