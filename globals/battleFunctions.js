@@ -1,5 +1,6 @@
-const {MessageEmbed, MessageActionRow, MessageButton} = require('discord.js');
+const {MessageEmbed, MessageActionRow, MessageButton, MessageAttachment} = require('discord.js');
 const pokemonFunctions = require("./pokemonFunctions");
+const {PythonShell} = require("python-shell");
 
 module.exports = {
 
@@ -18,23 +19,56 @@ module.exports = {
 
         const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
-        return new MessageEmbed()
+
+        let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
+        if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname) {
+            enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname;
+        }
+        let enemy_pokemon_gender = true;
+        if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].male) {
+            enemy_pokemon_gender = false;
+        }
+        const enemy_pokemon_level = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level;
+        const enemy_pokemon_current_hp = userTwoTotalHp - battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken;
+        const enemy_pokemon_total_hp = userTwoTotalHp;
+        const user_id = battlingDetails.userOne.userId;
+        let user_pokemon_name = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name;
+        if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname) {
+            enemy_pokemon_name = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname;
+        }
+        let user_pokemon_gender = true;
+        if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].male) {
+            user_pokemon_gender = false;
+        }
+        const user_pokemon_level = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level;
+        const user_pokemon_current_hp = userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken;
+        const user_pokemon_total_hp = userOneTotalHp;
+        const enemy_pokemon_id = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].pokeId;
+        const user_pokemon_id = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].pokeId;
+        const enemy_pokemon_shiny = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].shiny;
+        const team_pokemon_shiny = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].shiny;
+
+        let options = {
+            pythonOptions: ['-u'], // get print results in real-time
+            args: [enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
+                user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
+                enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny]
+        };
+
+        PythonShell.run('./python/battle_image.py', options, function (err, results) {
+            if (err)
+                throw err;
+            // Results is an array consisting of messages collected during execution
+            console.log('results: %j', results);
+        });
+
+        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+        return [new MessageEmbed()
             .setColor('RANDOM')
             .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
-            .addFields(
-                {
-                    name: `Opponent: ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`,
-                    value: `HP: ${getEmojiHp(userTwoTotalHp - battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken, userTwoTotalHp)}`
-                },
-                {name: '\u200B', value: '\u200B'},
-                {
-                    name: `Current Pokemon: ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`,
-                    value: `HP: ${getEmojiHp(userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken, userOneTotalHp)}\n
-                        ${userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken}/${userOneTotalHp}
-                    `
-                },
-            )
-            .setTimestamp()
+            .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
+            .setTimestamp(),
+            gif]
     },
 
     battlingOptions: function (inp, battlingDetails) {
@@ -62,9 +96,10 @@ module.exports = {
             row = module.exports.setRowDefault(row, inp)
         }
 
+
         return {
             content: "_ _",
-            embeds: [module.exports.createEmbedPVM(battlingDetails)],
+            embedDetails: module.exports.createEmbedPVM(battlingDetails),
             components: [row]
         };
     },
@@ -116,76 +151,82 @@ function setRowAttacks(row, battlingDetails, inp) {
     return row;
 }
 
-function getEmojiHp(currentHp, totalHp) {
-    const bar1empty = '<:bar1empty:943192152475844649>';
-    const bar1mid = '<a:bar1mid:943192277453537280>';
-    const bar1high = '<a:bar1high:943192229663629342>';
-    const bar1full = '<a:bar1full:943192370504146974>';
-    const bar2empty = '<:bar2empty:943192293517721692>';
-    const bar2mid = '<a:bar2mid:943192197820465163>';
-    const bar2high = '<a:bar2high:943192307136626739>';
-    const bar2full = '<a:bar2full:943192358382608446>';
-    const bar3empty = '<:bar3empty:943192331174150154>';
-    const bar3mid = '<a:bar3mid:943192554294374400>';
-    const bar3high = '<a:bar3high:943192319509803068>';
-    const bar3full = '<a:bar3full:943192345069887568>';
+// function getEmojiHp(currentHp, totalHp) {
+//     const bar1empty = '<:bar1empty:943192152475844649>';
+//     const bar1mid = '<a:bar1mid:943192277453537280>';
+//     const bar1high = '<a:bar1high:943192229663629342>';
+//     const bar1full = '<a:bar1full:943192370504146974>';
+//     const bar2empty = '<:bar2empty:943192293517721692>';
+//     const bar2mid = '<a:bar2mid:943192197820465163>';
+//     const bar2high = '<a:bar2high:943192307136626739>';
+//     const bar2full = '<a:bar2full:943192358382608446>';
+//     const bar3empty = '<:bar3empty:943192331174150154>';
+//     const bar3mid = '<a:bar3mid:943192554294374400>';
+//     const bar3high = '<a:bar3high:943192319509803068>';
+//     const bar3full = '<a:bar3full:943192345069887568>';
+//
+//     let percentHP = Math.round(totalHp / 5);
+//
+//     let counterHP = 0;
+//     let emoji = "";
+//
+//     for (let i = 0; i < 5; i++) {
+//         if (currentHp === totalHp) {
+//             if (i === 0) {
+//                 emoji += bar1full;
+//             } else if (0 < i && i < 4) {
+//                 emoji += bar2full;
+//             } else {
+//                 emoji += bar3full;
+//             }
+//             counterHP += percentHP;
+//         } else if (counterHP === currentHp) {
+//             if (i === 0) {
+//                 emoji += bar1empty;
+//             } else if (0 < i && i < 4) {
+//                 emoji += bar2empty;
+//             } else {
+//                 emoji += bar3empty;
+//             }
+//         } else if ((counterHP + percentHP) < currentHp) {
+//             if (i === 0) {
+//                 emoji += bar1full;
+//             } else if (0 < i && i < 4) {
+//                 emoji += bar2full;
+//             } else {
+//                 emoji += bar3full;
+//             }
+//             counterHP += percentHP;
+//         } else {
+//             let percent = 100 * (currentHp - counterHP) / 20;
+//             if (i === 0) {
+//                 if (percent > 50) {
+//                     emoji += bar1high;
+//                 } else {
+//                     emoji += bar1mid;
+//                 }
+//             } else if (0 < i && i < 4) {
+//                 if (percent > 50) {
+//                     emoji += bar2high;
+//                 } else {
+//                     emoji += bar2mid;
+//                 }
+//             } else {
+//                 if (percent > 50) {
+//                     emoji += bar3high;
+//                 } else {
+//                     emoji += bar3mid;
+//                 }
+//             }
+//             counterHP = currentHp;
+//         }
+//     }
+//
+//     return emoji;
+// }
 
-    let percentHP = Math.round(totalHp / 5);
-
-    let counterHP = 0;
-    let emoji = "";
-
-    for (let i = 0; i < 5; i++) {
-        if (currentHp === totalHp) {
-            if (i === 0) {
-                emoji += bar1full;
-            } else if (0 < i && i < 4) {
-                emoji += bar2full;
-            } else {
-                emoji += bar3full;
-            }
-            counterHP += percentHP;
-        } else if (counterHP === currentHp) {
-            if (i === 0) {
-                emoji += bar1empty;
-            } else if (0 < i && i < 4) {
-                emoji += bar2empty;
-            } else {
-                emoji += bar3empty;
-            }
-        } else if ((counterHP + percentHP) < currentHp) {
-            if (i === 0) {
-                emoji += bar1full;
-            } else if (0 < i && i < 4) {
-                emoji += bar2full;
-            } else {
-                emoji += bar3full;
-            }
-            counterHP += percentHP;
-        } else {
-            let percent = 100 * (currentHp - counterHP) / 20;
-            if (i === 0) {
-                if (percent > 50) {
-                    emoji += bar1high;
-                } else {
-                    emoji += bar1mid;
-                }
-            } else if (0 < i && i < 4) {
-                if (percent > 50) {
-                    emoji += bar2high;
-                } else {
-                    emoji += bar2mid;
-                }
-            } else {
-                if (percent > 50) {
-                    emoji += bar3high;
-                } else {
-                    emoji += bar3mid;
-                }
-            }
-            counterHP = currentHp;
-        }
-    }
-
-    return emoji;
-}
+// function sleep(ms) {
+//     return new Promise((resolve) => {
+//         setTimeout(resolve, ms);
+//     });
+// }

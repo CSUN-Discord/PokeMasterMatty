@@ -24,61 +24,61 @@ for (const file of commandFiles) {
 //get the events handler
 require("./handlers/events")(client);
 
-// This will handle process.exit():
-process.on("exit", () => {
-    if (dbObjects.mongoo)
-        dbObjects.mongoo.connection.close().then(() => {
-            console.log("MongoDb connection closed.");
-            console.error("exit");
-            process.exit();
-        });
-    else {
-        console.error("exit");
-        process.exit();
-    }
-});
-
-// This will handle kill commands, such as CTRL+C:
-process.on("SIGINT", () => {
-    if (dbObjects.mongoo)
-        dbObjects.mongoo.connection.close().then(() => {
-            console.log("MongoDb connection closed.");
-            console.error("SIGINT");
-            process.exit();
-        });
-    else {
-        console.error("SIGINT");
-        process.exit();
-    }
-});
-
-process.on("SIGTERM", () => {
-    if (dbObjects.mongoo)
-        dbObjects.mongoo.connection.close().then(() => {
-            console.log("MongoDb connection closed.");
-            console.error("SIGTERM");
-            process.exit();
-        });
-    else {
-        console.error("SIGTERM");
-        process.exit();
-    }
-});
-
-// This will prevent dirty exit on code-fault crashes:
-process.on("uncaughtException", (err) => {
-    console.error(err.stack)
-    if (dbObjects.mongoo)
-        dbObjects.mongoo.connection.close().then(() => {
-            console.log("MongoDb connection closed.");
-            console.error(`uncaughtException:  ${err}`);
-            process.exit();
-        });
-    else {
-        console.error(`uncaughtException:  ${err}`);
-        process.exit();
-    }
-});
+// // This will handle process.exit():
+// process.on("exit", () => {
+//     if (dbObjects.mongoo)
+//         dbObjects.mongoo.connection.close().then(() => {
+//             console.log("MongoDb connection closed.");
+//             console.error("exit");
+//             process.exit();
+//         });
+//     else {
+//         console.error("exit");
+//         process.exit();
+//     }
+// });
+//
+// // This will handle kill commands, such as CTRL+C:
+// process.on("SIGINT", () => {
+//     if (dbObjects.mongoo)
+//         dbObjects.mongoo.connection.close().then(() => {
+//             console.log("MongoDb connection closed.");
+//             console.error("SIGINT");
+//             process.exit();
+//         });
+//     else {
+//         console.error("SIGINT");
+//         process.exit();
+//     }
+// });
+//
+// process.on("SIGTERM", () => {
+//     if (dbObjects.mongoo)
+//         dbObjects.mongoo.connection.close().then(() => {
+//             console.log("MongoDb connection closed.");
+//             console.error("SIGTERM");
+//             process.exit();
+//         });
+//     else {
+//         console.error("SIGTERM");
+//         process.exit();
+//     }
+// });
+//
+// // This will prevent dirty exit on code-fault crashes:
+// process.on("uncaughtException", (err) => {
+//     console.error(err.stack)
+//     if (dbObjects.mongoo)
+//         dbObjects.mongoo.connection.close().then(() => {
+//             console.log("MongoDb connection closed.");
+//             console.error(`uncaughtException:  ${err}`);
+//             process.exit();
+//         });
+//     else {
+//         console.error(`uncaughtException:  ${err}`);
+//         process.exit();
+//     }
+// });
 
 //start the bot with the token from the config file
 client.login(token);

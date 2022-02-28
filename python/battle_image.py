@@ -5,7 +5,7 @@ import PIL.ImageDraw
 import math
 import sys
 
-def create_enemy_health_bar(name, gender, level, current_hp, total_hp, user_id):
+def create_enemy_health_bar(name, is_male, level, current_hp, total_hp, user_id):
 
     enemy_health_bar = None
 
@@ -59,15 +59,14 @@ def create_enemy_health_bar(name, gender, level, current_hp, total_hp, user_id):
     
     enemy_health_bar.save('./python/battle_image_outputs/enemy_health_bars/%s_enemy_health_bar.png'%(user_id))
 
-    if gender == "male":
+    if is_male == "true":
         male = PIL.Image.open("./media/battle_images/male.png")
 
         background = PIL.Image.open('./python/battle_image_outputs/enemy_health_bars/%s_enemy_health_bar.png'%(user_id))
 
         background.paste(male, (90, 5), male.convert('RGBA'))
         background.save('./python/battle_image_outputs/enemy_health_bars/%s_enemy_health_bar.png'%(user_id))
-
-    elif gender == "female":
+    else:
         female = PIL.Image.open("./media/battle_images/female.png")
 
         background = PIL.Image.open('./python/battle_image_outputs/enemy_health_bars/%s_enemy_health_bar.png'%(user_id))
@@ -80,8 +79,7 @@ def create_enemy_health_bar(name, gender, level, current_hp, total_hp, user_id):
     background_image.paste(health_bar, (0, 20), health_bar.convert('RGBA'))
     background_image.save('./python/battle_image_outputs/enemy_health_bar_backgrounds/%s_enemy_health_bar_background.png'%(user_id))
     
-def create_team_health_bar(name, gender, level, current_hp, total_hp, user_id):
-
+def create_team_health_bar(name, is_male, level, current_hp, total_hp, user_id):
     team_health_bar = None
 
     if math.ceil((int(current_hp)/int(total_hp))*100) < 5:
@@ -135,7 +133,7 @@ def create_team_health_bar(name, gender, level, current_hp, total_hp, user_id):
 
     team_health_bar.save('./python/battle_image_outputs/team_health_bars/%s_team_health_bar.png'%(user_id))
 
-    if gender == "male":
+    if is_male == "true":
         male = PIL.Image.open("./media/battle_images/male.png")
 
         background = PIL.Image.open('./python/battle_image_outputs/team_health_bars/%s_team_health_bar.png'%(user_id))
@@ -143,7 +141,7 @@ def create_team_health_bar(name, gender, level, current_hp, total_hp, user_id):
         background.paste(male, (105, 5), male.convert('RGBA'))
         background.save('./python/battle_image_outputs/team_health_bars/%s_team_health_bar.png'%(user_id))
 
-    elif gender == "female":
+    else:
         female = PIL.Image.open("./media/battle_images/female.png")
 
         background = PIL.Image.open('./python/battle_image_outputs/team_health_bars/%s_team_health_bar.png'%(user_id))
@@ -156,11 +154,15 @@ def create_team_health_bar(name, gender, level, current_hp, total_hp, user_id):
     background_image.paste(health_bar, (227, 150), health_bar.convert('RGBA'))
     background_image.save('./python/battle_image_outputs/battle_png/%s_battle.png'%(user_id))
 
-def create_frames(user_id, enemy_poke_id, team_poke_id):
+def create_frames(user_id, enemy_poke_id, team_poke_id, enemy_pokemon_shiny, team_pokemon_shiny):
 
-    enemyPokemon = PIL.Image.open("./media/pokemon/normal-gif/front/%s.gif"%(enemy_poke_id))
+    enemyPokemon = enemyPokemon = PIL.Image.open("./media/pokemon/normal-gif/front/%s.gif"%(enemy_poke_id))
+    if enemy_pokemon_shiny == "true":
+        enemyPokemon = PIL.Image.open("./media/pokemon/shiny-gif/front/%s.gif"%(enemy_poke_id))
 
-    teamPokemon = PIL.Image.open("./media/pokemon/normal-gif/back/%s.gif"%(team_poke_id))
+    teamPokemon = teamPokemon = PIL.Image.open("./media/pokemon/normal-gif/back/%s.gif"%(team_poke_id))
+    if team_pokemon_shiny == "true":
+        teamPokemon = PIL.Image.open("./media/pokemon/shiny-gif/back/%s.gif"%(team_poke_id))
 
     background_image = PIL.Image.open('./python/battle_image_outputs/battle_png/%s_battle.png'%(user_id))
 
@@ -170,7 +172,11 @@ def create_frames(user_id, enemy_poke_id, team_poke_id):
         'background': background_image.convert(mode='RGBA')
     }
 
-    for x in range(0, image_roles['enemyPokemon'].n_frames):
+    seek_range = image_roles['teamPokemon'].n_frames
+    if (image_roles['teamPokemon'].n_frames > image_roles['enemyPokemon'].n_frames):
+        seek_range = image_roles['enemyPokemon'].n_frames
+
+    for x in range(0, seek_range):
         image_roles['enemyPokemon'].seek(x)
         image_roles['teamPokemon'].seek(x)
 
@@ -189,15 +195,14 @@ def create_frames(user_id, enemy_poke_id, team_poke_id):
 #     user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
 #         enemy_pokemon_id, user_pokemon_id
 
-create_enemy_health_bar("test", "male", "54", "0", "100", "12345678")
+create_enemy_health_bar(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
 
-# create_team_health_bar(sys.argv[7], sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11], sys.argv[6])
-create_team_health_bar("user poke name", "female", "65", "15", "124", "12345678")
+create_team_health_bar(sys.argv[7], sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11], sys.argv[6])
 
-# frames = tuple(create_frames(sys.argv[6], sys.argv[12], sys.argv[13]))
-frames = tuple(create_frames("12345678", "1", "15"))
+frames = tuple(create_frames(sys.argv[6], sys.argv[12], sys.argv[13], sys.argv[14], sys.argv[15]))
+
 frames[0].save(
-    './python/battle_image_outputs/battle_gifs/Fahad1234.gif',
+    './python/battle_image_outputs/battle_gifs/%s.gif'%(sys.argv[6]),
     save_all=True,
     append_images=frames[1:],
     duration=100,loop=0

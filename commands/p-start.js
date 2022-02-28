@@ -172,10 +172,14 @@ module.exports = {
 
                                             let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
                                             battlingDetails = battlingDetails[0];
+                                            const embedDetails = battleFunctions.createEmbedPVM(battlingDetails);
+
+                                            await sleep(1500)
+
                                             thread.send({
-                                                // content: "test",
-                                                embeds: [battleFunctions.createEmbedPVM(battlingDetails)],
-                                                components: [row]
+                                                embeds: [embedDetails[0]],
+                                                components: [row],
+                                                files: [embedDetails[1]],
                                             }).then(msg => {
                                                 message = msg;
                                             })
@@ -195,10 +199,11 @@ module.exports = {
                                                 message.delete();
 
                                                 const messageValues = battleFunctions.battlingOptions(inp, battlingDetails);
-
+                                                await sleep(1500)
                                                 thread.send({
                                                     content: messageValues.content,
-                                                    embeds: messageValues.embeds,
+                                                    embeds: [messageValues.embedDetails[0]],
+                                                    files: [messageValues.embedDetails[1]],
                                                     components: messageValues.components
                                                 }).then(msg => {
                                                     message = msg;
@@ -279,3 +284,9 @@ module.exports = {
         }
     },
 };
+
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
