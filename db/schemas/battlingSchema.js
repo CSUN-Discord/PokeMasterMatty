@@ -30,7 +30,13 @@ const battlingSchema = new Schema({
         }
     },
     userTwoCurrentPokemon: Number,
-    battleType: String
+    battleType: String,
+    currentTurn: Number,
+    fleeCount: Number,
+    userOneCurrentMoveStage: Number,
+    userTwoCurrentMoveStage: Number,
+    userOneStatStage: Array,
+    userTwoStatStage: Array,
 });
 
 module.exports = mongoose.model("battling", battlingSchema);

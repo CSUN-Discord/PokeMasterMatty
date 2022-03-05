@@ -1,20 +1,33 @@
 const movesListSchema = require("../schemas/movesListSchema");
 
 module.exports = {
-    getMove: function (name) {
+    getMove: async function (name) {
         try {
-            movesListSchema
+            return await movesListSchema
                 .findOne(
                     {
-                        name: name
-                    }, (err, docs) => {
-                        if (err) console.log(err + "with the name:" + name)
-                        else {
-                            console.log(name + " true")
-                        }
-                    });
+                        name: name,
+                    }
+                )
+                .exec();
         } catch (e) {
             console.log(e);
+        }
+    },
+
+    updateMove: async function (id, type) {
+        try {
+            return await movesListSchema
+                .findOneAndUpdate(
+                    {
+                        id: id,
+                    },
+                    {
+                        type: type
+                    }
+                )
+        } catch (e) {
+            console.log(`${id}: ${e}`);
         }
     },
 }

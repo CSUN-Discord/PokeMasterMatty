@@ -199,7 +199,8 @@ module.exports = {
                                                 message.delete();
 
                                                 const messageValues = battleFunctions.battlingOptions(inp, battlingDetails);
-                                                await sleep(1500)
+                                                if (messageValues.embedDetails[2])
+                                                    await sleep(1500)
                                                 thread.send({
                                                     content: messageValues.content,
                                                     embeds: [messageValues.embedDetails[0]],

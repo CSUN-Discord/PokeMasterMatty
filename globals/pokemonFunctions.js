@@ -1,4 +1,6 @@
 const generalFunctions = require("./generalFunctions");
+const moveListFunctions = require("../db/functions/moveListFunctions");
+var async = require("async");
 
 module.exports = {
 
@@ -87,6 +89,8 @@ module.exports = {
 
         fullDetailsPokemon.shiny = isShiny(fullDetailsPokemon.ivStats)
         fullDetailsPokemon.currentMoves = setMoves(level, defaultPokemon);
+
+        console.log(fullDetailsPokemon.currentMoves)
 
         fullDetailsPokemon.evLevels = {
             "hp": getEvLevel(fullDetailsPokemon.ivStats.hp),
@@ -192,10 +196,31 @@ function setMoves(currentLevel, defaultPokemon) {
     })
     let currentMoves = [];
     while (moves.length > 0 && currentMoves.length < 4) {
-        currentMoves.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
+        currentMoves.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0]);
     }
-    // console.log(currentMoves)
-    return currentMoves;
+
+    let moveDetails = [];
+
+
+    for (let i = 0; i < currentMoves.length; i++) {
+        moveListFunctions.getMove(currentMoves[i].name).then((move) => {
+            const tempMove = {
+                id: move.id,
+                name: move.name,
+                category: move.category,
+                flavorText: move.flavorText,
+                pp: move.pp,
+                currentPP: move.pp,
+                pwr: move.pwr,
+                priority: move.priority,
+                type: move.type
+            }
+            moveDetails.push(tempMove);
+        })
+    }
+
+    return moveDetails;
+
 }
 
 function isShiny(ivStats) {

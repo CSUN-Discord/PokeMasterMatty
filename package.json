@@ -23,6 +23,7 @@
   "homepage": "https://github.com/CSUN-Discord/PokeMasterMatty#readme",
   "dependencies": {
     "@discordjs/builders": "^0.7.0",
+    "async": "^3.2.3",
     "base64-img": "^1.0.4",
     "discord.js": "^13.2.0",
     "glob": "^7.2.0",

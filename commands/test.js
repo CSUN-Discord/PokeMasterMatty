@@ -20,6 +20,8 @@ const PythonShell = require('python-shell').PythonShell;
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {MessageEmbed} = require("discord.js");
+const {updateMove} = require("../db/functions/moveListFunctions");
+const moveListFunction = require("../db/functions/moveListFunctions");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test")
@@ -35,41 +37,54 @@ module.exports = {
 
         interaction.reply({content: "checking stuff", ephemeral: true});
 
-        const enemy_pokemon_name = "Test nam";
-        const enemy_pokemon_gender = false;
-        const enemy_pokemon_level = "16";
-        const enemy_pokemon_current_hp = "53";
-        const enemy_pokemon_total_hp = "59";
-        const user_id = "12345678";
-        const user_pokemon_name = "test nic name";
-        const user_pokemon_gender = true;
-        const user_pokemon_level = "64";
-        const user_pokemon_current_hp = "100";
-        const user_pokemon_total_hp = "125";
-        const enemy_pokemon_id = "6";
-        const user_pokemon_id = "76";
-        const enemy_pokemon_shiny = false;
-        const team_pokemon_shiny = false;
+        // for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 900; i++) {
+            if (i > 826) {
 
-        // const spawn = require("child_process").spawn;
-        // const pythonBattleGifProcess = spawn('python', ["python/battle_image.py",
-        //     enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
-        //     user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
-        //     enemy_pokemon_id, user_pokemon_id]);
+            } else {
+                try {
+                    updateAllTypes(`https://pokeapi.co/api/v2/move/?offset=${i}&limit=${1}`, i)
+                } catch (e) {
+                    console.log(e)
+                }
+            }
+        }
 
-        let options = {
-            pythonOptions: ['-u'], // get print results in real-time
-            args: [enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
-                user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
-                enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny]
-        };
-
-        PythonShell.run('./python/battle_image.py', options, function (err, results) {
-            if (err)
-                throw err;
-            // Results is an array consisting of messages collected during execution
-            console.log('results: %j', results);
-        });
+        // const enemy_pokemon_name = "Test nam";
+        // const enemy_pokemon_gender = false;
+        // const enemy_pokemon_level = "16";
+        // const enemy_pokemon_current_hp = "53";
+        // const enemy_pokemon_total_hp = "59";
+        // const user_id = "12345678";
+        // const user_pokemon_name = "test nic name";
+        // const user_pokemon_gender = true;
+        // const user_pokemon_level = "64";
+        // const user_pokemon_current_hp = "100";
+        // const user_pokemon_total_hp = "125";
+        // const enemy_pokemon_id = "6";
+        // const user_pokemon_id = "76";
+        // const enemy_pokemon_shiny = false;
+        // const team_pokemon_shiny = false;
+        //
+        // // const spawn = require("child_process").spawn;
+        // // const pythonBattleGifProcess = spawn('python', ["python/battle_image.py",
+        // //     enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
+        // //     user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
+        // //     enemy_pokemon_id, user_pokemon_id]);
+        //
+        // let options = {
+        //     pythonOptions: ['-u'], // get print results in real-time
+        //     args: [enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
+        //         user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
+        //         enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny]
+        // };
+        //
+        // PythonShell.run('./python/battle_image.py', options, function (err, results) {
+        //     if (err)
+        //         throw err;
+        //     // Results is an array consisting of messages collected during execution
+        //     console.log('results: %j', results);
+        // });
 
 
         // const hp = 35;
@@ -256,18 +271,18 @@ module.exports = {
 //     }
 // }
 
-// for (let i = 0; i < 900; i++) {
-//     if (i > 826) {
-//
-//     } else {
-//         try {
-//             fetchAllMoves(`https://pokeapi.co/api/v2/move/?offset=${i}&limit=${1}`, i)
-//         }catch (e) {
-//             console.log(e)
-//         }
-//     }
-// }
-//   fetchAllMoves("https://pokeapi.co/api/v2/move/max-starfall/")
+        //     for (let i = 0; i < 900; i++) {
+        //         if (i > 826) {
+        //
+        //         } else {
+        //             try {
+        //                 fetchAllMoves(`https://pokeapi.co/api/v2/move/?offset=${i}&limit=${1}`, i)
+        //             } catch (e) {
+        //                 console.log(e)
+        //             }
+        //         }
+        //     }
+        //     fetchAllMoves("https://pokeapi.co/api/v2/move/max-starfall/")
     },
 }
 
@@ -339,3 +354,29 @@ module.exports = {
 //             })
 //         })
 // }
+
+function updateAllTypes(url, id) {
+    fetch(url)
+        .then(response => response.json())
+        .then((moves) => {
+            moves.results.forEach((move) => {
+                try {
+                    let url = move.url
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(async function (moveData) {
+                            try {
+                                let doc = await moveListFunction.updateMove(moveData.id, moveData.type.name);
+                                console.log(doc)
+
+                                // console.log(JSON.stringify(move) + ",")
+                            } catch (e) {
+                                console.log(e + " " + id + " " + moveData.name)
+                            }
+                        })
+                } catch (e) {
+                    console.log(e)
+                }
+            })
+        })
+}

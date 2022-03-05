@@ -1,5 +1,6 @@
 const {MessageEmbed, MessageActionRow, MessageButton, MessageAttachment} = require('discord.js');
 const pokemonFunctions = require("./pokemonFunctions");
+const moveListFunctions = require("../db/functions/moveListFunctions");
 const {PythonShell} = require("python-shell");
 
 module.exports = {
@@ -18,7 +19,6 @@ module.exports = {
         const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
 
         const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
-
 
         let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
         if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname) {
@@ -68,7 +68,61 @@ module.exports = {
             .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
             .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
             .setTimestamp(),
-            gif]
+            gif,
+            true
+        ]
+    },
+
+    createEmbedAfterAttackPVM: function (battlingDetails) {
+
+        let attackDetailsEmbed = new MessageEmbed()
+            .setColor('RANDOM')
+            .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+            .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
+            .setTimestamp()
+
+
+        for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.length; j++) {
+            attackDetailsEmbed.addFields(
+                {
+                    name: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`,
+                    value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].flavorText}`
+                },
+                {
+                    name: 'PP',
+                    value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].currentPP}/${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pp}`,
+                    inline: true
+                },
+            )
+            if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pwr == null)
+                attackDetailsEmbed.addField('Power', `0`, true)
+            else
+                attackDetailsEmbed.addField('Power', `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pwr}`, true)
+            attackDetailsEmbed.addFields(
+                {
+                    name: 'Type',
+                    value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].type}`,
+                    inline: true
+                },
+            )
+        }
+        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+        return [attackDetailsEmbed,
+            gif,
+            false
+        ]
+    },
+
+    createEmbedDefault: function (battlingDetails) {
+        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+        return [new MessageEmbed()
+            .setColor('RANDOM')
+            .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+            .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
+            .setTimestamp(),
+            gif,
+            false
+        ]
     },
 
     battlingOptions: function (inp, battlingDetails) {
@@ -78,25 +132,43 @@ module.exports = {
 
         if (inp.customId === `${inp.user.id}spawnBattleAttack`) {
             row = setRowAttacks(row, battlingDetails, inp);
-            console.log(`${inp.user.id} spawnBattleAttack`)
+
+            return {
+                content: "_ _",
+                embedDetails: module.exports.createEmbedAfterAttackPVM(battlingDetails),
+                components: [row]
+            };
         } else if (inp.customId === `${inp.user.id}spawnBattlePokemon`) {
+            row = setRowPokemon(row, battlingDetails, inp)
             console.log(`${inp.user.id} spawnBattlePokemon`)
         } else if (inp.customId === `${inp.user.id}spawnBattleBag`) {
             console.log(`${inp.user.id} spawnBattleBag`)
         } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
             console.log(`${inp.user.id} spawnBattleRun`)
-        } else if (inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`
+        } else if (inp.customId ===
+            `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}`
+            ||
+            inp.customId ===
+            `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}`
+            ||
+            inp.customId ===
+            `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}`
+            ||
+            inp.customId ===
+            `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`
+
         ) {
             console.log("used attack")
-            row = setRowAttacks(row, battlingDetails, inp);
+
         } else if (inp.customId === `${inp.user.id}back`) {
             row = module.exports.setRowDefault(row, inp)
+
+            return {
+                content: "_ _",
+                embedDetails: module.exports.createEmbedDefault(battlingDetails),
+                components: [row]
+            };
         }
-
-
         return {
             content: "_ _",
             embedDetails: module.exports.createEmbedPVM(battlingDetails),
@@ -108,25 +180,33 @@ module.exports = {
         return new MessageActionRow()
             .addComponents(
                 new MessageButton()
-                    .setCustomId(`${inp.user.id}spawnBattleAttack`)
+                    .setCustomId(
+                        `${inp.user.id}spawnBattleAttack`
+                    )
                     .setLabel('attack')
                     .setStyle('PRIMARY'),
             )
             .addComponents(
                 new MessageButton()
-                    .setCustomId(`${inp.user.id}spawnBattlePokemon`)
+                    .setCustomId(
+                        `${inp.user.id}spawnBattlePokemon`
+                    )
                     .setLabel('pokemon')
                     .setStyle('PRIMARY'),
             )
             .addComponents(
                 new MessageButton()
-                    .setCustomId(`${inp.user.id}spawnBattleBag`)
+                    .setCustomId(
+                        `${inp.user.id}spawnBattleBag`
+                    )
                     .setLabel('bag')
                     .setStyle('PRIMARY'),
             )
             .addComponents(
                 new MessageButton()
-                    .setCustomId(`${inp.user.id}spawnBattleRun`)
+                    .setCustomId(
+                        `${inp.user.id}spawnBattleRun`
+                    )
                     .setLabel('run')
                     .setStyle('DANGER'),
             );
@@ -135,98 +215,57 @@ module.exports = {
 
 function setRowAttacks(row, battlingDetails, inp) {
     for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.length; j++) {
+
         row.addComponents(
             new MessageButton()
-                .setCustomId(`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`)
-                .setLabel(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`)
+                .setCustomId(
+                    `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`
+                )
+                .setLabel(
+                    `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`
+                )
                 .setStyle('PRIMARY'),
         )
     }
     row.addComponents(
         new MessageButton()
-            .setCustomId(`${inp.user.id}back`)
-            .setLabel(`back`)
+            .setCustomId(
+                `${inp.user.id}back`
+            )
+            .setLabel(
+                `back`
+            )
             .setStyle('DANGER'),
     )
     return row;
 }
 
-// function getEmojiHp(currentHp, totalHp) {
-//     const bar1empty = '<:bar1empty:943192152475844649>';
-//     const bar1mid = '<a:bar1mid:943192277453537280>';
-//     const bar1high = '<a:bar1high:943192229663629342>';
-//     const bar1full = '<a:bar1full:943192370504146974>';
-//     const bar2empty = '<:bar2empty:943192293517721692>';
-//     const bar2mid = '<a:bar2mid:943192197820465163>';
-//     const bar2high = '<a:bar2high:943192307136626739>';
-//     const bar2full = '<a:bar2full:943192358382608446>';
-//     const bar3empty = '<:bar3empty:943192331174150154>';
-//     const bar3mid = '<a:bar3mid:943192554294374400>';
-//     const bar3high = '<a:bar3high:943192319509803068>';
-//     const bar3full = '<a:bar3full:943192345069887568>';
-//
-//     let percentHP = Math.round(totalHp / 5);
-//
-//     let counterHP = 0;
-//     let emoji = "";
-//
-//     for (let i = 0; i < 5; i++) {
-//         if (currentHp === totalHp) {
-//             if (i === 0) {
-//                 emoji += bar1full;
-//             } else if (0 < i && i < 4) {
-//                 emoji += bar2full;
-//             } else {
-//                 emoji += bar3full;
-//             }
-//             counterHP += percentHP;
-//         } else if (counterHP === currentHp) {
-//             if (i === 0) {
-//                 emoji += bar1empty;
-//             } else if (0 < i && i < 4) {
-//                 emoji += bar2empty;
-//             } else {
-//                 emoji += bar3empty;
-//             }
-//         } else if ((counterHP + percentHP) < currentHp) {
-//             if (i === 0) {
-//                 emoji += bar1full;
-//             } else if (0 < i && i < 4) {
-//                 emoji += bar2full;
-//             } else {
-//                 emoji += bar3full;
-//             }
-//             counterHP += percentHP;
-//         } else {
-//             let percent = 100 * (currentHp - counterHP) / 20;
-//             if (i === 0) {
-//                 if (percent > 50) {
-//                     emoji += bar1high;
-//                 } else {
-//                     emoji += bar1mid;
-//                 }
-//             } else if (0 < i && i < 4) {
-//                 if (percent > 50) {
-//                     emoji += bar2high;
-//                 } else {
-//                     emoji += bar2mid;
-//                 }
-//             } else {
-//                 if (percent > 50) {
-//                     emoji += bar3high;
-//                 } else {
-//                     emoji += bar3mid;
-//                 }
-//             }
-//             counterHP = currentHp;
-//         }
-//     }
-//
-//     return emoji;
-// }
+function setRowPokemon(row, battlingDetails, inp) {
+    for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].length; j++) {
 
-// function sleep(ms) {
-//     return new Promise((resolve) => {
-//         setTimeout(resolve, ms);
-//     });
-// }
+        const name = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name
+        row.addComponents(
+            new MessageButton()
+                .setCustomId(
+                    `${inp.user.id}${name}`
+                )
+                .setLabel(
+                    `${name}`
+                )
+                .setStyle('PRIMARY'),
+        )
+    }
+    row.addComponents(
+        new MessageButton()
+            .setCustomId(
+                `${inp.user.id}
+        back`
+            )
+            .setLabel(
+                `
+        back`
+            )
+            .setStyle('DANGER'),
+    )
+    return row;
+}
