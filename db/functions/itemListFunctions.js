@@ -1,5 +1,7 @@
 const itemsListSchema = require("../schemas/itemsListSchema");
 
+//poke-ball, recovery, hold-items, miscellaneous, vitamins, battle-effect
+
 module.exports = {
     addItem: async function (item) {
         try {
@@ -25,6 +27,18 @@ module.exports = {
                     }
                 )
                 .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    getItem: async function (item) {
+        try {
+            return await itemsListSchema
+                .findOne(
+                    {
+                        name: item.name,
+                    })
         } catch (e) {
             console.log(e);
         }

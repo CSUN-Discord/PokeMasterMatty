@@ -100,7 +100,9 @@ module.exports = {
                                 }
                             }
 
-                            const pokemon = shuffleBag.splice(Math.floor(Math.random() * shuffleBag.length), 1);
+
+                            const pokemon = [await pokemonListFunctions.getPokemonFromId(4)];
+                            // const pokemon = shuffleBag.splice(Math.floor(Math.random() * shuffleBag.length), 1);
                             let quantity = pokemonFunctions.setQuantity(pokemon[0].spawnRate);
                             await pokemonGameFunctions.setSpawned(interaction.guild.id, pokemon[0]);
 
@@ -140,10 +142,13 @@ module.exports = {
 
                                 collector.on('collect', async i => {
                                         if (i.customId === 'spawnBattle') {
+                                            await i.deferUpdate()
+
                                             const user = await trainerFunctions.getUser(interaction.user.id);
-                                            if (user == null) return i.reply({
+                                            if (user == null) return i.channel.send({
                                                 content: "Join the game first before battling.",
-                                                ephemeral: true
+                                            }).then((msg) => {
+                                                setTimeout(() => msg.delete(), 5000);
                                             });
 
                                             //check if user is in battle
@@ -153,9 +158,11 @@ module.exports = {
 
                                             quantity--;
 
-                                            const battlePokemon = pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
+                                            const battlePokemon = await pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
+                                            // const battlePokemon = await pokemonFunctions.createPokemonDetails(5, pokemon[0]);
 
                                             await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
+
 
                                             const thread = await channel.threads.create({
                                                 name: `${pokemon[0].name} vs ${i.user.username}`,
@@ -166,7 +173,7 @@ module.exports = {
                                             });
                                             thread.members.add(i.user.id);
                                             await thread.setLocked(true);
-                                            let row = battleFunctions.setRowDefault(new MessageActionRow(), i)
+                                            let row = await battleFunctions.setRowDefault(new MessageActionRow(), i)
                                             thread.send({content: "You have 10 minutes for this battle."})
                                             let message;
 
@@ -175,6 +182,7 @@ module.exports = {
                                             const embedDetails = battleFunctions.createEmbedPVM(battlingDetails);
 
                                             await sleep(1500)
+
 
                                             thread.send({
                                                 embeds: [embedDetails[0]],
@@ -198,7 +206,7 @@ module.exports = {
                                                 if (inp.user.id !== i.user.id) return;
                                                 message.delete();
 
-                                                const messageValues = battleFunctions.battlingOptions(inp, battlingDetails);
+                                                const messageValues = await battleFunctions.battlingOptions(inp, battlingDetails);
                                                 if (messageValues.embedDetails[2])
                                                     await sleep(1500)
                                                 thread.send({
@@ -223,6 +231,7 @@ module.exports = {
                                                 console.log("times up!")
                                             });
 
+
                                             if (quantity <= 0) {
                                                 spawnedMessage.channel.send(`All the ${pokemon[0].name}s have fled, been killed, or caught.`);
                                                 try {
@@ -244,7 +253,7 @@ module.exports = {
                                                         .setImage(`attachment://${pokemon[0].pokeId}.gif`)
                                                         .setTimestamp()
 
-                                                    await i.update({
+                                                    await i.editReply({
                                                         embeds: [spawnedPokemonEmbed],
                                                     });
                                                 }
@@ -252,7 +261,6 @@ module.exports = {
                                         }
                                     }
                                 )
-
                             } catch
                                 (e) {
                                 console.log(e)
@@ -272,7 +280,7 @@ module.exports = {
             } catch
                 (e) {
                 console.log(e)
-                interaction.reply({content: "There was an error with the game.", ephemeral: true});
+                await interaction.editReply({content: "There was an error with the game.", ephemeral: true});
             }
         }
     },

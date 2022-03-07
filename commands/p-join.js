@@ -71,14 +71,14 @@ module.exports = {
             if (i.customId === `${i.user.id}bulbasaur`) {
 
                 const bulbasaur = await pokemonListFunctions.getPokemonFromId(1);
-                const userBulbasaur = pokemonFunctions.createStarterPokemonDetails(10, bulbasaur, i.user);
+                const userBulbasaur = await pokemonFunctions.createStarterPokemonDetails(10, bulbasaur, i.user);
 
                 await trainerFunctions.addPokemonToUser(i.user, userBulbasaur);
 
                 await i.update({content: 'You have been added to the game.', components: []});
             } else if (i.customId === `${i.user.id}charmander`) {
                 const charmander = await pokemonListFunctions.getPokemonFromId(4);
-                const userCharmander = pokemonFunctions.createStarterPokemonDetails(10, charmander, i.user);
+                const userCharmander = await pokemonFunctions.createStarterPokemonDetails(10, charmander, i.user);
 
                 await trainerFunctions.addPokemonToUser(i.user, userCharmander);
 
@@ -86,7 +86,7 @@ module.exports = {
             } else if (i.customId === `${i.user.id}squirtle`) {
 
                 const squirtle = await pokemonListFunctions.getPokemonFromId(7);
-                const userSquirtle = pokemonFunctions.createStarterPokemonDetails(10, squirtle, i.user);
+                const userSquirtle = await pokemonFunctions.createStarterPokemonDetails(10, squirtle, i.user);
 
                 await trainerFunctions.addPokemonToUser(i.user, userSquirtle);
 

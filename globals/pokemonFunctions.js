@@ -1,10 +1,9 @@
 const generalFunctions = require("./generalFunctions");
 const moveListFunctions = require("../db/functions/moveListFunctions");
-var async = require("async");
 
 module.exports = {
 
-    createPokemonDetails: function (level, defaultPokemon) {
+    createPokemonDetails: async function (level, defaultPokemon) {
         let fullDetailsPokemon = {
             "pokeId": defaultPokemon.pokeId,
             "name": defaultPokemon.name,
@@ -34,13 +33,11 @@ module.exports = {
             "caughtTimestamp": null,
             "receivedTimestamp": null,
             "nature": setNature(),
-            "male": isMale(defaultPokemon.genderPercentage.male),
+            "male": isFemale(defaultPokemon.genderPercentage.male),
             "friendship": defaultPokemon.baseFriendship
         }
 
         fullDetailsPokemon.shiny = isShiny(fullDetailsPokemon.ivStats)
-        fullDetailsPokemon.currentMoves = setMoves(level, defaultPokemon);
-
         fullDetailsPokemon.evLevels = {
             "hp": getEvLevel(fullDetailsPokemon.ivStats.hp),
             "atk": getEvLevel(fullDetailsPokemon.ivStats.atk),
@@ -48,12 +45,14 @@ module.exports = {
             "spAtk": getEvLevel(fullDetailsPokemon.ivStats.spAtk),
             "spDef": getEvLevel(fullDetailsPokemon.ivStats.spDef),
             "speed": getEvLevel(fullDetailsPokemon.ivStats.speed)
-        }
+        };
+
+        fullDetailsPokemon.currentMoves = await setMoves(level, defaultPokemon);
 
         return fullDetailsPokemon;
     },
 
-    createStarterPokemonDetails: function (level, defaultPokemon, user) {
+    createStarterPokemonDetails: async function (level, defaultPokemon, user) {
         let fullDetailsPokemon = {
             "pokeId": defaultPokemon.pokeId,
             "name": defaultPokemon.name,
@@ -83,15 +82,11 @@ module.exports = {
             "caughtTimestamp": Date.now(),
             "receivedTimestamp": Date.now(),
             "nature": setNature(),
-            "male": isMale(defaultPokemon.genderPercentage.male),
+            "male": isFemale(defaultPokemon.genderPercentage.male),
             "friendship": defaultPokemon.baseFriendship
         }
 
         fullDetailsPokemon.shiny = isShiny(fullDetailsPokemon.ivStats)
-        fullDetailsPokemon.currentMoves = setMoves(level, defaultPokemon);
-
-        console.log(fullDetailsPokemon.currentMoves)
-
         fullDetailsPokemon.evLevels = {
             "hp": getEvLevel(fullDetailsPokemon.ivStats.hp),
             "atk": getEvLevel(fullDetailsPokemon.ivStats.atk),
@@ -99,7 +94,9 @@ module.exports = {
             "spAtk": getEvLevel(fullDetailsPokemon.ivStats.spAtk),
             "spDef": getEvLevel(fullDetailsPokemon.ivStats.spDef),
             "speed": getEvLevel(fullDetailsPokemon.ivStats.speed)
-        }
+        };
+
+        fullDetailsPokemon.currentMoves = await setMoves(level, defaultPokemon);
 
         return fullDetailsPokemon;
     },
@@ -108,7 +105,7 @@ module.exports = {
         return (((level / 100 + 1) * base + level) + elb)
     },
 
-    otherStateCalculation: function (level, base, nature, elb) {
+    otherStatCalculation: function (level, base, nature, elb) {
         return (((((level / 50 + 1) * base) / 1.5) * nature) + elb)
     },
 
@@ -186,24 +183,36 @@ function getEvLevel(ivLevel) {
     }
 }
 
-function isMale(malePercentage) {
-    return (Math.floor(Math.random() * (99) + 1) / 100) <= malePercentage;
+function isFemale(malePercentage) {
+    const percentage = generalFunctions.randomIntFromInterval(0, 100);
+    // console.log(percentage)
+    // console.log(malePercentage)
+    return percentage >= malePercentage;
 }
 
-function setMoves(currentLevel, defaultPokemon) {
+async function setMoves(currentLevel, defaultPokemon) {
+
     let moves = defaultPokemon.moves.filter(obj => {
         return obj.level <= currentLevel;
     })
+
+    for (let i = 0; i < moves.length; i++) {
+        await moveListFunctions.getMove(moves[i].name).then((doc) => {
+            if (doc == null) {
+                console.error(`Can't find move: ${moves[i].name}`)
+                moves.splice(i, 1)
+            }
+        })
+    }
+
     let currentMoves = [];
     while (moves.length > 0 && currentMoves.length < 4) {
         currentMoves.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0]);
     }
 
     let moveDetails = [];
-
-
     for (let i = 0; i < currentMoves.length; i++) {
-        moveListFunctions.getMove(currentMoves[i].name).then((move) => {
+        await moveListFunctions.getMove(currentMoves[i].name).then((move) => {
             const tempMove = {
                 id: move.id,
                 name: move.name,
@@ -220,7 +229,6 @@ function setMoves(currentLevel, defaultPokemon) {
     }
 
     return moveDetails;
-
 }
 
 function isShiny(ivStats) {

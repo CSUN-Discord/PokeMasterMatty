@@ -26,7 +26,8 @@ module.exports = {
                             userOneCurrentPokemon: 1,
                             userTwoTeam: [pokemon],
                             userTwoCurrentPokemon: 1,
-                            battleType: "pokemonRandomEncounter"
+                            battleType: "pokemonRandomEncounter",
+                            fleeCount: 0
                         },
                     },
                     {

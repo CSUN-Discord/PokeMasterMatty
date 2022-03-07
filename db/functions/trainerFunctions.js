@@ -65,6 +65,47 @@ module.exports = {
             newPokemon.boxNumber = player.team.length + 1;
             await addPokemonToBox(user.id, newPokemon);
         }
+    },
+
+    addPresentToBag: async function (userId, bag) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        bag: bag,
+                        presentReady: false
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    setPresent: async function (userId, ready) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        presentReady: ready
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
     }
 }
 
@@ -156,3 +197,4 @@ async function addUser(user) {
         console.log(e);
     }
 }
+
