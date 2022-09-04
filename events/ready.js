@@ -6,6 +6,7 @@ const mongo = require("../db/mongo");
 let dbObjects = require("../db/dbObjects");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+const battlingFunctions = require("../db/functions/battlingFunctions");
 
 module.exports = {
     name: "ready",
@@ -25,6 +26,7 @@ module.exports = {
 
         trainerFunctions.resetAllPresents()
         pokemonGameFunctions.resetAllGames()
+        battlingFunctions.deleteAllBattles()
 
         console.log(`Ready! Logged in as ${client.user.tag}`);
     },
