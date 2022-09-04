@@ -93,8 +93,8 @@ module.exports = {
 
         await trainerFunctions.addPresentToBag(user.userId, user.bag);
         setTimeout(() => {
-            trainerFunctions.setPresent(user.userId, true)
-            interaction.channel.send(`<@${user.userId}>,Your present is ready to claim, just use /p-present.`)
+            trainerFunctions.setPresent(user.userId, true);
+            interaction.channel.send(`<@${user.userId}>, your present is ready to claim, just use /p-present.`);
         }, 21600000);
     },
 };
