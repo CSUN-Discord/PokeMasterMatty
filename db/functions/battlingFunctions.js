@@ -50,6 +50,44 @@ module.exports = {
         } catch (e) {
             console.log(e);
         }
-    }
+    },
 
+    deleteAllBattles: function () {
+        try {
+            battlingSchema
+                .deleteMany({},
+                    (err, res) => {
+                        if (err) console.log(err);
+                        else console.log(`Reset ${res.modifiedCount || 0} battles.`)
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    updatePokemonRandomEncounterBattle: function (objectId, fleeCount, userOne, userOneBag, userOneCurrentPokemon, userOneStatsStage, userOneTeam, userTwooCurrentPokemon, userTwoStatsStage, userTwoTeam) {
+        try {
+            battlingSchema
+                .updateOne({
+                        _id: objectId
+                    },
+                    {
+                        fleeCount: fleeCount,
+                        userOne: userOne,
+                        userOneBag: userOneBag,
+                        userOneCurrentPokemon: userOneCurrentPokemon,
+                        userOneStatsStage: userOneStatsStage,
+                        userOneTeam: userOneTeam,
+                        userTwoCurrentPokemon: userTwooCurrentPokemon,
+                        userTwoStatsStage: userTwoStatsStage,
+                        userTwoTeam: userTwoTeam
+                    },
+                    (err, res) => {
+                        if (err) console.log(err);
+                        else console.log(`Updated ${res.modifiedCount || 0} battles.`)
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    }
 }
