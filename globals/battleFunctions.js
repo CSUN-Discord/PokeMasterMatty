@@ -1,8 +1,10 @@
 const {MessageEmbed, MessageActionRow, MessageButton, MessageAttachment, MessageSelectMenu} = require('discord.js');
 const pokemonFunctions = require("./pokemonFunctions");
-// const moveListFunctions = require("../db/functions/moveListFunctions");
 const generalFunctions = require("./generalFunctions");
 const {PythonShell} = require("python-shell");
+// const battlingFunctions = require("../db/functions/battlingFunctions");
+const moveListFunctions = require("../db/functions/moveListFunctions");
+const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 
 module.exports = {
 
@@ -54,7 +56,7 @@ module.exports = {
             if (err)
                 throw err;
             // Results is an array consisting of messages collected during execution
-            console.log('results: %j', results);
+            console.log('python code results: %j', results);
         });
 
         const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
@@ -83,39 +85,49 @@ module.exports = {
                 components: [row]
             };
         } else if (inp.customId === `${inp.user.id}spawnBattlePokemon`) {
-            row = setRowPokemon(row, battlingDetails, inp)
-            return {
-                content: "_ _",
-                embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
-                components: [row]
-            };
+            console.log(`${inp.user.id}spawnBattlePokemon`)
+            // row = setRowPokemon(row, battlingDetails, inp)
+            // return {
+            //     content: "_ _",
+            //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
+            //     components: [row]
+            // };
         } else if (inp.customId === `${inp.user.id}spawnBattleBag`) {
             console.log(`${inp.user.id}spawnBattleBag`)
-            row = setRowItem(battlingDetails, inp)
-            return {
-                content: "_ _",
-                embedDetails: createEmbedAfterBagPVM(battlingDetails),
-                components: row
-            };
+            // row = setRowItem(battlingDetails, inp)
+            // return {
+            //     content: "_ _",
+            //     embedDetails: createEmbedAfterBagPVM(battlingDetails),
+            //     components: row
+            // };
         } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
             const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
             const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
             const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
+            const userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
 
             const userTwoSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.speed));
             const userTwoSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, userTwoSpeedMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
             const userTwoTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature), userTwoSpeedElb));
+            const userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
 
-            if (escapeCalculation(userOneTotalSpeed, userTwoTotalSpeed, battlingDetails.fleeCount || 0)) {
-                console.log("escaped")
-                //update bag
-                //update team
-                //update battling to false
-                //update userOneCurrentPokemon
-                //update battling database
-                //update thread
+            if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
+                const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                return {
+                    content: "_ _",
+                    embedDetails: [new MessageEmbed()
+                        .setTitle(`You have successfully fled the battle.`)
+                        .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
+                        gif,
+                        false],
+                    components: []
+                };
+                // module.exports.encounterBattleEnds("fled", i.user.id)
+
+
             } else {
                 console.log("!escaped")
+                //increase escape count
                 // do enemy move
             }
             console.log(`${inp.user.id}spawnBattleRun`)
@@ -124,7 +136,32 @@ module.exports = {
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`
         ) {
-            console.log("used attack")
+            //user used a move
+
+            let enemyMove = getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+
+            let userMoveName = inp.customId.replace(inp.user.id, "");
+            let userMove = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.find(object => object.name === userMoveName);
+
+            await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails);
+
+            // if (inp.customId.includes("Scratch")) {
+            //     console.log("scratch")
+            //     // battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken += 10;
+            //     // battlingFunctions.updatePokemonRandomEncounterBattle(battlingDetails._id, battlingDetails.fleeCount, battlingDetails.userOne, battlingDetails.userOneBag, battlingDetails.userOneCurrentPokemon, battlingDetails.userOneStatsStage, battlingDetails.userOneTeam, battlingDetails.userTwoCurrentPokemon, battlingDetails.userTwoStatsStage, battlingDetails.userTwoTeam);
+            // }
+
+            //check if any pokemon hp is less than 1, use the row with button if battle is continuing
+            //else use empty row
+
+            //update to db
+
+            row = module.exports.setRowDefault(row, inp)
+            return {
+                content: "_ _",
+                embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                components: [row]
+            };
 
         } else if (inp.customId === `${inp.user.id}back`) {
             row = module.exports.setRowDefault(row, inp)
@@ -141,6 +178,28 @@ module.exports = {
             embedDetails: createEmbedDefault(battlingDetails),
             components: [row]
         };
+    },
+
+    encounterBattleEnds: function (endType, userId) {
+        //update bag
+        //update team
+        //update battling to false
+        //update userOneCurrentPokemon
+        //update battling database
+        //update thread
+        //update win/loss
+        switch (endType) {
+            case "time":
+                break;
+            case "fled":
+                break;
+            case "userFainted":
+                break;
+            case "enemyFainted":
+                break;
+            case "pokemonCaptured":
+                break;
+        }
     },
 
     setRowDefault: function (row, inp) {
@@ -360,6 +419,11 @@ function createEmbedAfterAttackPVM(battlingDetails) {
                 value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].type}`,
                 inline: true
             },
+            {
+                name: 'Category',
+                value: battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].category,
+                inline: true
+            }
         )
     }
     const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
@@ -414,15 +478,14 @@ function createEmbedAfterBagPVM(battlingDetails) {
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp()
 
-    // console.log(battlingDetails.userOneBag)
+    let itemCount = 0;
 
-    for (let j = 0; j < battlingDetails.userOneBag.length; j++) {
-
-        attackBagEmbed.addField(
-            `${j + 1}) ${battlingDetails.userOneBag[j].name}`,
-            `${battlingDetails.userOneBag[j].quantity}`
-        )
+    for (let [key, value] of battlingDetails.userOneBag.entries()) {
+        attackBagEmbed.addField(`${itemCount + 1}) ${key}`, `${value}`, true)
+        itemCount++;
+        if (itemCount > 4) break;
     }
+
     const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [attackBagEmbed,
         gif,
@@ -433,6 +496,9 @@ function createEmbedAfterBagPVM(battlingDetails) {
 function escapeCalculation(userSpeed, opponentSpeed, attemptNumber) {
     const escapeChance = ((((userSpeed * 32) / (opponentSpeed / 4)) + 30 * attemptNumber) / 256) * 100;
     const chance = generalFunctions.randomIntFromInterval(0, 100);
+    console.log(escapeChance)
+    console.log(chance)
+    console.log(chance <= escapeChance)
     return chance <= escapeChance;
 }
 
@@ -476,4 +542,413 @@ function getNatureValue(stat, nature) {
         default:
             return 1;
     }
+}
+
+async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleDetails) {
+    // console.log(randomPokemonMove)
+    // console.log(userMove)
+
+    // if (userMove.category === "status") {
+    //
+    // } else {
+    //     await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+    // }
+
+    //check move priority
+    if (userMove.priority > randomPokemonMove.priority) {
+
+        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+        //check HP of user
+        // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+
+    } else if (userMove.priority < randomPokemonMove.priority) {
+
+        // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+        //check HP of enemy pokemon
+        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+
+    }
+    //check pokemon base speed
+    else {
+        const userSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.speed));
+        const userSpeedElb = Math.round(pokemonFunctions.elbCalculation(user.base.speed, userSpeedMultiplier, user.level));
+        const userTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(user.level, user.base.speed, getNatureValue("speed", user.nature), userSpeedElb));
+        const userEffectiveSpeed = getEffectiveSpeed(userTotalSpeed, battleDetails.userOneStatStage.speed);
+
+        const pokemonSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(randomPokemon.evLevels.speed));
+        const pokemonSpeedElb = Math.round(pokemonFunctions.elbCalculation(randomPokemon.base.speed, pokemonSpeedMultiplier, randomPokemon.level));
+        const pokemonTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(randomPokemon.level, randomPokemon.base.speed, getNatureValue("speed", randomPokemon.nature), pokemonSpeedElb));
+        const pokemonEffectiveSpeed = getEffectiveSpeed(pokemonTotalSpeed, battleDetails.userTwoStatStage.speed);
+
+        console.log(userEffectiveSpeed, pokemonEffectiveSpeed);
+
+        if (userEffectiveSpeed > pokemonEffectiveSpeed) {
+            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+            //check HP of user
+            // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+        } else if (userTotalSpeed < pokemonTotalSpeed) {
+            // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+            //check HP of enemy pokemon
+            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+        }
+        //randomly pick who goes first
+        else {
+            if (Math.floor(Math.random() * 2) === 0) {
+                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+                //check HP of user
+                // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+            } else {
+                // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+                //check HP of enemy pokemon
+                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+            }
+        }
+    }
+
+    //check if both feinted,
+    // else check if enemy feinted,
+    // else check if user feinted
+
+
+}
+
+function getRandomPokemonMove(pokemon) {
+
+    // console.log(pokemon.currentMoves)
+
+    let moveList = pokemon.currentMoves.sort((a, b) => {
+        return b.currentPP - a.currentPP;
+    })
+
+    // console.log(moveList)
+
+    if (moveList[0].currentPP < 1) return "Struggle";
+
+    let randomMove = pokemon.currentMoves[Math.floor(Math.random() * pokemon.currentMoves.length)];
+
+    while (randomMove.currentPP < 1) {
+        randomMove = pokemon.currentMoves[Math.floor(Math.random() * pokemon.currentMoves.length)];
+    }
+
+    return randomMove;
+}
+
+async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage) {
+    //dmg calculations: https://bulbapedia.bulbagarden.net/wiki/Damage#Damage_calculation
+
+    // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
+    let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
+
+    let level = attacker.level;
+
+    let criticalStage = {
+        0: 24,
+        1: 8,
+        2: 2,
+        3: 1
+    }
+
+    let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
+
+    let power = move.pwr || 0;
+
+
+    let effectiveAtk;
+    let effectiveDef;
+
+    // console.log(move.category)
+    if (move.category === "physical") {
+        // console.log("physical")
+        let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
+        // console.log(attacker.base.attack, atkMultiplier, attacker.level)
+        let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+        // console.log(atkMultiplier, atkElb)
+        let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
+
+        // console.log(atk, attackerStatStage.atk, critical)
+        effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
+
+        let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
+        let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
+        let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
+
+        effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
+    } else {
+        // console.log("special")
+        let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
+        let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base["special-attack"], spAtkMultiplier, attacker.level));
+        let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base["special-attack"], getNatureValue("spAtk", attacker.nature), spAtkElb));
+
+        effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
+
+        let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
+        let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base["special-defense"], spDefMultiplier, defender.level));
+        let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base["special-defense"], getNatureValue("spDef", defender.nature), spDefElb));
+
+        effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
+    }
+
+    let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
+
+    let stab = fullDefenderDetails.types.includes(move.type) ? 1.5 : 1;
+
+    let type = getTypeCalculation(move.type, fullDefenderDetails.types);
+
+    // console.log(type)
+    let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
+    burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
+
+    let other = 1;
+
+    let damage = Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
+
+
+    switch (move.name) {
+        case "Karate Chop":
+            break;
+        default:
+            console.log(damage);
+            break;
+    }
+}
+
+
+function getEffectiveAtk(stat, statStage, critical) {
+    let statStageMultiplier = {
+        "-6": 0.25,
+        "-5": 0.28,
+        "-4": 0.33,
+        "-3": 0.40,
+        "-2": 0.50,
+        "-1": 0.66,
+        "0": 1,
+        "1": 1.5,
+        "2": 2,
+        "3": 2.5,
+        "4": 3,
+        "5": 3.5,
+        "6": 4,
+    }
+
+    if (critical > 1) {
+        return stat * Math.max(statStageMultiplier[statStage.toString()], 1);
+    } else {
+        return stat * statStageMultiplier[statStage.toString()];
+    }
+}
+
+function getEffectiveDef(stat, statStage, critical) {
+    let statStageMultiplier = {
+        "-6": 0.25,
+        "-5": 0.28,
+        "-4": 0.33,
+        "-3": 0.40,
+        "-2": 0.50,
+        "-1": 0.66,
+        "0": 1,
+        "1": 1.5,
+        "2": 2,
+        "3": 2.5,
+        "4": 3,
+        "5": 3.5,
+        "6": 4,
+    }
+
+    if (critical > 1) {
+        return stat * Math.min(statStageMultiplier[statStage.toString()], 1);
+    } else {
+        return stat * statStageMultiplier[statStage.toString()];
+    }
+}
+
+function getEffectiveSpeed(stat, statStage) {
+    let statStageMultiplier = {
+        "-6": 0.25,
+        "-5": 0.28,
+        "-4": 0.33,
+        "-3": 0.40,
+        "-2": 0.50,
+        "-1": 0.66,
+        "0": 1,
+        "1": 1.5,
+        "2": 2,
+        "3": 2.5,
+        "4": 3,
+        "5": 3.5,
+        "6": 4,
+    }
+
+    return stat * statStageMultiplier[statStage.toString()];
+}
+
+function getTypeCalculation(moveType, defenderTypes) {
+    let typeChart = {
+        "normal": {
+            "rock": 0.5,
+            "ghost": 0,
+            "steel": 0.5
+        },
+        "fire": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "dragon": 0.5,
+            "steel": 2
+        },
+        "water": {
+            "fire": 2,
+            "water": 0.5,
+            "grass": 0.5,
+            "ground": 2,
+            "rock": 2,
+            "dragon": 0.5
+        },
+        "grass": {
+            "fire": 0.5,
+            "water": 2,
+            "grass": 0.5,
+            "poison": 0.5,
+            "ground": 2,
+            "flying": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "dragon": 0.5,
+            "steel": 0.5
+        },
+        "electric": {
+            "water": 2,
+            "grass": 0.5,
+            "electric": 0.5,
+            "ground": 0,
+            "flying": 2,
+            "dragon": 0.5
+        },
+        "ice": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 0.5,
+            "ground": 2,
+            "flying": 2,
+            "dragon": 2,
+            "steel": 0.5
+        },
+        "fighting": {
+            "normal": 2,
+            "ice": 2,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "ghost": 0,
+            "dark": 2,
+            "steel": 2,
+            "fairy": 0.5
+        },
+        "poison": {
+            "grass": 2,
+            "poison": 0.5,
+            "ground": 0.5,
+            "rock": 0.5,
+            "ghost": 0.5,
+            "steel": 0,
+            "fairy": 2
+        },
+        "ground": {
+            "fire": 2,
+            "grass": 0.5,
+            "electric": 2,
+            "poison": 2,
+            "flying": 0,
+            "bug": 0.5,
+            "rock": 2,
+            "steel": 2
+        },
+        "flying": {
+            "grass": 2,
+            "electric": 0.5,
+            "fighting": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "steel": 0.5
+        },
+        "psychic": {
+            "fighting": 2,
+            "poison": 2,
+            "psychic": 0.5,
+            "dark": 0,
+            "steel": 0.5
+        },
+        "bug": {
+            "fire": 0.5,
+            "grass": 2,
+            "fighting": 0.5,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 2,
+            "dark": 2,
+            "steel": 0.5,
+            "fairy": 0.5
+        },
+        "rock": {
+            "fire": 2,
+            "ice": 2,
+            "fighting": 0.5,
+            "ground": 0.5,
+            "flying": 2,
+            "bug": 2,
+            "steel": 0.5
+        },
+        "ghost": {
+            "normal": 0,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5
+        },
+        "dragon": {
+            "dragon": 2,
+            "steel": 0.5,
+            "fairy": 0
+        },
+        "dark": {
+            "fighting": 0.5,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5,
+            "fairy": 0.5
+        },
+        "steel": {
+            "fire": 0.5,
+            "water": 0.5,
+            "electric": 0.5,
+            "ice": 2,
+            "rock": 2,
+            "steel": 0.5,
+            "fairy": 2
+        },
+        "fairy": {
+            "fire": 0.5,
+            "fighting": 2,
+            "poison": 0.5,
+            "dragon": 2,
+            "dark": 2,
+            "steel": 0.5
+        }
+    }
+
+    let multiplier = 1;
+
+    // console.log(typeChart[moveType]["steel"])
+    // console.log(typeChart[defenderTypes[0]] || 1)
+    // console.log(typeChart[defenderTypes[1]] || 1)
+
+    for (let i = 0; i < defenderTypes.length; i++) {
+        multiplier *= typeChart[moveType][defenderTypes[i]] || 1;
+    }
+
+    return multiplier;
 }

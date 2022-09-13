@@ -32,10 +32,10 @@ const pokemonListSchema = new Schema({
     abilities: Array,
     baseStats: {
         hp: Number,
-        attack: Number,
-        defense: Number,
-        'special-attack': Number,
-        'special-defense': Number,
+        atk: Number,
+        def: Number,
+        spAtk: Number,
+        spDef: Number,
         speed: Number
     },
     types: Array,

@@ -7,36 +7,139 @@ const battlingSchema = new Schema({
     userOne: Schema.Types.Mixed,
     userOneTeam: Array,
     userOneBag: Map,
-    userOneMove: {
-        type: String,
-        move: String,
-        pokemonSwap: Number,
-        bag: {
-            item: String,
-            pokemonTeamNumber: Number
-        }
-    },
     userOneCurrentPokemon: Number,
     userTwo: Schema.Types.Mixed,
     userTwoTeam: Array,
     userTwoBag: Map,
-    userTwoMove: {
-        type: String,
-        move: String,
-        pokemonSwap: Number,
-        bag: {
-            item: String,
-            pokemonTeamNumber: Number
-        }
-    },
     userTwoCurrentPokemon: Number,
     battleType: String,
-    currentTurn: Number,
     fleeCount: Number,
-    userOneCurrentMoveStage: Number,
-    userTwoCurrentMoveStage: Number,
-    userOneStatStage: Array,
-    userTwoStatStage: Array,
+    userOneStatStage: {
+        atk: Number,
+        def: Number,
+        spAtk: Number,
+        spDef: Number,
+        speed: Number,
+        evasion: Number,
+        accuracy: Number
+    },
+    userTwoStatStage: {
+        atk: Number,
+        def: Number,
+        spAtk: Number,
+        spDef: Number,
+        speed: Number,
+        evasion: Number,
+        accuracy: Number
+    },
+    userOneVolatileStatus: {
+        badlyPoisonTurn: Number,
+        sleepTurnLength: Number,
+        bound: {
+            name: String,
+            length: Number
+        },
+        escapePrevention: {
+            name: String,
+            length: Number
+        },
+        confusionLength: Number,
+        cursed: Boolean,
+        drowsy: Boolean,
+        embargoLength: Number,
+        encoreLength: Number,
+        flinch: Boolean,
+        healBlockLength: Number,
+        identified: {
+            name: String,
+            activated: Boolean,
+        },
+        infatuation: Boolean,
+        leechSeed: Boolean,
+        nightmare: Boolean,
+        perishSongLength: Number,
+        tauntLength: Number,
+        telekinesisLength: Number,
+        torment: {
+            lastMove: String,
+            enabled: Boolean
+        },
+        typeChange: String,
+        aquaRing: Boolean,
+        bracing: Boolean,
+        chargingLength: Number,
+        centerOfAttention: Boolean,
+        defenseCurl: Boolean,
+        rooting: Boolean,
+        magicCoat: Boolean,
+        magneticLevitationLength: Number,
+        mimicLastOpponentMove: String,
+        minimized: Boolean,
+        protection: Boolean,
+        recharging: Boolean,
+        semiInvulnerable: Boolean,
+        substituteHP: Number,
+        takingAim: Boolean,
+        thrashing: {
+            name: String,
+            length: Number
+        },
+        transformed: Boolean,
+    },
+    userTwoVolatileStatus: {
+        badlyPoisonTurn: Number,
+        sleepTurnLength: Number,
+        bound: {
+            name: String,
+            length: Number
+        },
+        escapePrevention: {
+            name: String,
+            length: Number
+        },
+        confusionLength: Number,
+        cursed: Boolean,
+        drowsy: Boolean,
+        embargoLength: Number,
+        encoreLength: Number,
+        flinch: Boolean,
+        healBlockLength: Number,
+        identified: {
+            name: String,
+            activated: Boolean,
+        },
+        infatuation: Boolean,
+        leechSeed: Boolean,
+        nightmare: Boolean,
+        perishSongLength: Number,
+        tauntLength: Number,
+        telekinesisLength: Number,
+        torment: {
+            lastMove: String,
+            enabled: Boolean
+        },
+        typeChange: String,
+        aquaRing: Boolean,
+        bracing: Boolean,
+        chargingLength: Number,
+        centerOfAttention: Boolean,
+        defenseCurl: Boolean,
+        rooting: Boolean,
+        magicCoat: Boolean,
+        magneticLevitationLength: Number,
+        mimicLastOpponentMove: String,
+        minimized: Boolean,
+        protection: Boolean,
+        recharging: Boolean,
+        semiInvulnerable: Boolean,
+        substituteHP: Number,
+        takingAim: Boolean,
+        thrashing: {
+            name: String,
+            length: Number
+        },
+        transformed: Boolean,
+    }
 });
 
 module.exports = mongoose.model("battling", battlingSchema);

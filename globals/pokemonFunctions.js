@@ -3,6 +3,7 @@ const moveListFunctions = require("../db/functions/moveListFunctions");
 
 module.exports = {
 
+    //give pokemon their abilities
     createPokemonDetails: async function (level, defaultPokemon) {
         let fullDetailsPokemon = {
             "pokeId": defaultPokemon.pokeId,
@@ -87,6 +88,7 @@ module.exports = {
         }
 
         fullDetailsPokemon.shiny = isShiny(fullDetailsPokemon.ivStats)
+
         fullDetailsPokemon.evLevels = {
             "hp": getEvLevel(fullDetailsPokemon.ivStats.hp),
             "atk": getEvLevel(fullDetailsPokemon.ivStats.atk),

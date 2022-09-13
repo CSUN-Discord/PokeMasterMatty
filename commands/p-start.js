@@ -198,13 +198,20 @@ module.exports = {
 
                                             const battleCollector = thread.createMessageComponentCollector({
                                                 // battleFilter,
-                                                time: 300000
-                                                // time: 5000
+                                                time: 600000
+                                                // time: 1000
                                             });
 
                                             battleCollector.on('collect', async inp => {
                                                 if (inp.user.id !== i.user.id) return;
-                                                message.delete();
+                                                try {
+                                                    message.delete();
+                                                } catch (e) {
+                                                    console.log("Error on collecting battle collector" + e)
+                                                }
+
+                                                battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                                battlingDetails = battlingDetails[0];
 
                                                 const messageValues = await battleFunctions.battlingOptions(inp, battlingDetails);
                                                 if (messageValues.embedDetails[2])
@@ -219,18 +226,23 @@ module.exports = {
                                                 })
                                             });
 
-                                            battleCollector.on('end', (collected, reason) => {
+                                            battleCollector.on('end', async (collected, reason) => {
 
-                                                message.delete();
-                                                //when 10 minutes are up
-                                                //user is still in battle -> pokemon runs away (send a message in thread before removing buttons)
-                                                //user captured/killed
-                                                //user fainted
-                                                //user ran away
+                                                let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                                if (battlingDetails.length > 0) {
+                                                    try {
+                                                        const receivedEmbed = message.embeds[0];
+                                                        const exampleEmbed = new MessageEmbed(receivedEmbed)
+                                                            .setTitle('The pokemon fled before you had a chance to capture or kill it!')
+                                                        message.channel.send({embeds: [exampleEmbed], components: []});
+                                                        message.delete();
+                                                    } catch (e) {
+                                                        console.log(e)
+                                                    }
 
-                                                console.log("times up!")
+                                                    //battleFunctions.encounterBattleEnds("time", i.user.id)
+                                                }
                                             });
-
 
                                             if (quantity <= 0) {
                                                 spawnedMessage.channel.send(`All the ${pokemon[0].name}s have fled, been killed, or caught.`);
@@ -265,9 +277,13 @@ module.exports = {
                                 (e) {
                                 console.log(e)
                             }
-                            //
-                            // // collector.on('end', collected => console.log(`Collected ${collected.size} items`));
-                            //
+
+                            // collector.on('end', collected => {
+                            //     console.log(`Collected ${collected.size} items`);
+                            //     spawnedMessage.delete();
+                            // });
+
+
                             console.log(shuffleBag.length)
                         } else {
                             const newTimer = gameDocument.spawnTime - (gameDocument.messageCounter * 10000) - 60000;

@@ -6,12 +6,12 @@ module.exports = {
             return await movesListSchema
                 .findOne(
                     {
-                        name: name,
+                        name: name
                     }
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.log("error getting move: " + e);
         }
     },
 
