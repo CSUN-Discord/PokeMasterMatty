@@ -4,6 +4,7 @@ const moveListFunctions = require("../db/functions/moveListFunctions");
 module.exports = {
 
     //give pokemon their abilities
+    //check magnemites gender should be n/a
     createPokemonDetails: async function (level, defaultPokemon) {
         let fullDetailsPokemon = {
             "pokeId": defaultPokemon.pokeId,

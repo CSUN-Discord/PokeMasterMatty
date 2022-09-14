@@ -41,13 +41,16 @@ const battlingSchema = new Schema({
         },
         escapePrevention: {
             name: String,
-            length: Number
+            enabled: Boolean
         },
         confusionLength: Number,
         cursed: Boolean,
         drowsy: Boolean,
         embargoLength: Number,
-        encoreLength: Number,
+        encore: {
+            moveToRepeat: String,
+            encoreLength: Number,
+        },
         flinch: Boolean,
         healBlockLength: Number,
         identified: {
@@ -67,7 +70,10 @@ const battlingSchema = new Schema({
         typeChange: String,
         aquaRing: Boolean,
         bracing: Boolean,
-        chargingLength: Number,
+        chargingMove: {
+            name: String,
+            chargingLength: Number,
+        },
         centerOfAttention: Boolean,
         defenseCurl: Boolean,
         rooting: Boolean,
@@ -76,7 +82,10 @@ const battlingSchema = new Schema({
         mimicLastOpponentMove: String,
         minimized: Boolean,
         protection: Boolean,
-        recharging: Boolean,
+        recharging: {
+            name: String,
+            enabled: Number,
+        },
         semiInvulnerable: Boolean,
         substituteHP: Number,
         takingAim: Boolean,
@@ -95,13 +104,16 @@ const battlingSchema = new Schema({
         },
         escapePrevention: {
             name: String,
-            length: Number
+            enabled: Boolean
         },
         confusionLength: Number,
         cursed: Boolean,
         drowsy: Boolean,
         embargoLength: Number,
-        encoreLength: Number,
+        encore: {
+            moveToRepeat: String,
+            encoreLength: Number,
+        },
         flinch: Boolean,
         healBlockLength: Number,
         identified: {
@@ -121,7 +133,10 @@ const battlingSchema = new Schema({
         typeChange: String,
         aquaRing: Boolean,
         bracing: Boolean,
-        chargingLength: Number,
+        chargingMove: {
+            name: String,
+            chargingLength: Number,
+        },
         centerOfAttention: Boolean,
         defenseCurl: Boolean,
         rooting: Boolean,
@@ -130,7 +145,10 @@ const battlingSchema = new Schema({
         mimicLastOpponentMove: String,
         minimized: Boolean,
         protection: Boolean,
-        recharging: Boolean,
+        recharging: {
+            name: String,
+            enabled: Number,
+        },
         semiInvulnerable: Boolean,
         substituteHP: Number,
         takingAim: Boolean,

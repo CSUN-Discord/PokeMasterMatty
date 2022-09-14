@@ -46,13 +46,16 @@ module.exports = {
                                 },
                                 escapePrevention: {
                                     name: "",
-                                    length: 0
+                                    enabled: false
                                 },
                                 confusionLength: 0,
                                 cursed: false,
                                 drowsy: false,
                                 embargoLength: 0,
-                                encoreLength: 0,
+                                encore: {
+                                    moveToRepeat: "",
+                                    encoreLength: 0,
+                                },
                                 flinch: false,
                                 healBlockLength: 0,
                                 identified: {
@@ -72,7 +75,10 @@ module.exports = {
                                 typeChange: "",
                                 aquaRing: false,
                                 bracing: false,
-                                chargingLength: 0,
+                                chargingMove: {
+                                    name: "",
+                                    chargingLength: 0,
+                                },
                                 centerOfAttention: false,
                                 defenseCurl: false,
                                 rooting: false,
@@ -81,7 +87,10 @@ module.exports = {
                                 mimicLastOpponentMove: "",
                                 minimized: false,
                                 protection: false,
-                                recharging: false,
+                                recharging: {
+                                    name: "",
+                                    enabled: 0,
+                                },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
                                 takingAim: false,
@@ -100,13 +109,16 @@ module.exports = {
                                 },
                                 escapePrevention: {
                                     name: "",
-                                    length: 0
+                                    enabled: false
                                 },
                                 confusionLength: 0,
                                 cursed: false,
                                 drowsy: false,
                                 embargoLength: 0,
-                                encoreLength: 0,
+                                encore: {
+                                    moveToRepeat: "",
+                                    encoreLength: 0,
+                                },
                                 flinch: false,
                                 healBlockLength: 0,
                                 identified: {
@@ -126,7 +138,10 @@ module.exports = {
                                 typeChange: "",
                                 aquaRing: false,
                                 bracing: false,
-                                chargingLength: 0,
+                                chargingMove: {
+                                    name: "",
+                                    chargingLength: 0,
+                                },
                                 centerOfAttention: false,
                                 defenseCurl: false,
                                 rooting: false,
@@ -135,7 +150,10 @@ module.exports = {
                                 mimicLastOpponentMove: "",
                                 minimized: false,
                                 protection: false,
-                                recharging: false,
+                                recharging: {
+                                    name: "",
+                                    enabled: 0,
+                                },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
                                 takingAim: false,

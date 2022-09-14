@@ -145,12 +145,6 @@ module.exports = {
 
             await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails);
 
-            // if (inp.customId.includes("Scratch")) {
-            //     console.log("scratch")
-            //     // battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken += 10;
-            //     // battlingFunctions.updatePokemonRandomEncounterBattle(battlingDetails._id, battlingDetails.fleeCount, battlingDetails.userOne, battlingDetails.userOneBag, battlingDetails.userOneCurrentPokemon, battlingDetails.userOneStatsStage, battlingDetails.userOneTeam, battlingDetails.userTwoCurrentPokemon, battlingDetails.userTwoStatsStage, battlingDetails.userTwoTeam);
-            // }
-
             //check if any pokemon hp is less than 1, use the row with button if battle is continuing
             //else use empty row
 
@@ -545,71 +539,125 @@ function getNatureValue(stat, nature) {
 }
 
 async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleDetails) {
+
     // console.log(randomPokemonMove)
     // console.log(userMove)
 
-    // if (userMove.category === "status") {
-    //
-    // } else {
-    //     await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
-    // }
+    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(randomPokemon.evLevels.hp));
+    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(randomPokemon.base.hp, pokemonHpMultiplier, randomPokemon.level));
+    const pokemonTotalHp = Math.round(pokemonFunctions.hpCalculation(randomPokemon.level, randomPokemon.base.hp, pokemonElb));
+
+    const userHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.hp));
+    const userElb = Math.round(pokemonFunctions.elbCalculation(user.base.hp, userHpMultiplier, user.level));
+    const userTotalHp = Math.round(pokemonFunctions.hpCalculation(user.level, user.base.hp, userElb));
+
 
     //check move priority
     if (userMove.priority > randomPokemonMove.priority) {
 
-        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
-        //check HP of user
-        // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
-
+        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+        //check HP of pokemon
+        // if (randomPokemon.damageTaken < pokemonTotalHp)
+        //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
     } else if (userMove.priority < randomPokemonMove.priority) {
 
-        // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
-        //check HP of enemy pokemon
-        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
-
+        // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
+        //check HP of user
+        if (user.damageTaken < userTotalHp)
+            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
     }
     //check pokemon base speed
     else {
         const userSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.speed));
         const userSpeedElb = Math.round(pokemonFunctions.elbCalculation(user.base.speed, userSpeedMultiplier, user.level));
         const userTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(user.level, user.base.speed, getNatureValue("speed", user.nature), userSpeedElb));
-        const userEffectiveSpeed = getEffectiveSpeed(userTotalSpeed, battleDetails.userOneStatStage.speed);
+        let userEffectiveSpeed = getEffectiveSpeed(userTotalSpeed, battleDetails.userOneStatStage.speed);
+        if (user.status === "paralyzed") {
+            userEffectiveSpeed = Math.round(userEffectiveSpeed / 2);
+            console.log("speed reduced bc user is paralyzed")
+        }
 
         const pokemonSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(randomPokemon.evLevels.speed));
         const pokemonSpeedElb = Math.round(pokemonFunctions.elbCalculation(randomPokemon.base.speed, pokemonSpeedMultiplier, randomPokemon.level));
         const pokemonTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(randomPokemon.level, randomPokemon.base.speed, getNatureValue("speed", randomPokemon.nature), pokemonSpeedElb));
-        const pokemonEffectiveSpeed = getEffectiveSpeed(pokemonTotalSpeed, battleDetails.userTwoStatStage.speed);
+        let pokemonEffectiveSpeed = getEffectiveSpeed(pokemonTotalSpeed, battleDetails.userTwoStatStage.speed);
+        if (randomPokemon.status === "paralyzed") {
+            pokemonEffectiveSpeed = Math.round(pokemonEffectiveSpeed / 2);
+            console.log("speed reduced bc enemy pokemon is paralyzed")
+        }
 
         console.log(userEffectiveSpeed, pokemonEffectiveSpeed);
 
         if (userEffectiveSpeed > pokemonEffectiveSpeed) {
-            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
-            //check HP of user
-            // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+
+            // //check HP of pokemon
+            // if (randomPokemon.damageTaken < pokemonTotalHp)
+            //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
+
         } else if (userTotalSpeed < pokemonTotalSpeed) {
-            // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
-            //check HP of enemy pokemon
-            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+            // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
+
+            //check HP of user
+            if (user.damageTaken < userTotalHp)
+                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
         }
         //randomly pick who goes first
         else {
             if (Math.floor(Math.random() * 2) === 0) {
-                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
-                //check HP of user
-                // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
+                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+
+                // //check HP of pokemon
+                // if (randomPokemon.damageTaken < pokemonTotalHp)
+                //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
             } else {
-                // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage);
-                //check HP of enemy pokemon
-                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage);
+                // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
+
+                //check HP of user
+                if (user.damageTaken < userTotalHp)
+                    await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
             }
         }
     }
 
-    //check if both feinted,
-    // else check if enemy feinted,
-    // else check if user feinted
+    //check if both fainted,
+    if (user.damageTaken >= userTotalHp && randomPokemon.damageTaken >= pokemonTotalHp) {
+        console.log("both pokemon feinted");
+        //end battle both lost
+    } else {
+        //check if user pokemon fainted
+        if (user.damageTaken >= userTotalHp) {
+            console.log("user pokemon fainted in battle");
+            //end battle user lost
+        } else {
+            runThroughStatusEffects(user, battleDetails.userOneVolatileStatus, userTotalHp);
+        }
+        //check if enemy pokemon fainted
+        if (randomPokemon.damageTaken >= pokemonTotalHp) {
+            console.log("enemy pokemon fainted in battle");
+            //end battle pokemon lost
+        } else {
+            runThroughStatusEffects(randomPokemon, battleDetails.userTwoVolatileStatus, pokemonTotalHp);
+        }
+    }
 
-
+    //check if both fainted after status effects
+    if (user.damageTaken >= userTotalHp && randomPokemon.damageTaken >= pokemonTotalHp) {
+        console.log("both pokemon feinted after status effects");
+        //end battle both lost
+    } else {
+        //check if user pokemon fainted
+        if (user.damageTaken >= userTotalHp) {
+            console.log("user pokemon fainted after status effects");
+            //end battle user lost
+        }
+        //check if enemy pokemon fainted
+        if (randomPokemon.damageTaken >= pokemonTotalHp) {
+            console.log("enemy pokemon fainted after status effects");
+            //end battle pokemon lost
+        }
+    }
+    // console.log(battleDetails)
 }
 
 function getRandomPokemonMove(pokemon) {
@@ -633,82 +681,120 @@ function getRandomPokemonMove(pokemon) {
     return randomMove;
 }
 
-async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage) {
+async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus) {
+
+    if (attacker.status === "frozen") {
+        let movesThatThaw = new Set(["Burn Up", "Flame Wheel", "Flare Blitz", "Fusion Flare",
+            "Pyro Ball", "Sacred Fire", "Scald", "Scorching Sands", "Steam Eruption"])
+
+        if (Math.floor(Math.random() * 5) === 0 || movesThatThaw.has(move.name)) {
+            attacker.status = "normal";
+            console.log(`${attacker.name} managed to thaw out.`)
+        } else {
+            console.log(`${attacker.name} is frozen.`)
+            return;
+        }
+    }
+
+    if (attacker.status === "paralyzed") {
+        if (Math.floor(Math.random() * 4) === 0) {
+            console.log(`${attacker.name} is paralyzed and can't move.`)
+            return;
+        }
+    }
+
+    if (attacker.status === "sleeping") {
+        if (attackerVolatileStatus.sleepTurnLength === 1) {
+
+        } else {
+            console.log(`${attacker.name} is fast asleep.`)
+            return;
+        }
+    }
+
+    console.log(`${attacker.name} used ${move.name} on ${defender.name}`);
+
     //dmg calculations: https://bulbapedia.bulbagarden.net/wiki/Damage#Damage_calculation
 
     // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
     let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
 
-    let level = attacker.level;
-
-    let criticalStage = {
-        0: 24,
-        1: 8,
-        2: 2,
-        3: 1
-    }
-
-    let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
-
-    let power = move.pwr || 0;
-
-
-    let effectiveAtk;
-    let effectiveDef;
-
-    // console.log(move.category)
-    if (move.category === "physical") {
-        // console.log("physical")
-        let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
-        // console.log(attacker.base.attack, atkMultiplier, attacker.level)
-        let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
-        // console.log(atkMultiplier, atkElb)
-        let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
-
-        // console.log(atk, attackerStatStage.atk, critical)
-        effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
-
-        let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
-        let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
-        let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
-
-        effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
+    if (move.category === "status") {
+        console.log("used status move");
     } else {
-        // console.log("special")
-        let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
-        let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base["special-attack"], spAtkMultiplier, attacker.level));
-        let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base["special-attack"], getNatureValue("spAtk", attacker.nature), spAtkElb));
+        let level = attacker.level;
 
-        effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
+        let criticalStage = {
+            0: 24,
+            1: 8,
+            2: 2,
+            3: 1
+        }
 
-        let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
-        let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base["special-defense"], spDefMultiplier, defender.level));
-        let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base["special-defense"], getNatureValue("spDef", defender.nature), spDefElb));
+        let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
 
-        effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
-    }
+        let power = move.pwr || 0;
 
-    let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
+        // console.log(power)
 
-    let stab = fullDefenderDetails.types.includes(move.type) ? 1.5 : 1;
+        let effectiveAtk;
+        let effectiveDef;
 
-    let type = getTypeCalculation(move.type, fullDefenderDetails.types);
+        // console.log(move.category)
+        if (move.category === "physical") {
+            console.log("physical")
+            let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
+            // console.log(attacker.base.attack, atkMultiplier, attacker.level)
+            let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+            // console.log(atkMultiplier, atkElb)
+            let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
 
-    // console.log(type)
-    let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
-    burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
+            // console.log(atk, attackerStatStage.atk, critical)
+            effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
 
-    let other = 1;
+            let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
+            let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
+            let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
 
-    let damage = Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
+            effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
+        } else {
+            console.log("special")
+            let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
+            let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base["special-attack"], spAtkMultiplier, attacker.level));
+            let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base["special-attack"], getNatureValue("spAtk", attacker.nature), spAtkElb));
 
+            effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
 
-    switch (move.name) {
-        case "Karate Chop":
-            break;
-        default:
-            console.log(damage);
-            break;
+            let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
+            let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base["special-defense"], spDefMultiplier, defender.level));
+            let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base["special-defense"], getNatureValue("spDef", defender.nature), spDefElb));
+
+            effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
+        }
+
+        let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
+
+        let stab = fullDefenderDetails.types.includes(move.type) ? 1.5 : 1;
+
+        let type = getTypeCalculation(move.type, fullDefenderDetails.types);
+
+        // console.log(type)
+        let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
+        burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
+
+        let other = 1;
+
+        let damage = Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
+
+        // console.log(power, effectiveAtk, effectiveDef, critical, random, stab, type, burn, other);
+
+        switch (move.name) {
+            case "Karate Chop":
+                break;
+            default:
+                console.log(damage);
+                break;
+        }
     }
 }
 
@@ -951,4 +1037,152 @@ function getTypeCalculation(moveType, defenderTypes) {
     }
 
     return multiplier;
+}
+
+function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
+
+    if (pokemon.status === "burned") {
+        pokemon.damageTaken += Math.round(totalHp / 16);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+    }
+    if (pokemon.status === "poisoned") {
+        pokemon.damageTaken += Math.round(totalHp / 8);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+    }
+    if (pokemon.status === "badly poisoned") {
+        pokemon.damageTaken += Math.round(totalHp * (volatileStatus.badlyPoisonTurn + 1) / 16);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+        volatileStatus.badlyPoisonTurn++;
+    }
+    if (volatileStatus.sleepTurnLength > 0)
+        volatileStatus.sleepTurnLength--;
+    if (volatileStatus.bound.length > 0) {
+        switch (volatileStatus.bound.name) {
+            case "Bind":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Clamp":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Fire Spin":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Infestation":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Magma Storm":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Sand Tomb":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Snap Trap":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Thunder Cage":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Whirlpool":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            case "Wrap":
+                pokemon.damageTaken += Math.round(totalHp / 8);
+                pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+                volatileStatus.bound.length--;
+                break;
+            default:
+                console.log("Incorrect bind name")
+                break;
+        }
+    }
+    if (volatileStatus.cursed) {
+        pokemon.damageTaken += Math.round(totalHp / 4);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+    }
+    if (volatileStatus.drowsy) {
+        if (pokemon.status === "normal") {
+            pokemon.status = "sleeping";
+            console.log(`Due to it's drowsiness ${pokemon.name} fell asleep.`)
+        }
+        volatileStatus.drowsy = false;
+    }
+    if (volatileStatus.encore.encoreLength > 0) {
+        volatileStatus.encore.encoreLength--;
+    }
+    volatileStatus.flinch = false;
+    if (volatileStatus.healBlockLength > 0) {
+        volatileStatus.healBlockLength--;
+    }
+    if (volatileStatus.leechSeed) {
+        pokemon.damageTaken += Math.round(totalHp / 8);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+
+        //if enemy pokemon is alive then decrease their damage taken,
+        // make sure the lowest it can go is 0 Math.max(0, damageTaken)
+    }
+    if (pokemon.status === "sleeping" && volatileStatus.nightmare) {
+        pokemon.damageTaken += Math.round(totalHp / 4);
+        pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+    } else {
+        volatileStatus.nightmare = false;
+    }
+    if (volatileStatus.perishSongLength > 0) {
+        if (volatileStatus.perishSongLength === 1) {
+            pokemon.damageTaken = totalHp;
+        }
+        volatileStatus.perishSongLength--;
+    }
+    if (volatileStatus.tauntLength > 0) {
+        volatileStatus.tauntLength--;
+    }
+    // volatileStatus.telekinesisLength = Math.max(0, volatileStatus.telekinesisLength--);
+    if (volatileStatus.telekinesisLength) {
+        volatileStatus.telekinesisLength--
+    }
+
+    volatileStatus.bracing = false;
+
+    if (volatileStatus.chargingMove.chargingLength > 0) {
+        volatileStatus.chargingMove.chargingLength--;
+    }
+
+    volatileStatus.magicCoat = false;
+
+    if (volatileStatus.magneticLevitationLength > 0) {
+        volatileStatus.magneticLevitationLength--;
+    }
+
+    volatileStatus.protection = false;
+
+    if (pokemon.damageTaken < totalHp && volatileStatus.rooting) {
+        pokemon.damageTaken -= Math.round(totalHp / 16);
+        pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
+        console.log("healed from rooting");
+    }
+
+    if (pokemon.damageTaken < totalHp && volatileStatus.aquaRing) {
+        pokemon.damageTaken -= Math.round(totalHp / 16);
+        pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
+        console.log("healed from aqua ring");
+    }
+
+    // return pokemon.damageTaken >= totalHp;
 }
