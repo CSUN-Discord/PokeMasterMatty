@@ -51,6 +51,50 @@ module.exports = {
         }
     },
 
+    setBag: async function (userId, bag) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $set: {
+                            bag: bag
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    setTeam: async function (userId, team) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $set: {
+                            team: team
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
     addPokemonToUser: async function (user, newPokemon) {
         let player = await module.exports.getUser(user.id);
         if (player == null) {

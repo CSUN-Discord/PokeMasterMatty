@@ -26,7 +26,8 @@ module.exports = {
             "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
-            "teamNumber": null,
+            //is team number needed?
+            // "teamNumber": null,
             "boxNumber": null,
             "item": null,
             "shiny": false,
@@ -75,7 +76,7 @@ module.exports = {
             "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
-            "teamNumber": null,
+            // "teamNumber": null,
             "boxNumber": null,
             "item": null,
             "shiny": false,

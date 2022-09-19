@@ -138,6 +138,7 @@ module.exports = {
                                 collector = channel.createMessageComponentCollector({
                                     filter,
                                     time: 840000
+                                    // time: 5000
                                 });
 
                                 collector.on('collect', async i => {
@@ -154,7 +155,7 @@ module.exports = {
                                             //check if user is in battle
                                             //check if user has a usable pokemon
 
-                                            await trainerFunctions.setBattling(interaction.user.id, true)
+                                            await trainerFunctions.setBattling(interaction.user.id, true);
 
                                             quantity--;
 
@@ -183,7 +184,6 @@ module.exports = {
 
                                             await sleep(1500)
 
-
                                             thread.send({
                                                 embeds: [embedDetails[0]],
                                                 components: [row],
@@ -199,7 +199,7 @@ module.exports = {
                                             const battleCollector = thread.createMessageComponentCollector({
                                                 // battleFilter,
                                                 time: 600000
-                                                // time: 1000
+                                                // time: 10000
                                             });
 
                                             battleCollector.on('collect', async inp => {
@@ -224,35 +224,40 @@ module.exports = {
                                                 }).then(msg => {
                                                     message = msg;
                                                 })
+
+                                                if (messageValues.content.includes("The battle has ended")) {
+                                                    battleCollector.stop()
+                                                    // battleCollector = null;
+                                                }
                                             });
 
                                             battleCollector.on('end', async (collected, reason) => {
-
+                                                // console.log("ended")
                                                 let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
                                                 if (battlingDetails.length > 0) {
+                                                    // console.log("ended_2")
                                                     try {
                                                         const receivedEmbed = message.embeds[0];
                                                         const exampleEmbed = new MessageEmbed(receivedEmbed)
                                                             .setTitle('The pokemon fled before you had a chance to capture or kill it!')
                                                         message.channel.send({embeds: [exampleEmbed], components: []});
+
+                                                        await battleFunctions.endRandomBattleEncounter("time", battlingDetails[0]);
                                                         message.delete();
                                                     } catch (e) {
                                                         console.log(e)
                                                     }
-
-                                                    //battleFunctions.encounterBattleEnds("time", i.user.id)
                                                 }
                                             });
 
                                             if (quantity <= 0) {
                                                 spawnedMessage.channel.send(`All the ${pokemon[0].name}s have fled, been killed, or caught.`);
-                                                try {
-                                                    spawnedMessage.delete();
-                                                    spawnedMessage = null;
-                                                } catch (e) {
-                                                    console.log(e)
-                                                }
-
+                                                // try {
+                                                //     spawnedMessage.delete();
+                                                //     spawnedMessage = null;
+                                                // } catch (e) {
+                                                //     console.log("error while deleting embeds" + e)
+                                                // }
                                                 collector.stop()
                                                 collector = null;
                                             } else {
@@ -278,11 +283,20 @@ module.exports = {
                                 console.log(e)
                             }
 
-                            // collector.on('end', collected => {
-                            //     console.log(`Collected ${collected.size} items`);
-                            //     spawnedMessage.delete();
-                            // });
+                            collector.on('end', collected => {
+                                try {
+                                    const receivedEmbed = spawnedMessage.embeds[0];
+                                    const exampleEmbed = new MessageEmbed(receivedEmbed)
+                                        .setTitle(`All the ${pokemon[0].name}s have fled, been killed, or caught.`)
+                                    spawnedMessage.channel.send({embeds: [exampleEmbed], components: []});
 
+                                    spawnedMessage.delete();
+                                    spawnedMessage = null;
+                                } catch (e) {
+                                    console.log(e)
+                                }
+                                console.log(`Collected ${collected.size} items`);
+                            });
 
                             console.log(shuffleBag.length)
                         } else {

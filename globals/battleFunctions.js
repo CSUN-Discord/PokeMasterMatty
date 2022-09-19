@@ -5,6 +5,8 @@ const {PythonShell} = require("python-shell");
 // const battlingFunctions = require("../db/functions/battlingFunctions");
 const moveListFunctions = require("../db/functions/moveListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
+const trainerFunctions = require("../db/functions/trainerFunctions");
+const battlingFunctions = require("../db/functions/battlingFunctions");
 
 module.exports = {
 
@@ -30,6 +32,7 @@ module.exports = {
         }
         const enemy_pokemon_level = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level;
         const enemy_pokemon_current_hp = userTwoTotalHp - battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken;
+        // console.log("enemy Hp" + enemy_pokemon_current_hp)
         const enemy_pokemon_total_hp = userTwoTotalHp;
         const user_id = battlingDetails.userOne.userId;
         let user_pokemon_name = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name;
@@ -104,15 +107,26 @@ module.exports = {
             const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
             const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
             const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
-            const userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
+            let userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
+            if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "paralyzed") {
+                userOneEffectiveSpeed = Math.round(userOneEffectiveSpeed / 2);
+                console.log("speed reduced bc user is paralyzed")
+            }
 
             const userTwoSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.speed));
             const userTwoSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, userTwoSpeedMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
             const userTwoTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature), userTwoSpeedElb));
-            const userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
+            let userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
+            if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "paralyzed") {
+                userTwoEffectiveSpeed = Math.round(userTwoEffectiveSpeed / 2);
+                console.log("speed reduced bc user is paralyzed")
+            }
 
-            if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
+            //allow ghost types to be able to escape if escape prevention is true
+            console.log(!battlingDetails.userOneVolatileStatus.escapePrevention.enabled)
+            if (!battlingDetails.userOneVolatileStatus.escapePrevention.enabled && escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
                 const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                await module.exports.endRandomBattleEncounter("fled", battlingDetails)
                 return {
                     content: "_ _",
                     embedDetails: [new MessageEmbed()
@@ -122,13 +136,14 @@ module.exports = {
                         false],
                     components: []
                 };
-                // module.exports.encounterBattleEnds("fled", i.user.id)
-
-
             } else {
                 console.log("!escaped")
                 //increase escape count
+                battlingFunctions.setFleeCount(battlingDetails._id, battlingDetails.fleeCount + 1)
+
                 // do enemy move
+
+
             }
             console.log(`${inp.user.id}spawnBattleRun`)
         } else if (inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}` ||
@@ -138,25 +153,30 @@ module.exports = {
         ) {
             //user used a move
 
+            //reset flee count
+            battlingFunctions.setFleeCount(battlingDetails._id, 0)
+
             let enemyMove = getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
 
+            //program torment and charging move, and recharging
             let userMoveName = inp.customId.replace(inp.user.id, "");
             let userMove = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.find(object => object.name === userMoveName);
 
-            await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails);
-
-            //check if any pokemon hp is less than 1, use the row with button if battle is continuing
-            //else use empty row
-
-            //update to db
-
-            row = module.exports.setRowDefault(row, inp)
-            return {
-                content: "_ _",
-                embedDetails: module.exports.createEmbedPVM(battlingDetails),
-                components: [row]
-            };
-
+            if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
+                row = module.exports.setRowDefault(row, inp)
+                return {
+                    content: "The battle has ended due to a pokemon fainting.",
+                    embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                    components: []
+                };
+            } else {
+                row = module.exports.setRowDefault(row, inp)
+                return {
+                    content: "_ _",
+                    embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                    components: [row]
+                };
+            }
         } else if (inp.customId === `${inp.user.id}back`) {
             row = module.exports.setRowDefault(row, inp)
 
@@ -174,25 +194,42 @@ module.exports = {
         };
     },
 
-    encounterBattleEnds: function (endType, userId) {
+    endRandomBattleEncounter: async function (endType, battlingDetails) {
         //update bag
+        await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+
         //update team
+        await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
+
         //update battling to false
-        //update userOneCurrentPokemon
+        await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+
         //update battling database
-        //update thread
+        await battlingFunctions.deletePVMBattle(battlingDetails._id);
+
         //update win/loss
+
+        console.log(`battle ended due to ${endType}`)
+
         switch (endType) {
-            case "time":
-                break;
-            case "fled":
-                break;
-            case "userFainted":
-                break;
-            case "enemyFainted":
-                break;
-            case "pokemonCaptured":
-                break;
+            //     case "user feint":
+            //         break;
+            //     case "enemy feint":
+            //         break;
+            //     case "both feint":
+            //         break;
+            // case "ran":
+            //
+            //     break;
+            //     case "roar":
+            //         break;
+            //     case "teleport":
+            //         break;
+            // case "time":
+            //
+            //     break;
+            //     case "pokemonCaptured":
+            //         break;
         }
     },
 
@@ -553,19 +590,35 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
 
 
     //check move priority
-    if (userMove.priority > randomPokemonMove.priority) {
+    // if (userMove.priority > randomPokemonMove.priority) {
+    if (1 === 1) {
 
-        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
-        //check HP of pokemon
-        // if (randomPokemon.damageTaken < pokemonTotalHp)
-        //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
+        if (battleDetails.userOneVolatileStatus.chargingMove.chargingLength > 1) {
+            console.log(`${user.name} is charging up ${battleDetails.userOneVolatileStatus.chargingMove.name}.`)
+            return false;
+        }
+        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp);
+        user.damageTaken = Math.min(userTotalHp, user.damageTaken);
+        randomPokemon.damageTaken = Math.min(pokemonTotalHp, randomPokemon.damageTaken);
+
+        // //check HP of both pokemon, it can hurt itself in confusion
+        // if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
+        //     if (battleDetails.userTwoVolatileStatus.chargingMove.chargingLength > 1) {
+        //         console.log(`${randomPokemon.name} is charging up ${battleDetails.userTwoVolatileStatus.chargingMove.name}.`)
+        //         return false;
+        //     }
+        //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp);
+        //     user.damageTaken = Math.min(userTotalHp, user.damageTaken);
+        //     randomPokemon.damageTaken = Math.min(pokemonTotalHp, randomPokemon.damageTaken);
+        // }
     } else if (userMove.priority < randomPokemonMove.priority) {
 
         // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
         //check HP of user
-        if (user.damageTaken < userTotalHp)
-            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+        // if (user.damageTaken < userTotalHp)
+        //     await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
     }
+
     //check pokemon base speed
     else {
         const userSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.speed));
@@ -589,7 +642,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         console.log(userEffectiveSpeed, pokemonEffectiveSpeed);
 
         if (userEffectiveSpeed > pokemonEffectiveSpeed) {
-            await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+            // await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
 
             // //check HP of pokemon
             // if (randomPokemon.damageTaken < pokemonTotalHp)
@@ -599,13 +652,13 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
 
             //check HP of user
-            if (user.damageTaken < userTotalHp)
-                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+            // if (user.damageTaken < userTotalHp)
+            //     await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
         }
         //randomly pick who goes first
         else {
             if (Math.floor(Math.random() * 2) === 0) {
-                await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+                // await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
 
                 // //check HP of pokemon
                 // if (randomPokemon.damageTaken < pokemonTotalHp)
@@ -614,50 +667,36 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
 
                 //check HP of user
-                if (user.damageTaken < userTotalHp)
-                    await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
+                // if (user.damageTaken < userTotalHp)
+                //     await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus);
             }
         }
     }
 
-    //check if both fainted,
-    if (user.damageTaken >= userTotalHp && randomPokemon.damageTaken >= pokemonTotalHp) {
-        console.log("both pokemon feinted");
-        //end battle both lost
+
+    if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
+        //end battle function
+        await module.exports.endRandomBattleEncounter("feint", battleDetails);
+        return true;
     } else {
-        //check if user pokemon fainted
-        if (user.damageTaken >= userTotalHp) {
-            console.log("user pokemon fainted in battle");
-            //end battle user lost
-        } else {
-            runThroughStatusEffects(user, battleDetails.userOneVolatileStatus, userTotalHp);
+        runThroughStatusEffects(user, battleDetails.userOneVolatileStatus, userTotalHp, randomPokemon);
+        if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
+            //end battle function
+            await module.exports.endRandomBattleEncounter("feint", battleDetails);
+            return true;
         }
-        //check if enemy pokemon fainted
-        if (randomPokemon.damageTaken >= pokemonTotalHp) {
-            console.log("enemy pokemon fainted in battle");
-            //end battle pokemon lost
-        } else {
-            runThroughStatusEffects(randomPokemon, battleDetails.userTwoVolatileStatus, pokemonTotalHp);
+        runThroughStatusEffects(randomPokemon, battleDetails.userTwoVolatileStatus, pokemonTotalHp, user);
+        if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
+            //end battle function
+            await module.exports.endRandomBattleEncounter("feint", battleDetails);
+            return true;
         }
     }
 
-    //check if both fainted after status effects
-    if (user.damageTaken >= userTotalHp && randomPokemon.damageTaken >= pokemonTotalHp) {
-        console.log("both pokemon feinted after status effects");
-        //end battle both lost
-    } else {
-        //check if user pokemon fainted
-        if (user.damageTaken >= userTotalHp) {
-            console.log("user pokemon fainted after status effects");
-            //end battle user lost
-        }
-        //check if enemy pokemon fainted
-        if (randomPokemon.damageTaken >= pokemonTotalHp) {
-            console.log("enemy pokemon fainted after status effects");
-            //end battle pokemon lost
-        }
-    }
-    // console.log(battleDetails)
+    //update battle details in db
+    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus);
+    return false;
+    // // console.log(battleDetails)
 }
 
 function getRandomPokemonMove(pokemon) {
@@ -681,7 +720,17 @@ function getRandomPokemonMove(pokemon) {
     return randomMove;
 }
 
-async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus) {
+async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus, defenderVolatileStatus, totalDefenderHp) {
+    // move = await moveListFunctions.getMove("Burn Up");
+
+    if (attackerVolatileStatus.encore.encoreLength > 0) {
+        move = await moveListFunctions.getMove(attackerVolatileStatus.encore.name);
+        //decrease pp for move should be at the end not here
+        //if cant decrease pp then use struggle
+        console.log(`due to encore move was changed to ${move.name}`);
+    }
+
+    defenderVolatileStatus.mimicLastOpponentMove = move.name;
 
     if (attacker.status === "frozen") {
         let movesThatThaw = new Set(["Burn Up", "Flame Wheel", "Flare Blitz", "Fusion Flare",
@@ -697,17 +746,102 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     }
 
     if (attacker.status === "paralyzed") {
+        console.log("is paralyzed")
         if (Math.floor(Math.random() * 4) === 0) {
             console.log(`${attacker.name} is paralyzed and can't move.`)
             return;
         }
     }
 
+    //make user pokemon awake if the battle ends
     if (attacker.status === "sleeping") {
         if (attackerVolatileStatus.sleepTurnLength === 1) {
-
+            console.log(`${attacker.name} woke up.`)
+            attacker.status = "normal";
         } else {
             console.log(`${attacker.name} is fast asleep.`)
+            return;
+        }
+    }
+
+    if (attackerVolatileStatus.flinch) {
+        console.log(`${attacker.name} flinched.`)
+        return;
+    }
+
+    let infatuation = Math.floor(Math.random() * 2);
+    // console.log(infatuation);
+    if (attackerVolatileStatus.infatuation && infatuation === 0) {
+        console.log(`${attacker.name} is in love.`)
+        return;
+        // if any pokemon switches out infatuation is removed
+    }
+
+    if (attackerVolatileStatus.confusionLength) {
+        if (attackerVolatileStatus.confusionLength === 1) {
+            console.log(`${attacker.name} snapped out of it's confusion.`)
+        } else {
+            if (Math.floor(Math.random() * 2) === 0) {
+                console.log(`${attacker.name} hurt itself in it's confusion.`)
+                let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
+                burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
+                let criticalStage = {
+                    0: 24,
+                    1: 8,
+                    2: 2,
+                    3: 1
+                }
+                //update critical stage "criticalStage[0]"
+                let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
+
+                let effectiveAtk;
+                let effectiveDef;
+                let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
+                // console.log(attacker.base.attack, atkMultiplier, attacker.level)
+                let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+                // console.log(atkMultiplier, atkElb)
+                let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
+
+                // console.log(atk, attackerStatStage.atk, critical)
+                effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
+
+                let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.def));
+                let defElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.defense, defMultiplier, attacker.level));
+                let def = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.defense, getNatureValue("def", attacker.nature), defElb));
+
+                effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
+
+                let damage = Math.round(((((((2 * attacker.level) / 5) + 2) * 40 * effectiveAtk / effectiveDef) / 50) + 2) * critical * (Math.floor(Math.random() * (101 - 85) + 85) / 100) * burn * 1.001);
+
+                attacker.damageTaken += damage;
+                return;
+            }
+        }
+    }
+
+    if (move.type === "ground" && defenderVolatileStatus.magneticLevitationLength > 0) {
+        console.log("due to magnetic levitation your ground move had no effect.")
+        return;
+    }
+
+    if (move.type === "ground" && defenderVolatileStatus.telekinesisLength > 0) {
+        console.log("due to telekinesis your ground move had no effect.")
+        return;
+    }
+
+    if (defenderVolatileStatus.protection) {
+        console.log("enemy pokemon is protected.")
+        return;
+    }
+
+    if (defenderVolatileStatus.semiInvulnerable) {
+        if (!(attackerVolatileStatus.takingAim || move.name === "Toxic" || ((defenderVolatileStatus.chargingMove.name === "Fly" || defenderVolatileStatus.chargingMove.name === "Bounce" ||
+            defenderVolatileStatus.chargingMove.name === "Sky Drop") && (move.name === "Gust" || move.name === "Hurricane" ||
+            move.name === "Sky Uppercut" || move.name === "Smack Down" || move.name === "Thousand Arrows" || move.name === "Thunder" ||
+            move.name === "Twister")) || ((defenderVolatileStatus.chargingMove.name === "Fly") && (move.name === "Earthquake" ||
+            move.name === "Magnitude" || move.name === "Fissure")) || ((defenderVolatileStatus.chargingMove.name === "Dive") &&
+            (move.name === "Surf" || move.name === "Whirlpool")))) {
+            console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
             return;
         }
     }
@@ -720,6 +854,16 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
 
     if (move.category === "status") {
+        if (attackerVolatileStatus.tauntLength > 0) {
+            console.log("move failed, used a status move while taunted");
+            return;
+        }
+
+        if (defenderVolatileStatus.magicCoat) {
+
+        } else {
+
+        }
         console.log("used status move");
     } else {
         let level = attacker.level;
@@ -730,7 +874,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             2: 2,
             3: 1
         }
-
+        //update critical stage "criticalStage[0]"
         let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
 
         let power = move.pwr || 0;
@@ -789,9 +933,72 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         // console.log(power, effectiveAtk, effectiveDef, critical, random, stab, type, burn, other);
 
         switch (move.name) {
-            case "Karate Chop":
+            // case "Karate Chop":
+            //     break;
+            case "Rapid Spin":
+                console.log("unbound if bound")
+                attackerVolatileStatus.bound.length = 0;
                 break;
             default:
+                // defender.damageTaken += damage;
+                defender.status = "normal";
+
+                // if (defenderVolatileStatus.bound.length === 0) {
+                //     defenderVolatileStatus.bound.length = 3;
+                //     defenderVolatileStatus.bound.name = "Bind";
+                // }
+
+                // if (defenderVolatileStatus.drowsy > 0) {
+                //     console.log("atk failed, already drowsy")
+                // } else if (defenderVolatileStatus.sleepTurnLength > 0) {
+                //     console.log("atk failed, already sleeping")
+                // } else {
+                //     defenderVolatileStatus.drowsy = 2;
+                // }
+
+                // defenderVolatileStatus.escapePrevention.enabled = true;
+
+                // if (defenderVolatileStatus.confusionLength > 0) {
+                //     console.log("atk failed, already confused")
+                // } else {
+                //     console.log("confused")
+                //     defenderVolatileStatus.confusionLength = 3;
+                // }
+
+                // defenderVolatileStatus.cursed = true;
+
+                // defenderVolatileStatus.flinch = true;
+
+                // defenderVolatileStatus.infatuation = true;
+
+                // defenderVolatileStatus.leechSeed = true;
+
+                // defender.status = "sleeping";
+                // defenderVolatileStatus.nightmare = true;
+                // defenderVolatileStatus.sleepTurnLength = 3;
+
+                // defenderVolatileStatus.perishSongLength = 2;
+
+                // defenderVolatileStatus.tauntLength = 3;
+
+                // defenderVolatileStatus.magneticLevitationLength = 3;
+
+                // defenderVolatileStatus.bracing = true;
+
+                // defenderVolatileStatus.aquaRing = true;
+
+                defenderVolatileStatus.rooting = true;
+
+                // let dmg = 50;
+                defender.damageTaken += damage;
+
+                // if (defenderVolatileStatus.bracing && (totalDefenderHp - defender.damageTaken + dmg) > 1) {
+                //     console.log("lived with 1 hp due to brace")
+                //     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp - 1)
+                // }
+
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
                 console.log(damage);
                 break;
         }
@@ -1039,24 +1246,33 @@ function getTypeCalculation(moveType, defenderTypes) {
     return multiplier;
 }
 
-function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
+function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
+    // console.log(pokemon.level)
+    // console.log(enemy.level)
 
     if (pokemon.status === "burned") {
+        console.log("burned")
         pokemon.damageTaken += Math.round(totalHp / 16);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
     if (pokemon.status === "poisoned") {
+        console.log("poisoned")
         pokemon.damageTaken += Math.round(totalHp / 8);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
     if (pokemon.status === "badly poisoned") {
+        console.log("badly poisoned")
         pokemon.damageTaken += Math.round(totalHp * (volatileStatus.badlyPoisonTurn + 1) / 16);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
         volatileStatus.badlyPoisonTurn++;
     }
     if (volatileStatus.sleepTurnLength > 0)
         volatileStatus.sleepTurnLength--;
-    if (volatileStatus.bound.length > 0) {
+
+    if (volatileStatus.bound.length === 1) {
+        console.log("freed from being bound")
+    } else if (volatileStatus.bound.length > 1) {
+        console.log("bounded")
         switch (volatileStatus.bound.name) {
             case "Bind":
                 pokemon.damageTaken += Math.round(totalHp / 8);
@@ -1113,16 +1329,36 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
                 break;
         }
     }
+
+    if (volatileStatus.bound.length > 0) {
+        volatileStatus.bound.length--;
+    }
+
     if (volatileStatus.cursed) {
+        console.log("damaged due to cursed")
         pokemon.damageTaken += Math.round(totalHp / 4);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
-    if (volatileStatus.drowsy) {
+
+    // console.log(volatileStatus)
+    if (volatileStatus.drowsy === 1) {
+        console.log("test")
         if (pokemon.status === "normal") {
+            console.log("test2")
+            volatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
             pokemon.status = "sleeping";
             console.log(`Due to it's drowsiness ${pokemon.name} fell asleep.`)
         }
-        volatileStatus.drowsy = false;
+    }
+    if (volatileStatus.drowsy > 0) {
+        volatileStatus.drowsy--;
+    }
+
+    if (volatileStatus.confusionLength > 0) {
+        volatileStatus.confusionLength--;
+    }
+    if (volatileStatus.embargoLength > 0) {
+        volatileStatus.embargoLength--;
     }
     if (volatileStatus.encore.encoreLength > 0) {
         volatileStatus.encore.encoreLength--;
@@ -1131,14 +1367,25 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
     if (volatileStatus.healBlockLength > 0) {
         volatileStatus.healBlockLength--;
     }
-    if (volatileStatus.leechSeed) {
+    if (pokemon.damageTaken < totalHp && volatileStatus.leechSeed) {
+        console.log(`leech seed dmg to ${pokemon.level} healing ${enemy.level}`)
+
+        //shouldnt be able to gain hp if enemy is dead
+
         pokemon.damageTaken += Math.round(totalHp / 8);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
+
+        // console.log(enemy.damageTaken)
+        // console.log(enemy.damageTaken)
+        enemy.damageTaken -= Math.round(totalHp / 8);
+        enemy.damageTaken = Math.max(enemy.damageTaken, 0);
+        // console.log(enemy.damageTaken)
 
         //if enemy pokemon is alive then decrease their damage taken,
         // make sure the lowest it can go is 0 Math.max(0, damageTaken)
     }
     if (pokemon.status === "sleeping" && volatileStatus.nightmare) {
+        console.log("had a nightmare");
         pokemon.damageTaken += Math.round(totalHp / 4);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     } else {
@@ -1154,7 +1401,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
         volatileStatus.tauntLength--;
     }
     // volatileStatus.telekinesisLength = Math.max(0, volatileStatus.telekinesisLength--);
-    if (volatileStatus.telekinesisLength) {
+    if (volatileStatus.telekinesisLength > 0) {
         volatileStatus.telekinesisLength--
     }
 
@@ -1162,6 +1409,9 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
 
     if (volatileStatus.chargingMove.chargingLength > 0) {
         volatileStatus.chargingMove.chargingLength--;
+        if (volatileStatus.chargingMove.chargingLength === 1) {
+            volatileStatus.semiInvulnerable = false;
+        }
     }
 
     volatileStatus.magicCoat = false;
@@ -1186,3 +1436,4 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp) {
 
     // return pokemon.damageTaken >= totalHp;
 }
+

@@ -50,7 +50,7 @@ module.exports = {
                                 },
                                 confusionLength: 0,
                                 cursed: false,
-                                drowsy: false,
+                                drowsy: 0,
                                 embargoLength: 0,
                                 encore: {
                                     moveToRepeat: "",
@@ -89,7 +89,7 @@ module.exports = {
                                 protection: false,
                                 recharging: {
                                     name: "",
-                                    enabled: 0,
+                                    enabled: false,
                                 },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
@@ -113,7 +113,7 @@ module.exports = {
                                 },
                                 confusionLength: 0,
                                 cursed: false,
-                                drowsy: false,
+                                drowsy: 0,
                                 embargoLength: 0,
                                 encore: {
                                     moveToRepeat: "",
@@ -152,7 +152,7 @@ module.exports = {
                                 protection: false,
                                 recharging: {
                                     name: "",
-                                    enabled: 0,
+                                    enabled: false,
                                 },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
@@ -200,29 +200,61 @@ module.exports = {
         }
     },
 
-    // updatePokemonRandomEncounterBattle: function (objectId, fleeCount, userOne, userOneBag, userOneCurrentPokemon, userOneStatsStage, userOneTeam, userTwooCurrentPokemon, userTwoStatsStage, userTwoTeam) {
-    //     try {
-    //         battlingSchema
-    //             .updateOne({
-    //                     _id: objectId
-    //                 },
-    //                 {
-    //                     fleeCount: fleeCount,
-    //                     userOne: userOne,
-    //                     userOneBag: userOneBag,
-    //                     userOneCurrentPokemon: userOneCurrentPokemon,
-    //                     userOneStatsStage: userOneStatsStage,
-    //                     userOneTeam: userOneTeam,
-    //                     userTwoCurrentPokemon: userTwooCurrentPokemon,
-    //                     userTwoStatsStage: userTwoStatsStage,
-    //                     userTwoTeam: userTwoTeam
-    //                 },
-    //                 (err, res) => {
-    //                     if (err) console.log(err);
-    //                     else console.log(`Updated ${res.modifiedCount || 0} battles.`)
-    //                 });
-    //     } catch (e) {
-    //         console.log(e);
-    //     }
-    // }
+    deletePVMBattle: function (battleID) {
+        try {
+            battlingSchema
+                .deleteOne({
+                        _id: battleID
+                    },
+                    (err, res) => {
+                        if (err) console.log(err);
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    setFleeCount: function (battleID, count) {
+        try {
+            battlingSchema
+                .findOneAndUpdate({
+                        _id: battleID
+                    },
+                    {
+                        $set: {
+                            fleeCount: count
+                        }
+                    },
+                    (err, res) => {
+                        if (err) console.log(err);
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus) {
+        try {
+            battlingSchema
+                .updateOne({
+                        _id: objectId
+                    },
+                    {
+                        userOneBag: userOneBag,
+                        userOneCurrentPokemon: userOneCurrentPokemon,
+                        userOneStatStage: userOneStatStage,
+                        userOneTeam: userOneTeam,
+                        userOneVolatileStatus: userOneVolatileStatus,
+                        userTwoStatStage: userTwoStatStage,
+                        userTwoTeam: userTwoTeam,
+                        userTwoVolatileStatus: userTwoVolatileStatus
+                    },
+                    (err, res) => {
+                        if (err) console.log(err);
+                        else console.log(`Updated ${res.modifiedCount || 0} battles.`)
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    }
 }

@@ -45,7 +45,7 @@ const battlingSchema = new Schema({
         },
         confusionLength: Number,
         cursed: Boolean,
-        drowsy: Boolean,
+        drowsy: Number,
         embargoLength: Number,
         encore: {
             moveToRepeat: String,
@@ -84,7 +84,7 @@ const battlingSchema = new Schema({
         protection: Boolean,
         recharging: {
             name: String,
-            enabled: Number,
+            enabled: Boolean,
         },
         semiInvulnerable: Boolean,
         substituteHP: Number,
@@ -108,7 +108,7 @@ const battlingSchema = new Schema({
         },
         confusionLength: Number,
         cursed: Boolean,
-        drowsy: Boolean,
+        drowsy: Number,
         embargoLength: Number,
         encore: {
             moveToRepeat: String,
@@ -147,7 +147,7 @@ const battlingSchema = new Schema({
         protection: Boolean,
         recharging: {
             name: String,
-            enabled: Number,
+            enabled: Boolean,
         },
         semiInvulnerable: Boolean,
         substituteHP: Number,
