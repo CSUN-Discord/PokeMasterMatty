@@ -14,6 +14,7 @@ const trainerSchema = new Schema({
         background: String,
         trainerSprite: String
     },
+    money: Number,
     battling: Boolean,
     achievements: Map,
     badges: Map,

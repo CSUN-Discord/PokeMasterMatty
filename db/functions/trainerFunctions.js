@@ -150,7 +150,29 @@ module.exports = {
         } catch (e) {
             console.log(e);
         }
-    }
+    },
+
+    setMoney: async function (userId, money) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $set: {
+                            money: money
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
 }
 
 async function addPokemonToTeam(userId, pokemon) {
@@ -215,6 +237,7 @@ async function addUser(user) {
                         background: "/media/trainer-card/backgroundsOriginals/general/(1).png",
                         trainerSprite: "/media/trainer-card/sprites/heartGold-soulSilver/(1).png"
                     },
+                    money: 3000,
                     battling: false,
                     achievements: new Map(),
                     badges: new Map(),

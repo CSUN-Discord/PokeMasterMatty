@@ -88,7 +88,7 @@ const battlingSchema = new Schema({
         },
         semiInvulnerable: Boolean,
         substituteHP: Number,
-        takingAim: Boolean,
+        takingAim: Number,
         thrashing: {
             name: String,
             length: Number
@@ -151,7 +151,7 @@ const battlingSchema = new Schema({
         },
         semiInvulnerable: Boolean,
         substituteHP: Number,
-        takingAim: Boolean,
+        takingAim: Number,
         thrashing: {
             name: String,
             length: Number

@@ -93,7 +93,7 @@ module.exports = {
                                 },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
-                                takingAim: false,
+                                takingAim: 0,
                                 thrashing: {
                                     name: "",
                                     length: 0
@@ -156,7 +156,7 @@ module.exports = {
                                 },
                                 semiInvulnerable: false,
                                 substituteHP: 0,
-                                takingAim: false,
+                                takingAim: 0,
                                 thrashing: {
                                     name: "",
                                     length: 0
@@ -233,13 +233,14 @@ module.exports = {
         }
     },
 
-    updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus) {
+    updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus, userOne) {
         try {
             battlingSchema
                 .updateOne({
                         _id: objectId
                     },
                     {
+                        userOne: userOne,
                         userOneBag: userOneBag,
                         userOneCurrentPokemon: userOneCurrentPokemon,
                         userOneStatStage: userOneStatStage,

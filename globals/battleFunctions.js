@@ -146,26 +146,38 @@ module.exports = {
 
             }
             console.log(`${inp.user.id}spawnBattleRun`)
+        } else if (inp.customId === `${inp.user.id}back`) {
+            row = module.exports.setRowDefault(row, inp)
+
+            return {
+                content: "_ _",
+                embedDetails: createEmbedDefault(battlingDetails),
+                components: [row]
+            };
         } else if (inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}` ||
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}` ||
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`
+            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}` ||
+            inp.customId === `${inp.user.id}Struggle`
         ) {
             //user used a move
 
             //reset flee count
             battlingFunctions.setFleeCount(battlingDetails._id, 0)
 
-            let enemyMove = getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+            let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+            enemyMove = await moveListFunctions.getMove(enemyMove);
 
+            // console.log("enemy move", enemyMove)
             //program torment and charging move, and recharging
+
             let userMoveName = inp.customId.replace(inp.user.id, "");
-            let userMove = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.find(object => object.name === userMoveName);
+            // let userMove = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.find(object => object.name === userMoveName);
+            let userMove = await moveListFunctions.getMove(userMoveName);
 
             if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
-                row = module.exports.setRowDefault(row, inp)
                 return {
-                    content: "The battle has ended due to a pokemon fainting.",
+                    content: "The battle has ended.",
                     embedDetails: module.exports.createEmbedPVM(battlingDetails),
                     components: []
                 };
@@ -177,14 +189,6 @@ module.exports = {
                     components: [row]
                 };
             }
-        } else if (inp.customId === `${inp.user.id}back`) {
-            row = module.exports.setRowDefault(row, inp)
-
-            return {
-                content: "_ _",
-                embedDetails: createEmbedDefault(battlingDetails),
-                components: [row]
-            };
         }
         row = module.exports.setRowDefault(row, inp)
         return {
@@ -203,6 +207,9 @@ module.exports = {
 
         //update battling to false
         await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+
+        //update set gold
+        await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
 
         //update battling database
         await battlingFunctions.deletePVMBattle(battlingDetails._id);
@@ -263,19 +270,50 @@ module.exports = {
 }
 
 function setRowAttacks(row, battlingDetails, inp) {
-    for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.length; j++) {
+    let currentMoves = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves;
 
+    currentMoves = currentMoves.filter(move => {
+        return move.currentPP > 0;
+    });
+
+    if (battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0) {
         row.addComponents(
             new MessageButton()
                 .setCustomId(
-                    `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`
+                    `${inp.user.id}${battlingDetails.userOneVolatileStatus.chargingMove.name}`
                 )
                 .setLabel(
-                    `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`
+                    `${battlingDetails.userOneVolatileStatus.chargingMove.name}`
                 )
                 .setStyle('PRIMARY'),
         )
+    } else if (currentMoves.length < 1) {
+        row.addComponents(
+            new MessageButton()
+                .setCustomId(
+                    `${inp.user.id}Struggle`
+                )
+                .setLabel(
+                    `Struggle`
+                )
+                .setStyle('PRIMARY'),
+        )
+    } else {
+        for (let j = 0; j < currentMoves.length; j++) {
+
+            row.addComponents(
+                new MessageButton()
+                    .setCustomId(
+                        `${inp.user.id}${currentMoves[j].name}`
+                    )
+                    .setLabel(
+                        `${currentMoves[j].name}`
+                    )
+                    .setStyle('PRIMARY'),
+            )
+        }
     }
+
     row.addComponents(
         new MessageButton()
             .setCustomId(`${inp.user.id}back`)
@@ -427,32 +465,37 @@ function createEmbedAfterAttackPVM(battlingDetails) {
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp()
 
+    let currentMoves = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves;
+    // currentMoves = currentMoves.filter(move => {
+    //     return move.currentPP > 0;
+    // })
 
-    for (let j = 0; j < battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.length; j++) {
+
+    for (let j = 0; j < currentMoves.length; j++) {
         attackDetailsEmbed.addFields(
             {
-                name: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].name}`,
-                value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].flavorText}`
+                name: `${currentMoves[j].name}`,
+                value: `${currentMoves[j].flavorText}`
             },
             {
                 name: 'PP',
-                value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].currentPP}/${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pp}`,
+                value: `${currentMoves[j].currentPP}/${currentMoves[j].pp}`,
                 inline: true
             },
         )
-        if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pwr == null)
+        if (currentMoves[j].pwr == null)
             attackDetailsEmbed.addField('Power', `0`, true)
         else
-            attackDetailsEmbed.addField('Power', `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].pwr}`, true)
+            attackDetailsEmbed.addField('Power', `${currentMoves[j].pwr}`, true)
         attackDetailsEmbed.addFields(
             {
                 name: 'Type',
-                value: `${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].type}`,
+                value: `${currentMoves[j].type}`,
                 inline: true
             },
             {
                 name: 'Category',
-                value: battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[j].category,
+                value: currentMoves[j].category,
                 inline: true
             }
         )
@@ -592,25 +635,18 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     //check move priority
     // if (userMove.priority > randomPokemonMove.priority) {
     if (1 === 1) {
-
-        if (battleDetails.userOneVolatileStatus.chargingMove.chargingLength > 1) {
-            console.log(`${user.name} is charging up ${battleDetails.userOneVolatileStatus.chargingMove.name}.`)
-            return false;
+        if (await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails) === "whirlwind") {
+            await module.exports.endRandomBattleEncounter("whirlwind", battleDetails);
+            return true;
         }
-        await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp);
-        user.damageTaken = Math.min(userTotalHp, user.damageTaken);
-        randomPokemon.damageTaken = Math.min(pokemonTotalHp, randomPokemon.damageTaken);
 
-        // //check HP of both pokemon, it can hurt itself in confusion
-        // if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
-        //     if (battleDetails.userTwoVolatileStatus.chargingMove.chargingLength > 1) {
-        //         console.log(`${randomPokemon.name} is charging up ${battleDetails.userTwoVolatileStatus.chargingMove.name}.`)
-        //         return false;
-        //     }
-        //     await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp);
-        //     user.damageTaken = Math.min(userTotalHp, user.damageTaken);
-        //     randomPokemon.damageTaken = Math.min(pokemonTotalHp, randomPokemon.damageTaken);
-        // }
+        //check HP of both pokemon, it can hurt itself in confusion
+        if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
+            if (await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails) === "whirlwind") {
+                await module.exports.endRandomBattleEncounter("whirlwind", battleDetails);
+                return true;
+            }
+        }
     } else if (userMove.priority < randomPokemonMove.priority) {
 
         // await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus);
@@ -694,7 +730,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     }
 
     //update battle details in db
-    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus);
+    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
     return false;
     // // console.log(battleDetails)
 }
@@ -709,7 +745,7 @@ function getRandomPokemonMove(pokemon) {
 
     // console.log(moveList)
 
-    if (moveList[0].currentPP < 1) return "Struggle";
+    if (moveList.length < 1 || moveList[0].currentPP < 1) return "Struggle";
 
     let randomMove = pokemon.currentMoves[Math.floor(Math.random() * pokemon.currentMoves.length)];
 
@@ -717,11 +753,13 @@ function getRandomPokemonMove(pokemon) {
         randomMove = pokemon.currentMoves[Math.floor(Math.random() * pokemon.currentMoves.length)];
     }
 
-    return randomMove;
+    return randomMove.name;
 }
 
-async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus, defenderVolatileStatus, totalDefenderHp) {
-    // move = await moveListFunctions.getMove("Burn Up");
+async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus, defenderVolatileStatus, totalDefenderHp, totalAttackerHp, battleDetails) {
+    attackerVolatileStatus.encore.moveToRepeat = move.name;
+
+    // defenderVolatileStatus.typeChange = "dragon";
 
     if (attackerVolatileStatus.encore.encoreLength > 0) {
         move = await moveListFunctions.getMove(attackerVolatileStatus.encore.name);
@@ -782,7 +820,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             console.log(`${attacker.name} snapped out of it's confusion.`)
         } else {
             if (Math.floor(Math.random() * 2) === 0) {
-                console.log(`${attacker.name} hurt itself in it's confusion.`)
                 let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
                 burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
                 let criticalStage = {
@@ -814,6 +851,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let damage = Math.round(((((((2 * attacker.level) / 5) + 2) * 40 * effectiveAtk / effectiveDef) / 50) + 2) * critical * (Math.floor(Math.random() * (101 - 85) + 85) / 100) * burn * 1.001);
 
                 attacker.damageTaken += damage;
+                attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp)
+                console.log(`${attacker.name} hurt itself in it's confusion and did ${damage} dmg`)
                 return;
             }
         }
@@ -829,13 +868,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         return;
     }
 
-    if (defenderVolatileStatus.protection) {
+    if (defenderVolatileStatus.protection && move.name !== "Whirlwind") {
         console.log("enemy pokemon is protected.")
         return;
     }
 
     if (defenderVolatileStatus.semiInvulnerable) {
-        if (!(attackerVolatileStatus.takingAim || move.name === "Toxic" || ((defenderVolatileStatus.chargingMove.name === "Fly" || defenderVolatileStatus.chargingMove.name === "Bounce" ||
+        if (!(attackerVolatileStatus.takingAim > 0 || move.name === "Toxic" || ((defenderVolatileStatus.chargingMove.name === "Fly" || defenderVolatileStatus.chargingMove.name === "Bounce" ||
             defenderVolatileStatus.chargingMove.name === "Sky Drop") && (move.name === "Gust" || move.name === "Hurricane" ||
             move.name === "Sky Uppercut" || move.name === "Smack Down" || move.name === "Thousand Arrows" || move.name === "Thunder" ||
             move.name === "Twister")) || ((defenderVolatileStatus.chargingMove.name === "Fly") && (move.name === "Earthquake" ||
@@ -848,10 +887,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
     console.log(`${attacker.name} used ${move.name} on ${defender.name}`);
 
-    //dmg calculations: https://bulbapedia.bulbagarden.net/wiki/Damage#Damage_calculation
+    if (move.type === "fire" && move.name !== "Fire Spin" && defender.status === "frozen") {
+        defender.status = "normal";
 
-    // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
-    let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
+        console.log(`${move.name} thawed out ${defender.name}`);
+    }
 
     if (move.category === "status") {
         if (attackerVolatileStatus.tauntLength > 0) {
@@ -862,86 +902,201 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         if (defenderVolatileStatus.magicCoat) {
 
         } else {
-
+            switch (move.name) {
+                case "Swords Dance":
+                    attackerStatStage.atk += 2;
+                    console.log("raised atk by 2 stages");
+                    break;
+                case "Whirlwind":
+                    console.log("whirlwind ended the battle");
+                    return "whirlwind";
+                default:
+                    console.log(`${move.name} is not programmed.`);
+                    break;
+            }
         }
         console.log("used status move");
     } else {
-        let level = attacker.level;
-
-        let criticalStage = {
-            0: 24,
-            1: 8,
-            2: 2,
-            3: 1
-        }
-        //update critical stage "criticalStage[0]"
-        let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
-
-        let power = move.pwr || 0;
-
-        // console.log(power)
-
-        let effectiveAtk;
-        let effectiveDef;
-
-        // console.log(move.category)
-        if (move.category === "physical") {
-            console.log("physical")
-            let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
-            // console.log(attacker.base.attack, atkMultiplier, attacker.level)
-            let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
-            // console.log(atkMultiplier, atkElb)
-            let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
-
-            // console.log(atk, attackerStatStage.atk, critical)
-            effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
-
-            let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
-            let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
-            let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
-
-            effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
-        } else {
-            console.log("special")
-            let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
-            let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base["special-attack"], spAtkMultiplier, attacker.level));
-            let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base["special-attack"], getNatureValue("spAtk", attacker.nature), spAtkElb));
-
-            effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
-
-            let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
-            let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base["special-defense"], spDefMultiplier, defender.level));
-            let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base["special-defense"], getNatureValue("spDef", defender.nature), spDefElb));
-
-            effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
-        }
-
-        let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
-
-        let stab = fullDefenderDetails.types.includes(move.type) ? 1.5 : 1;
-
-        let type = getTypeCalculation(move.type, fullDefenderDetails.types);
-
-        // console.log(type)
-        let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
-        burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
-
-        let other = 1;
-
-        let damage = Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
 
         // console.log(power, effectiveAtk, effectiveDef, critical, random, stab, type, burn, other);
 
         switch (move.name) {
-            // case "Karate Chop":
-            //     break;
-            case "Rapid Spin":
-                console.log("unbound if bound")
-                attackerVolatileStatus.bound.length = 0;
+            case "Double Slap":
+                let slapCount;
+                let slapChance = Math.floor(Math.random() * 8);
+                if (slapChance >= 0 && slapChance < 3)
+                    slapCount = 2;
+                else if (slapChance >= 3 && slapChance < 6)
+                    slapCount = 3;
+                else if (slapChance === 6)
+                    slapCount = 4;
+                else if (slapChance === 7)
+                    slapCount = 5;
+
+                for (let i = 0; i < slapCount; i++) {
+                    let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    defender.damageTaken += damage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
+                    console.log(damage);
+                }
+
+                console.log(`dealt dmg ${slapCount} times`)
                 break;
+            case "Comet Punch":
+                let cometCount;
+                let cometChance = Math.floor(Math.random() * 8);
+                if (cometChance >= 0 && cometChance < 3)
+                    cometCount = 2;
+                else if (cometChance >= 3 && cometChance < 6)
+                    cometCount = 3;
+                else if (cometChance === 6)
+                    cometCount = 4;
+                else if (cometChance === 7)
+                    cometCount = 5;
+
+                for (let i = 0; i < cometCount; i++) {
+                    let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus);
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    defender.damageTaken += damage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                    console.log(damage);
+                }
+
+                console.log(`dealt dmg ${cometCount} times`);
+                break;
+            case "Pay Day":
+                let payDayDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                defender.damageTaken += payDayDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                if (battleDetails.userOneTeam[battleDetails.userOneCurrentPokemon - 1] === attacker) {
+                    battleDetails.userOne.money += attacker.level * 2;
+
+                    // console.log(battleDetails.userOne.money)
+                    console.log(`gained ${attacker.level * 2} money`);
+                }
+
+                console.log(payDayDamage);
+                break;
+            case "Fire Punch":
+                let firePunchDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                // console.log(move)
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += firePunchDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let firePunchEffectChance = Math.floor(Math.random() * 100);
+                if (firePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                    console.log("user was burned")
+                    defender.status = "burned";
+                }
+
+                console.log(firePunchDamage);
+                break;
+            case "Ice Punch":
+                let icePunchDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                // console.log(move)
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += icePunchDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let icePunchEffectChance = Math.floor(Math.random() * 100);
+                if (icePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                    console.log("user was frozen")
+                    defender.status = "frozen";
+                }
+
+                console.log(icePunchDamage);
+                break;
+            case "Thunder Punch":
+                let thunderPunchDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                // console.log(move)
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += thunderPunchDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let thunderPunchEffectChance = Math.floor(Math.random() * 100);
+                if (thunderPunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange)) {
+                    console.log("user was paralyzed")
+                    defender.status = "paralyzed";
+                }
+
+                console.log(thunderPunchDamage);
+                break;
+            case "Guillotine":
+                if (defender.level > attacker.level) {
+                    console.log("defender level is too high and the move fails")
+                    return;
+                }
+                let moveDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus) * 10000;
+                move.acc += attacker.level - defender.level;
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += moveDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log("KO");
+                break;
+            case "Razor Wind":
+                if (attackerVolatileStatus.chargingMove.chargingLength === 0) {
+                    attackerVolatileStatus.chargingMove.chargingLength = 2;
+                    attackerVolatileStatus.chargingMove.name = "Razor Wind";
+                    console.log(`${attacker.name} made a whirlwind`);
+                } else {
+                    let razorDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    defender.damageTaken += razorDamage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
+                    console.log(razorDamage);
+                }
+                break;
+            // case "Move":
+            //     let moveDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+            //     defender.damageTaken += moveDamage;
+            //     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+            //     console.log(moveDamage);
+            //     break;
+            // case "Rapid Spin":
+            //     console.log("unbound if bound")
+            //     attackerVolatileStatus.bound.length = 0;
+            //     break;
             default:
+                //moves in default:
+                //pound, karate chop, mega punch, scratch, vise grip, cut, gust, wing attack
+
+
                 // defender.damageTaken += damage;
-                defender.status = "normal";
+                // defender.status = "normal";
 
                 // if (defenderVolatileStatus.bound.length === 0) {
                 //     defenderVolatileStatus.bound.length = 3;
@@ -987,16 +1142,22 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 // defenderVolatileStatus.aquaRing = true;
 
-                defenderVolatileStatus.rooting = true;
+                // defenderVolatileStatus.rooting = true;
 
                 // let dmg = 50;
-                defender.damageTaken += damage;
+
 
                 // if (defenderVolatileStatus.bracing && (totalDefenderHp - defender.damageTaken + dmg) > 1) {
                 //     console.log("lived with 1 hp due to brace")
                 //     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp - 1)
                 // }
 
+                let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += damage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
 
                 console.log(damage);
@@ -1005,6 +1166,92 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     }
 }
 
+async function getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus) {
+    //dmg calculations: https://bulbapedia.bulbagarden.net/wiki/Damage#Damage_calculation
+
+    // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
+    let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
+
+    let level = attacker.level;
+
+    let criticalStage = {
+        0: 24,
+        1: 8,
+        2: 2,
+        3: 1
+    }
+    //update critical stage "criticalStage[0]"
+    // var icon = (area == 1) ? icon1 : (area == 2) ? icon2 : icon0;
+    let stage = 0;
+
+    if ((move.name === "Karate Chop") || (move.name === "Razor Wind"))
+        stage = 1;
+    let critical = (Math.floor(Math.random() * (criticalStage[stage] - 0)) === 0) ? 2 : 1;
+    if (critical === 2)
+        console.log("critical strike");
+
+    let power = move.pwr || 0;
+    if (defenderVolatileStatus.semiInvulnerable && (defenderVolatileStatus.chargingMove.name === "Fly" || defenderVolatileStatus.chargingMove.name === "Bounce")) {
+        power *= 2;
+    }
+
+    // console.log(power)
+
+    let effectiveAtk;
+    let effectiveDef;
+
+    // console.log(move.category)
+    if (move.category === "physical") {
+        console.log("physical")
+        let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
+        // console.log(attacker.base.attack, atkMultiplier, attacker.level)
+        let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+        // console.log(atkMultiplier, atkElb)
+        let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
+
+        // console.log(atk, attackerStatStage.atk, critical)
+        effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
+
+        let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
+        let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
+        let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
+
+        effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
+    } else {
+        console.log("special")
+        let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
+        let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base["special-attack"], spAtkMultiplier, attacker.level));
+        let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base["special-attack"], getNatureValue("spAtk", attacker.nature), spAtkElb));
+
+        effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
+
+        let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
+        let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base["special-defense"], spDefMultiplier, defender.level));
+        let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base["special-defense"], getNatureValue("spDef", defender.nature), spDefElb));
+
+        effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
+    }
+
+    let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
+
+    let stab = 1;
+    if (fullDefenderDetails.types.includes(move.type) || defenderVolatileStatus.typeChange === move.type) {
+        stab = 1.5;
+    }
+
+    // console.log(move)
+    // console.log("move.type", move.type)
+    let type = getTypeCalculation(move.type, fullDefenderDetails.types, defenderVolatileStatus.typeChange, defenderVolatileStatus.identified);
+
+    // console.log(type)
+    let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
+    burn = (attacker.status === "frostbite" && move.category === "special") ? 0.5 : burn;
+
+    let other = 1;
+
+    return Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
+
+}
 
 function getEffectiveAtk(stat, statStage, critical) {
     let statStageMultiplier = {
@@ -1054,6 +1301,47 @@ function getEffectiveDef(stat, statStage, critical) {
     }
 }
 
+function getEffectiveAcc(move, accuracyStage, evasionStage, defenderVolatileStatus) {
+
+    let stageMultiplier = {
+        "-6": 0.33,
+        "-5": 0.375,
+        "-4": 0.429,
+        "-3": 0.5,
+        "-2": 0.6,
+        "-1": 0.75,
+        "0": 1,
+        "1": 1.33,
+        "2": 1.667,
+        "3": 2,
+        "4": 2.33,
+        "5": 2.667,
+        "6": 3,
+    }
+
+    let combinedStage;
+    if (defenderVolatileStatus.identified.activated) {
+        console.log(`defender was identified`)
+        combinedStage = accuracyStage - Math.min(evasionStage, 0)
+    } else {
+        combinedStage = accuracyStage - evasionStage;
+    }
+
+    if (combinedStage > 6) combinedStage = 6;
+    if (combinedStage < -6) combinedStage = -6;
+
+    let other = 1;
+
+    // console.log(stageMultiplier[combinedStage.toString()])
+    let acc = (move.acc || 100) * stageMultiplier[combinedStage.toString()] * other;
+    console.log("acc", acc)
+
+    if (defenderVolatileStatus.takingAim > 0 || (defenderVolatileStatus.telekinesisLength > 0 && (move.name !== "Fissure" || move.name !== "Guillotine" || move.name !== "Horn Drill" || move.name !== "Sheer Cold"))) {
+        return 101;
+    }
+    return acc;
+}
+
 function getEffectiveSpeed(stat, statStage) {
     let statStageMultiplier = {
         "-6": 0.25,
@@ -1074,7 +1362,9 @@ function getEffectiveSpeed(stat, statStage) {
     return stat * statStageMultiplier[statStage.toString()];
 }
 
-function getTypeCalculation(moveType, defenderTypes) {
+function getTypeCalculation(moveType, defenderTypes, typeChange, identified) {
+    // console.log(moveType, defenderTypes, typeChange)
+
     let typeChart = {
         "normal": {
             "rock": 0.5,
@@ -1233,15 +1523,369 @@ function getTypeCalculation(moveType, defenderTypes) {
         }
     }
 
+    let foresightOdorTypeChart = {
+        "normal": {
+            "rock": 0.5,
+            "ghost": 1,
+            "steel": 0.5
+        },
+        "fire": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "dragon": 0.5,
+            "steel": 2
+        },
+        "water": {
+            "fire": 2,
+            "water": 0.5,
+            "grass": 0.5,
+            "ground": 2,
+            "rock": 2,
+            "dragon": 0.5
+        },
+        "grass": {
+            "fire": 0.5,
+            "water": 2,
+            "grass": 0.5,
+            "poison": 0.5,
+            "ground": 2,
+            "flying": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "dragon": 0.5,
+            "steel": 0.5
+        },
+        "electric": {
+            "water": 2,
+            "grass": 0.5,
+            "electric": 0.5,
+            "ground": 0,
+            "flying": 2,
+            "dragon": 0.5
+        },
+        "ice": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 0.5,
+            "ground": 2,
+            "flying": 2,
+            "dragon": 2,
+            "steel": 0.5
+        },
+        "fighting": {
+            "normal": 2,
+            "ice": 2,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "ghost": 1,
+            "dark": 2,
+            "steel": 2,
+            "fairy": 0.5
+        },
+        "poison": {
+            "grass": 2,
+            "poison": 0.5,
+            "ground": 0.5,
+            "rock": 0.5,
+            "ghost": 0.5,
+            "steel": 0,
+            "fairy": 2
+        },
+        "ground": {
+            "fire": 2,
+            "grass": 0.5,
+            "electric": 2,
+            "poison": 2,
+            "flying": 0,
+            "bug": 0.5,
+            "rock": 2,
+            "steel": 2
+        },
+        "flying": {
+            "grass": 2,
+            "electric": 0.5,
+            "fighting": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "steel": 0.5
+        },
+        "psychic": {
+            "fighting": 2,
+            "poison": 2,
+            "psychic": 0.5,
+            "dark": 0,
+            "steel": 0.5
+        },
+        "bug": {
+            "fire": 0.5,
+            "grass": 2,
+            "fighting": 0.5,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 2,
+            "dark": 2,
+            "steel": 0.5,
+            "fairy": 0.5
+        },
+        "rock": {
+            "fire": 2,
+            "ice": 2,
+            "fighting": 0.5,
+            "ground": 0.5,
+            "flying": 2,
+            "bug": 2,
+            "steel": 0.5
+        },
+        "ghost": {
+            "normal": 0,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5
+        },
+        "dragon": {
+            "dragon": 2,
+            "steel": 0.5,
+            "fairy": 0
+        },
+        "dark": {
+            "fighting": 0.5,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5,
+            "fairy": 0.5
+        },
+        "steel": {
+            "fire": 0.5,
+            "water": 0.5,
+            "electric": 0.5,
+            "ice": 2,
+            "rock": 2,
+            "steel": 0.5,
+            "fairy": 2
+        },
+        "fairy": {
+            "fire": 0.5,
+            "fighting": 2,
+            "poison": 0.5,
+            "dragon": 2,
+            "dark": 2,
+            "steel": 0.5
+        }
+    }
+
+    let miracleTypeChart = {
+        "normal": {
+            "rock": 0.5,
+            "ghost": 1,
+            "steel": 0.5
+        },
+        "fire": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "dragon": 0.5,
+            "steel": 2
+        },
+        "water": {
+            "fire": 2,
+            "water": 0.5,
+            "grass": 0.5,
+            "ground": 2,
+            "rock": 2,
+            "dragon": 0.5
+        },
+        "grass": {
+            "fire": 0.5,
+            "water": 2,
+            "grass": 0.5,
+            "poison": 0.5,
+            "ground": 2,
+            "flying": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "dragon": 0.5,
+            "steel": 0.5
+        },
+        "electric": {
+            "water": 2,
+            "grass": 0.5,
+            "electric": 0.5,
+            "ground": 0,
+            "flying": 2,
+            "dragon": 0.5
+        },
+        "ice": {
+            "fire": 0.5,
+            "water": 0.5,
+            "grass": 2,
+            "ice": 0.5,
+            "ground": 2,
+            "flying": 2,
+            "dragon": 2,
+            "steel": 0.5
+        },
+        "fighting": {
+            "normal": 2,
+            "ice": 2,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 0.5,
+            "bug": 0.5,
+            "rock": 2,
+            "ghost": 1,
+            "dark": 2,
+            "steel": 2,
+            "fairy": 0.5
+        },
+        "poison": {
+            "grass": 2,
+            "poison": 0.5,
+            "ground": 0.5,
+            "rock": 0.5,
+            "ghost": 0.5,
+            "steel": 0,
+            "fairy": 2
+        },
+        "ground": {
+            "fire": 2,
+            "grass": 0.5,
+            "electric": 2,
+            "poison": 2,
+            "flying": 0,
+            "bug": 0.5,
+            "rock": 2,
+            "steel": 2
+        },
+        "flying": {
+            "grass": 2,
+            "electric": 0.5,
+            "fighting": 2,
+            "bug": 2,
+            "rock": 0.5,
+            "steel": 0.5
+        },
+        "psychic": {
+            "fighting": 2,
+            "poison": 2,
+            "psychic": 0.5,
+            "dark": 1,
+            "steel": 0.5
+        },
+        "bug": {
+            "fire": 0.5,
+            "grass": 2,
+            "fighting": 0.5,
+            "poison": 0.5,
+            "flying": 0.5,
+            "psychic": 2,
+            "dark": 2,
+            "steel": 0.5,
+            "fairy": 0.5
+        },
+        "rock": {
+            "fire": 2,
+            "ice": 2,
+            "fighting": 0.5,
+            "ground": 0.5,
+            "flying": 2,
+            "bug": 2,
+            "steel": 0.5
+        },
+        "ghost": {
+            "normal": 0,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5
+        },
+        "dragon": {
+            "dragon": 2,
+            "steel": 0.5,
+            "fairy": 0
+        },
+        "dark": {
+            "fighting": 0.5,
+            "psychic": 2,
+            "ghost": 2,
+            "dark": 0.5,
+            "fairy": 0.5
+        },
+        "steel": {
+            "fire": 0.5,
+            "water": 0.5,
+            "electric": 0.5,
+            "ice": 2,
+            "rock": 2,
+            "steel": 0.5,
+            "fairy": 2
+        },
+        "fairy": {
+            "fire": 0.5,
+            "fighting": 2,
+            "poison": 0.5,
+            "dragon": 2,
+            "dark": 2,
+            "steel": 0.5
+        }
+    }
+
+
     let multiplier = 1;
 
     // console.log(typeChart[moveType]["steel"])
-    // console.log(typeChart[defenderTypes[0]] || 1)
-    // console.log(typeChart[defenderTypes[1]] || 1)
+    // console.log(typeChart[moveType][defenderTypes[0]])
+    // console.log(typeChart[moveType][defenderTypes[1]])
+    // console.log(typeChart[moveType][typeChange])
 
     for (let i = 0; i < defenderTypes.length; i++) {
-        multiplier *= typeChart[moveType][defenderTypes[i]] || 1;
+        if (identified.activated) {
+            if (identified.name === "Foresight" || identified.name === "Odor Sleuth") {
+
+                multiplier *= foresightOdorTypeChart[moveType][defenderTypes[i]] || 1;
+
+                if (typeChange !== "") {
+                    multiplier *= foresightOdorTypeChart[moveType][typeChange] || 1;
+                }
+
+            } else if (identified.name === "Miracle Eye") {
+
+                multiplier *= miracleTypeChart[moveType][defenderTypes[i]] || 1;
+
+                if (typeChange !== "") {
+                    multiplier *= miracleTypeChart[moveType][typeChange] || 1;
+                }
+
+            }
+        } else {
+
+            multiplier *= typeChart[moveType][defenderTypes[i]] || 1;
+
+            if (typeChange !== "") {
+                multiplier *= typeChart[moveType][typeChange] || 1;
+            }
+
+        }
     }
+
+
+    // console.log(multiplier)
+
+    if (multiplier === 0)
+        console.log("no effect");
+    else if (multiplier < 1)
+        console.log("not very effective");
+    else if (multiplier > 1)
+        console.log("super effective");
 
     return multiplier;
 }
@@ -1342,9 +1986,9 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
 
     // console.log(volatileStatus)
     if (volatileStatus.drowsy === 1) {
-        console.log("test")
+        // console.log("test")
         if (pokemon.status === "normal") {
-            console.log("test2")
+            // console.log("test2")
             volatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
             pokemon.status = "sleeping";
             console.log(`Due to it's drowsiness ${pokemon.name} fell asleep.`)
@@ -1364,6 +2008,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
         volatileStatus.encore.encoreLength--;
     }
     volatileStatus.flinch = false;
+
     if (volatileStatus.healBlockLength > 0) {
         volatileStatus.healBlockLength--;
     }
@@ -1400,6 +2045,11 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
     if (volatileStatus.tauntLength > 0) {
         volatileStatus.tauntLength--;
     }
+
+    if (volatileStatus.takingAim > 0) {
+        volatileStatus.takingAim--;
+    }
+
     // volatileStatus.telekinesisLength = Math.max(0, volatileStatus.telekinesisLength--);
     if (volatileStatus.telekinesisLength > 0) {
         volatileStatus.telekinesisLength--
@@ -1409,9 +2059,6 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
 
     if (volatileStatus.chargingMove.chargingLength > 0) {
         volatileStatus.chargingMove.chargingLength--;
-        if (volatileStatus.chargingMove.chargingLength === 1) {
-            volatileStatus.semiInvulnerable = false;
-        }
     }
 
     volatileStatus.magicCoat = false;
@@ -1437,3 +2084,15 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
     // return pokemon.damageTaken >= totalHp;
 }
 
+async function isType(pokemon, type, typeChange) {
+    pokemon = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+
+    if (typeChange === type)
+        return true;
+    for (let i = 0; i < pokemon.types.length; i++) {
+        if (pokemon.types[i] === "fire")
+            return true;
+    }
+
+    return false;
+}

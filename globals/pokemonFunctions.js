@@ -195,10 +195,38 @@ function isFemale(malePercentage) {
 }
 
 async function setMoves(currentLevel, defaultPokemon) {
+    //partial complete:
+
+    let allProgrammedMoves = new Set([
+        "Pound",
+        "Karate Chop",
+        "Double Slap",
+        "Comet Punch",
+        "Mega Punch",
+        "Pay Day",
+        "Fire Punch",
+        "Ice Punch",
+        "Thunder Punch",
+        "Scratch",
+        "Vise Grip",
+        "Guillotine",
+        "Razor Wind",
+        "Swords Dance",
+        "Cut",
+        "Gust",
+        "Wing Attack",
+        "Whirlwind"
+    ]);
 
     let moves = defaultPokemon.moves.filter(obj => {
         return obj.level <= currentLevel;
     })
+
+    moves = moves.filter(obj => {
+        return allProgrammedMoves.has(obj.name)
+    })
+
+    // console.log(moves)
 
     for (let i = 0; i < moves.length; i++) {
         await moveListFunctions.getMove(moves[i].name).then((doc) => {
