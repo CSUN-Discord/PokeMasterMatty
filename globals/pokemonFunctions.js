@@ -215,7 +215,25 @@ async function setMoves(currentLevel, defaultPokemon) {
         "Cut",
         "Gust",
         "Wing Attack",
-        "Whirlwind"
+        "Whirlwind",
+        "Fly",
+        "Bind",
+        "Slam",
+        "Vine Whip",
+        "Stomp",
+        "Double Kick",
+        "Mega Kick",
+        "Jump Kick",
+        "Rolling Kick",
+        "Sand Attack",
+        "Headbutt",
+        "Horn Attack",
+        "Fury Attack",
+        "Horn Drill",
+        "Tackle",
+        "Body Slam",
+        "Wrap",
+        "Take Down"
     ]);
 
     let moves = defaultPokemon.moves.filter(obj => {
