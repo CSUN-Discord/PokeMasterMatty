@@ -161,7 +161,7 @@ module.exports = {
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}` ||
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
             inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}` ||
-            inp.customId === `${inp.user.id}Struggle`
+            inp.customId === `${inp.user.id}Struggle` || inp.customId === `${inp.user.id}recharge`
         ) {
             //user used a move
 
@@ -169,14 +169,29 @@ module.exports = {
             battlingFunctions.setFleeCount(battlingDetails._id, 0)
 
             let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
-            enemyMove = await moveListFunctions.getMove(enemyMove);
-
-            // console.log("enemy move", enemyMove)
-            //program torment and charging move, and recharging
+            enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
 
             let userMoveName = inp.customId.replace(inp.user.id, "");
-            // let userMove = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves.find(object => object.name === userMoveName);
-            let userMove = await moveListFunctions.getMove(userMoveName);
+            let userMove = (userMoveName !== "recharge") ? await moveListFunctions.getMove(userMoveName) : userMoveName;
+
+
+            //decrease pp
+            if (userMove !== "recharge" && userMove.name !== "Struggle" && battlingDetails.userOneVolatileStatus.thrashing.length === 0) {
+                let currentMoves = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves;
+
+                currentMoves = currentMoves.filter(move => {
+                    return move.name === userMove.name;
+                });
+                currentMoves[0].currentPP--;
+            }
+            if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                currentMoves = currentMoves.filter(move => {
+                    return move.name === enemyMove.name;
+                });
+                currentMoves[0].currentPP--;
+            }
 
             if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
                 return {
@@ -279,6 +294,25 @@ function setRowAttacks(row, battlingDetails, inp) {
         return move.currentPP > 0;
     });
 
+    if (battlingDetails.userOneVolatileStatus.thrashing.length > 0) {
+        currentMoves = currentMoves.filter(move => {
+            return move.name === battlingDetails.userOneVolatileStatus.thrashing.name;
+        });
+    }
+
+    //check encore
+
+    //check torment
+
+    //check disable
+    if (battlingDetails.userOneVolatileStatus.disable.length > 0) {
+        currentMoves = currentMoves.filter(move => {
+            return move.name !== battlingDetails.userOneVolatileStatus.disable.name;
+        });
+    }
+
+    //do an if statement and set move to recharging
+
     if (battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0) {
         row.addComponents(
             new MessageButton()
@@ -290,6 +324,17 @@ function setRowAttacks(row, battlingDetails, inp) {
                 )
                 .setStyle('PRIMARY'),
         )
+    } else if (battlingDetails.userOneVolatileStatus.recharging.enabled) {
+        row.addComponents(
+            new MessageButton()
+                .setCustomId(
+                    `${inp.user.id}recharge`
+                )
+                .setLabel(
+                    `recharge`
+                )
+                .setStyle('PRIMARY'),
+        )
     } else if (currentMoves.length < 1) {
         row.addComponents(
             new MessageButton()
@@ -297,7 +342,7 @@ function setRowAttacks(row, battlingDetails, inp) {
                     `${inp.user.id}Struggle`
                 )
                 .setLabel(
-                    `Struggle`
+                    `struggle`
                 )
                 .setStyle('PRIMARY'),
         )
@@ -327,6 +372,8 @@ function setRowAttacks(row, battlingDetails, inp) {
 }
 
 function setRowPokemon(row, battlingDetails, inp) {
+    //cant swap pokemon if user is using a recharge move
+
     for (let j = 0; j < battlingDetails.userOneTeam.length; j++) {
 
         const name = battlingDetails.userOneTeam[j].nickname || battlingDetails.userOneTeam[j].name
@@ -638,16 +685,38 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     //check move priority
     // if (userMove.priority > randomPokemonMove.priority) {
     if (1 === 1) {
-        if (await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails) === "whirlwind") {
-            await module.exports.endRandomBattleEncounter("whirlwind", battleDetails);
-            return true;
+        // let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
+        // if (moveOutput != null) {
+        //     await module.exports.endRandomBattleEncounter(moveOutput, battleDetails);
+        //     return true;
+        // }
+        if (battleDetails.userOneVolatileStatus.recharging.enabled) {
+            console.log(`user pokemon is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+            battleDetails.userOneVolatileStatus.recharging.enabled = false;
+        } else {
+            let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
+            if (moveOutput != null) {
+                await module.exports.endRandomBattleEncounter(moveOutput, battleDetails);
+                return true;
+            }
         }
 
         //check HP of both pokemon, it can hurt itself in confusion
         if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
-            if (await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails) === "whirlwind") {
-                await module.exports.endRandomBattleEncounter("whirlwind", battleDetails);
-                return true;
+            // let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
+            // if (moveOutput != null) {
+            //     await module.exports.endRandomBattleEncounter(moveOutput, battleDetails);
+            //     return true;
+            // }
+            if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
+                console.log(`enemy pokemon is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                battleDetails.userTwoVolatileStatus.recharging.enabled = false;
+            } else {
+                let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
+                if (moveOutput != null) {
+                    await module.exports.endRandomBattleEncounter(moveOutput, battleDetails);
+                    return true;
+                }
             }
         }
     } else if (userMove.priority < randomPokemonMove.priority) {
@@ -742,6 +811,8 @@ function getRandomPokemonMove(pokemon) {
 
     // console.log(pokemon.currentMoves)
 
+    //need to do the same move checks used on user
+
     let moveList = pokemon.currentMoves.sort((a, b) => {
         return b.currentPP - a.currentPP;
     })
@@ -762,17 +833,27 @@ function getRandomPokemonMove(pokemon) {
 async function executeMove(attacker, defender, move, attackerStatStage, defenderStatStage, attackerVolatileStatus, defenderVolatileStatus, totalDefenderHp, totalAttackerHp, battleDetails) {
     attackerVolatileStatus.semiInvulnerable = false;
 
-    attackerVolatileStatus.encore.moveToRepeat = move.name;
+    if (attackerVolatileStatus.encore.encoreLength === 0) {
+        attackerVolatileStatus.encore.moveToRepeat = move.name;
+    }
 
+    if (attackerVolatileStatus.disable.length === 0) {
+        attackerVolatileStatus.disable.name = move.name;
+    } else {
+        if (attackerVolatileStatus.disable.name === move.name) {
+            console.log("move fails because it is disabled")
+            return;
+        }
+    }
 
     // defenderVolatileStatus.typeChange = "dragon";
 
-    if (attackerVolatileStatus.encore.encoreLength > 0) {
-        move = await moveListFunctions.getMove(attackerVolatileStatus.encore.name);
-        //decrease pp for move should be at the end not here
-        //if cant decrease pp then use struggle
-        console.log(`due to encore move was changed to ${move.name}`);
-    }
+    // if (attackerVolatileStatus.encore.encoreLength > 0) {
+    //     move = await moveListFunctions.getMove(attackerVolatileStatus.encore.name);
+    //     //decrease pp for move should be at the end not here
+    //     //if cant decrease pp then use struggle
+    //     console.log(`due to encore move was changed to ${move.name}`);
+    // }
 
     defenderVolatileStatus.mimicLastOpponentMove = move.name;
 
@@ -874,7 +955,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         return;
     }
 
-    if (defenderVolatileStatus.protection && move.name !== "Whirlwind" && move.name !== "Jump Kick") {
+    if (defenderVolatileStatus.protection && move.name !== "Whirlwind" && move.name !== "Roar" && move.name !== "Jump Kick") {
         console.log("enemy pokemon is protected.")
         return;
     }
@@ -910,15 +991,158 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         } else {
             switch (move.name) {
                 case "Swords Dance":
-                    attackerStatStage.atk += 2;
+                    attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 2);
                     console.log("raised atk by 2 stages");
                     break;
                 case "Whirlwind":
                     console.log("whirlwind ended the battle");
                     return "whirlwind";
                 case "Sand Attack":
-                    console.log("whirlwind ended the battle");
-                    defenderStatStage.accuracy--;
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+
+                    if (defenderVolatileStatus.mistLength > 0) {
+                        console.log("mist covers the opponent and the attack misses")
+                        return;
+                    }
+
+                    console.log("reduced enemy's accuracy");
+                    defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
+                    break;
+                case "Tail Whip":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+
+                    if (defenderVolatileStatus.mistLength > 0) {
+                        console.log("mist covers the opponent and the attack misses")
+                        return;
+                    }
+
+                    console.log("decreased enemy's defense");
+                    defenderStatStage.def = Math.max(-6, defenderStatStage.def - 1)
+                    break;
+                case "Leer":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+
+                    if (defenderVolatileStatus.mistLength > 0) {
+                        console.log("mist covers the opponent and the attack misses")
+                        return;
+                    }
+
+                    console.log("decreased enemy's defense");
+                    defenderStatStage.def = Math.max(-6, defenderStatStage.def - 1)
+                    break;
+                case "Growl":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+
+                    if (defenderVolatileStatus.mistLength > 0) {
+                        console.log("mist covers the opponent and the attack misses")
+                        return;
+                    }
+
+                    console.log("decreased enemy's attack");
+                    defenderStatStage.atk = Math.max(-6, defenderStatStage.atk - 1);
+                    break;
+                case "Roar":
+                    console.log("Roar ended the battle");
+                    return "roar";
+                case "Sing":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    if (defender.status === "normal") {
+                        console.log("enemy was put to sleep")
+                        defender.status = "sleeping";
+                        defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
+                    } else {
+                        console.log("move failed")
+                    }
+                    break
+                case "Supersonic":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    if (attackerVolatileStatus.confusionLength === 0) {
+                        console.log("enemy is confused")
+                        attackerVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
+                    } else {
+                        console.log("move failed");
+                    }
+                    break
+                case "Disable":
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    if (defenderVolatileStatus.disable.length === 0 && defenderVolatileStatus.disable.name !== "") {
+                        defenderVolatileStatus.disable.length = 5;
+                        console.log(`${defenderVolatileStatus.disable.name} is disabled`)
+                    } else {
+                        console.log("move failed");
+                    }
+
+                    break;
+                case "Mist":
+                    attackerVolatileStatus.mistLength = 6;
+                    console.log("a mist has enveloped the battlefield")
+                    break;
+                case "Haze":
+                    statReset(attackerStatStage);
+                    statReset(defenderStatStage);
+
+                function statReset(statStage) {
+                    statStage.atk = 0;
+                    statStage.def = 0;
+                    statStage.spAtk = 0;
+                    statStage.spDef = 0;
+                    statStage.speed = 0;
+                    statStage.evasion = 0;
+                    statStage.accuracy = 0;
+                }
+
+                    console.log("everyone's battle stats have been reset.")
                     break;
                 default:
                     console.log(`${move.name} is not programmed.`);
@@ -1201,7 +1425,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken += stompDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
-                if (Math.min(Math.random() * 10) < 3) {
+                let stompEffectChance = Math.floor(Math.random() * 100);
+                if (stompEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
                     console.log("made opponent flinch")
                 }
@@ -1227,7 +1452,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
                 break;
             case "Jump Kick":
-                let crashDamage = totalDefenderHp / 2;
+                let crashDamage = Math.round(totalDefenderHp / 2);
                 if (defenderVolatileStatus.protection) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
@@ -1275,7 +1500,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken += rollingKickDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
-                if (Math.min(Math.random() * 10) < 3) {
+                let rollingKickEffectChance = Math.floor(Math.random() * 100);
+                if (rollingKickEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
                     console.log("made opponent flinch")
                 }
@@ -1296,7 +1522,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken += headbuttDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
-                if (Math.min(Math.random() * 10) < 3) {
+                let headbuttEffectChance = Math.floor(Math.random() * 100);
+                if (headbuttEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
                     console.log("made opponent flinch")
                 }
@@ -1370,7 +1597,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken += bodySlamDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
-                if (Math.min(Math.random() * 10) < 3 && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "normal", defenderVolatileStatus.typeChange)) {
+                let bodySlamEffectChance = Math.floor(Math.random() * 100);
+                if (bodySlamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "normal", defenderVolatileStatus.typeChange)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -1413,15 +1641,473 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
+                let takeDownDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += takeDownDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(takeDownDamage);
+
+                attacker.damageTaken += Math.round(takeDownDamage / 4);
+                attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
+                console.log("recoil damage", Math.round(takeDownDamage / 4));
+                break;
+            case "Thrash":
+                if (attackerVolatileStatus.thrashing.length === 0) {
+                    attackerVolatileStatus.thrashing.length = (Math.floor(Math.random() * 2) === 0) ? 3 : 4;
+                    attackerVolatileStatus.thrashing.name = "Thrash";
+                    console.log(`forced to thrash for ${attackerVolatileStatus.thrashing.length - 1} turns`)
+                }
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let thrashDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += thrashDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(thrashDamage);
+
+                attackerVolatileStatus.thrashing.length--;
+                if (attackerVolatileStatus.thrashing.length === 0) {
+                    attackerVolatileStatus.confusionLength = Math.floor(Math.random() * 4 + 1);
+                    console.log(`thrashing has ended and left your pokemon confused`)
+                }
+                break;
+            case "Double-Edge":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let doubleEdgeDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += doubleEdgeDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(doubleEdgeDamage);
+
+                attacker.damageTaken += Math.round(doubleEdgeDamage / 3);
+                attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
+                console.log("recoil damage", Math.round(doubleEdgeDamage / 3));
+
+                break;
+            case "Poison Sting":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                // console.log(move)
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let poisonStingDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += poisonStingDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let poisonStingEffectChance = Math.floor(Math.random() * 100);
+                if (poisonStingEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                    console.log("enemy was poisoned")
+                    defender.status = "poisoned";
+                }
+
+                console.log(poisonStingDamage);
+                break;
+            case "Twineedle":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                for (let i = 0; i < 2; i++) {
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        continue;
+                    }
+                    let twineedleDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                    defender.damageTaken += twineedleDamage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                    console.log(twineedleDamage);
+                    let twineedleEffectChance = Math.floor(Math.random() * 100);
+                    if (twineedleEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                        console.log("enemy was poisoned")
+                        defender.status = "poisoned";
+                    }
+                }
+                break;
+            case "Pin Missile":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                let pinMissileCount;
+                let pinMissileChance = Math.floor(Math.random() * 100);
+                if (pinMissileChance >= 0 && pinMissileChance < 35)
+                    pinMissileCount = 2;
+                else if (pinMissileChance >= 35 && pinMissileChance < 70)
+                    pinMissileCount = 3;
+                else if (pinMissileChance >= 70 && pinMissileChance < 85)
+                    pinMissileCount = 4;
+                else
+                    pinMissileCount = 5;
+
+                for (let i = 0; i < pinMissileCount; i++) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        continue;
+                    }
+                    let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                    defender.damageTaken += damage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
+                    console.log(damage);
+                }
+
+                console.log(`dealt dmg ${pinMissileCount} times`)
+                break;
+            case "Bite":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let biteDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += biteDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let biteEffectChance = Math.floor(Math.random() * 100);
+                if (biteEffectChance < move.effect_chance) {
+                    defenderVolatileStatus.flinch = true;
+                    console.log("made opponent flinch")
+                }
+                console.log(biteDamage);
+                break;
+            case "Sonic Boom":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += 20;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(20);
+                break;
+            case "Acid":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let acidDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += acidDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(acidDamage);
+
+                let acidChance = Math.floor(Math.random() * 100);
+                if (acidChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
+                    defenderStatStage.spDef = Math.max(-6, defenderStatStage.spDef - 1)
+                    console.log("lowered opponent's special defense")
+                }
+                break;
+            case "Ember":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let emberDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += emberDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let emberEffectChance = Math.floor(Math.random() * 100);
+                if (emberEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                    console.log("enemy was burned")
+                    defender.status = "burned";
+                }
+                console.log(emberDamage);
+                break;
+            case "Flamethrower":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let flamethrowerDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += flamethrowerDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let flamethrowerEffectChance = Math.floor(Math.random() * 100);
+                if (flamethrowerEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                    console.log("enemy was burned")
+                    defender.status = "burned";
+                }
+
+                console.log(flamethrowerDamage);
+                break;
+            case "Ice Beam":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let iceBeamDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += iceBeamDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let iceBeamEffectChance = Math.floor(Math.random() * 100);
+                if (iceBeamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                    console.log("enemy was frozen")
+                    defender.status = "frozen";
+                }
+
+                console.log(iceBeamDamage);
+                break;
+            case "Blizzard":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let blizzardDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += blizzardDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let blizzardEffectChance = Math.floor(Math.random() * 100);
+                if (blizzardEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                    console.log("enemy was frozen")
+                    defender.status = "frozen";
+                }
+
+                console.log(blizzardDamage);
+                break;
+            case "Psybeam":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let psybeamDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += psybeamDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let psybeamChance = Math.floor(Math.random() * 100);
+                if (psybeamChance < move.effect_chance) {
+                    if (attackerVolatileStatus.confusionLength === 0) {
+                        console.log("enemy is confused")
+                        attackerVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
+                    }
+                }
+
+                console.log(psybeamDamage);
+                break;
+            case "Bubble Beam":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let bubbleBeamDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += bubbleBeamDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let bubbleBeamChance = Math.floor(Math.random() * 100);
+                if (bubbleBeamChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
+                    console.log("enemy speed is decreased")
+                    defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 1)
+                }
+
+                console.log(bubbleBeamDamage);
+                break;
+            case "Aurora Beam":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let auroraBeamDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += auroraBeamDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let auroraBeamChance = Math.floor(Math.random() * 100);
+                if (auroraBeamChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
+                    console.log("enemy attack is decreased")
+                    defenderStatStage.atk = Math.max(-6, defenderStatStage.atk - 1)
+                }
+
+                console.log(auroraBeamDamage);
+                break;
+            case "Hyper Beam":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
                 let moveDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
                 defender.damageTaken += moveDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                 console.log(moveDamage);
+                attackerVolatileStatus.recharging.name = move.name;
+                attackerVolatileStatus.recharging.enabled = true;
+                break;
+            case "Submission":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let submissionDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += submissionDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(submissionDamage);
 
-                attacker.damageTaken += Math.round(moveDamage / 4);
+                attacker.damageTaken += Math.round(submissionDamage / 4);
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
-                console.log("recoil damage", Math.round(moveDamage / 4));
+                console.log("recoil damage", Math.round(submissionDamage / 4));
+                break;
+            case "Low Kick":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
 
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let lowKickDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += lowKickDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let lowKickEffectChance = Math.floor(Math.random() * 100);
+                if (lowKickEffectChance < move.effect_chance) {
+                    defenderVolatileStatus.flinch = true;
+                    console.log("made opponent flinch");
+                }
+                console.log(lowKickDamage);
+                break;
+            case "Counter":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                    console.log("move missed");
+                    return;
+                }
+                defender.damageTaken += attackerVolatileStatus.counter;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(attackerVolatileStatus.counter);
+                break;
+            case "Seismic Toss":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let seismicTossDamage = attacker.level;
+                defender.damageTaken += seismicTossDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(seismicTossDamage);
+                break;
+            case "Absorb":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let absorbDamage = attacker.level;
+                defender.damageTaken += absorbDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                //FIX HEALED AMOUNT
+                let healed = Math.round(absorbDamage / 2);
+
+                if (attackerVolatileStatus.healBlockLength === 0) {
+                    attacker.damageTaken -= healed;
+                    attacker.damageTaken = Math.max(0, attacker.damageTaken);
+                    console.log(`absorb health you for ${healed}`);
+                }
+                console.log(absorbDamage);
                 break;
             // case "Move":
             //     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
@@ -1443,8 +2129,9 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             //     break;
             default:
                 //moves in default:
-                //Pound, Karate Chop, Mega Punch, Scratch, Vise Grip, Cut, Gust
-                // Wing Attack, Slam, Vine Whip, Mega Kick, Horn Attack, Tackle
+                //Pound, Karate Chop, Mega Punch, Scratch, Vise Grip, Cut, Gust,
+                // Wing Attack, Slam, Vine Whip, Mega Kick, Horn Attack, Tackle,
+                //Water Gun, Hydro Pump, Surf, Strength
 
 
                 // defender.damageTaken += damage;
@@ -1548,6 +2235,10 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
         console.log("dealing double damage since opponent is in the air");
         power *= 2;
     }
+    if (move.name === "Surf" && defenderVolatileStatus.semiInvulnerable && defenderVolatileStatus.chargingMove.name === "Dive") {
+        console.log("dealing double damage since opponent dove into the water");
+        power *= 2;
+    }
     if (defenderVolatileStatus.minimized && (move.name === "Body Slam" || move.name === "Stomp" || move.name === "Dragon Rush" || move.name === "Steamroller" ||
         move.name === "Heat Crash" || move.name === "Heavy Slam" || move.name === "Flying Press" || move.name === "Malicious Moonsault")) {
         console.log("dealing double damage since opponent is minimized")
@@ -1608,8 +2299,12 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
 
     let other = 1;
 
-    return Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
+    let damage = Math.round(((((((2 * level) / 5) + 2) * power * effectiveAtk / effectiveDef) / 50) + 2) * critical * random * stab * type * burn * other);
 
+    if (move.category === "physical") {
+        defenderVolatileStatus.counter = damage * 2;
+    }
+    return damage;
 }
 
 function getEffectiveAtk(stat, statStage, critical) {
@@ -2286,8 +2981,13 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
     if (volatileStatus.sleepTurnLength > 0)
         volatileStatus.sleepTurnLength--;
 
+    if (volatileStatus.disable.length > 0) {
+        volatileStatus.disable.length--;
+    }
+
     if (volatileStatus.bound.length > 0) {
         volatileStatus.bound.length--;
+
 
         let boundDmg = Math.round(totalHp / 8)
         pokemon.damageTaken += boundDmg;
@@ -2364,6 +3064,10 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
         volatileStatus.drowsy--;
     }
 
+    if (volatileStatus.mistLength > 0) {
+        volatileStatus.mistLength--;
+    }
+
     if (volatileStatus.confusionLength > 0) {
         volatileStatus.confusionLength--;
     }
@@ -2423,6 +3127,8 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
 
     volatileStatus.bracing = false;
 
+    volatileStatus.counter = 0;
+
     if (volatileStatus.chargingMove.chargingLength > 0) {
         volatileStatus.chargingMove.chargingLength--;
     }
@@ -2435,13 +3141,15 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy) {
 
     volatileStatus.protection = false;
 
-    if (pokemon.damageTaken < totalHp && volatileStatus.rooting) {
+
+    //healing should be either the damage amount or what was left if the enemy faints
+    if (volatileStatus.healBlockLength === 0 && pokemon.damageTaken < totalHp && volatileStatus.rooting) {
         pokemon.damageTaken -= Math.round(totalHp / 16);
         pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
         console.log("healed from rooting");
     }
 
-    if (pokemon.damageTaken < totalHp && volatileStatus.aquaRing) {
+    if (volatileStatus.healBlockLength === 0 && pokemon.damageTaken < totalHp && volatileStatus.aquaRing) {
         pokemon.damageTaken -= Math.round(totalHp / 16);
         pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
         console.log("healed from aqua ring");
@@ -2456,7 +3164,7 @@ async function isType(pokemon, type, typeChange) {
     if (typeChange === type)
         return true;
     for (let i = 0; i < pokemon.types.length; i++) {
-        if (pokemon.types[i] === "fire")
+        if (pokemon.types[i] === type)
             return true;
     }
 

@@ -93,7 +93,13 @@ const battlingSchema = new Schema({
             name: String,
             length: Number
         },
+        disable: {
+            name: String,
+            length: Number
+        },
+        mistLength: Number,
         transformed: Boolean,
+        counter: Number
     },
     userTwoVolatileStatus: {
         badlyPoisonTurn: Number,
@@ -156,7 +162,13 @@ const battlingSchema = new Schema({
             name: String,
             length: Number
         },
+        disable: {
+            name: String,
+            length: Number
+        },
+        mistLength: Number,
         transformed: Boolean,
+        counter: Number
     }
 });
 

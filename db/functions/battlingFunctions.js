@@ -98,7 +98,13 @@ module.exports = {
                                     name: "",
                                     length: 0
                                 },
+                                disable: {
+                                    name: "",
+                                    length: 0
+                                },
+                                mistLength: 0,
                                 transformed: false,
+                                counter: 0
                             },
                             userTwoVolatileStatus: {
                                 badlyPoisonTurn: 0,
@@ -161,7 +167,13 @@ module.exports = {
                                     name: "",
                                     length: 0
                                 },
+                                disable: {
+                                    name: "",
+                                    length: 0
+                                },
+                                mistLength: 0,
                                 transformed: false,
+                                counter: 0
                             },
                         },
                     },
