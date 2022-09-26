@@ -21,7 +21,8 @@ const battlingSchema = new Schema({
         spDef: Number,
         speed: Number,
         evasion: Number,
-        accuracy: Number
+        accuracy: Number,
+        crit: Number,
     },
     userTwoStatStage: {
         atk: Number,
@@ -30,7 +31,8 @@ const battlingSchema = new Schema({
         spDef: Number,
         speed: Number,
         evasion: Number,
-        accuracy: Number
+        accuracy: Number,
+        crit: Number,
     },
     userOneVolatileStatus: {
         badlyPoisonTurn: Number,
@@ -99,7 +101,9 @@ const battlingSchema = new Schema({
         },
         mistLength: Number,
         transformed: Boolean,
-        counter: Number
+        counter: Number,
+        lightScreenLength: Number,
+        reflectLength: Number
     },
     userTwoVolatileStatus: {
         badlyPoisonTurn: Number,
@@ -168,7 +172,9 @@ const battlingSchema = new Schema({
         },
         mistLength: Number,
         transformed: Boolean,
-        counter: Number
+        counter: Number,
+        lightScreenLength: Number,
+        reflectLength: Number
     }
 });
 

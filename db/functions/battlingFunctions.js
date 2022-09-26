@@ -26,7 +26,8 @@ module.exports = {
                                 spDef: 0,
                                 speed: 0,
                                 evasion: 0,
-                                accuracy: 0
+                                accuracy: 0,
+                                crit: 0,
                             },
                             userOneStatStage: {
                                 atk: 0,
@@ -35,7 +36,8 @@ module.exports = {
                                 spDef: 0,
                                 speed: 0,
                                 evasion: 0,
-                                accuracy: 0
+                                accuracy: 0,
+                                crit: 0,
                             },
                             userOneVolatileStatus: {
                                 badlyPoisonTurn: 0,
@@ -104,7 +106,9 @@ module.exports = {
                                 },
                                 mistLength: 0,
                                 transformed: false,
-                                counter: 0
+                                counter: 0,
+                                lightScreenLength: 0,
+                                reflectLength: 0
                             },
                             userTwoVolatileStatus: {
                                 badlyPoisonTurn: 0,
@@ -173,7 +177,9 @@ module.exports = {
                                 },
                                 mistLength: 0,
                                 transformed: false,
-                                counter: 0
+                                counter: 0,
+                                lightScreenLength: 0,
+                                reflectLength: 0
                             },
                         },
                     },
