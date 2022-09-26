@@ -105,7 +105,17 @@ module.exports = {
                                     length: 0
                                 },
                                 mistLength: 0,
-                                transformed: false,
+                                transform: {
+                                    enabled: false,
+                                    details: {
+                                        pokeId: 0,
+                                        name: "String",
+                                        currentMoves: {},
+                                        ivStats: {},
+                                        evLevels: {},
+                                        base: {}
+                                    }
+                                },
                                 counter: 0,
                                 lightScreenLength: 0,
                                 reflectLength: 0
@@ -176,7 +186,17 @@ module.exports = {
                                     length: 0
                                 },
                                 mistLength: 0,
-                                transformed: false,
+                                transform: {
+                                    enabled: false,
+                                    details: {
+                                        pokeId: 0,
+                                        name: "String",
+                                        currentMoves: {},
+                                        ivStats: {},
+                                        evLevels: {},
+                                        base: {}
+                                    }
+                                },
                                 counter: 0,
                                 lightScreenLength: 0,
                                 reflectLength: 0

@@ -100,7 +100,17 @@ const battlingSchema = new Schema({
             length: Number
         },
         mistLength: Number,
-        transformed: Boolean,
+        transform: {
+            enabled: Boolean,
+            details: {
+                pokeId: Number,
+                name: String,
+                currentMoves: Schema.Types.Mixed,
+                ivStats: Schema.Types.Mixed,
+                evLevels: Schema.Types.Mixed,
+                base: Schema.Types.Mixed
+            }
+        },
         counter: Number,
         lightScreenLength: Number,
         reflectLength: Number
@@ -171,7 +181,17 @@ const battlingSchema = new Schema({
             length: Number
         },
         mistLength: Number,
-        transformed: Boolean,
+        transform: {
+            enabled: Boolean,
+            details: {
+                pokeId: Number,
+                name: String,
+                currentMoves: Schema.Types.Mixed,
+                ivStats: Schema.Types.Mixed,
+                evLevels: Schema.Types.Mixed,
+                base: Schema.Types.Mixed
+            }
+        },
         counter: Number,
         lightScreenLength: Number,
         reflectLength: Number
