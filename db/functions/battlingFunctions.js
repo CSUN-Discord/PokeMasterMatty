@@ -118,7 +118,8 @@ module.exports = {
                                 },
                                 counter: 0,
                                 lightScreenLength: 0,
-                                reflectLength: 0
+                                reflectLength: 0,
+                                conversion: false
                             },
                             userTwoVolatileStatus: {
                                 badlyPoisonTurn: 0,
@@ -199,7 +200,8 @@ module.exports = {
                                 },
                                 counter: 0,
                                 lightScreenLength: 0,
-                                reflectLength: 0
+                                reflectLength: 0,
+                                conversion: false
                             },
                         },
                     },

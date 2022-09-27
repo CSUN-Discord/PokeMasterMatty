@@ -218,6 +218,9 @@ module.exports = {
     },
 
     endRandomBattleEncounter: async function (endType, battlingDetails) {
+
+
+        //check if transform was used
         if (battlingDetails.userOneVolatileStatus.transform.enabled) {
             let volatileStatus = battlingDetails.userOneVolatileStatus;
             let pokemonToUpdate = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1];
@@ -904,8 +907,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         }
     }
 
-    // defenderVolatileStatus.typeChange = "dragon";
-
     // if (attackerVolatileStatus.encore.encoreLength > 0) {
     //     move = await moveListFunctions.getMove(attackerVolatileStatus.encore.name);
     //     //decrease pp for move should be at the end not here
@@ -1202,7 +1203,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus.typeChange) && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus) && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
                         console.log("enemy was poisoned")
                         defender.status = "poisoned";
                     } else {
@@ -1220,7 +1221,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "grass", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "grass", defenderVolatileStatus)) {
                         console.log("enemy was paralyzed")
                         defender.status = "paralyzed";
                     } else {
@@ -1237,7 +1238,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         console.log("move missed");
                         return;
                     }
-                    if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus)) {
                         console.log("enemy was put to sleep")
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
@@ -1274,7 +1275,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         console.log("move missed");
                         return;
                     }
-                    if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "ground", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ground", defenderVolatileStatus)) {
                         console.log("enemy was paralyzed")
                         defender.status = "paralyzed";
                     } else {
@@ -1282,17 +1283,17 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
                     break;
                 case "Toxic":
-                    if (!await isType(attacker, "poison", attackerVolatileStatus.typeChange) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
                         console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
-                    if (!await isType(attacker, "poison", attackerVolatileStatus.typeChange) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
 
-                    if (defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
                         console.log("enemy was badly poisoned")
                         defender.status = "badly poisoned";
                     } else {
@@ -1514,23 +1515,23 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     let glareEffectChance = Math.floor(Math.random() * 100);
-                    if (glareEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                    if (glareEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ghost", defenderVolatileStatus)) {
                         console.log("enemy was paralyzed")
                         defender.status = "paralyzed";
                     }
                     break;
                 case "Poison Gas":
-                    if (!await isType(attacker, "poison", attackerVolatileStatus.typeChange) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
                         console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
-                    if (!await isType(attacker, "poison", attackerVolatileStatus.typeChange) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
 
-                    if (defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                    if (defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
                         console.log("enemy was poisoned")
                         defender.status = "poisoned";
                     } else {
@@ -1588,6 +1589,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         console.log("move failed");
                     }
 
+                    attackerVolatileStatus.conversion = false;
                     attackerVolatileStatus.transform.enabled = true;
                     attackerVolatileStatus.transform.details = {
                         pokeId: attacker.pokeId,
@@ -1637,6 +1639,23 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attacker.base = defender.base;
                     attacker.base.hp = tempBaseHp;
 
+                    break;
+                case "Acid Armor":
+                    console.log("increased defense by 2 (two) stages");
+                    attackerStatStage.def = Math.min(6, attackerStatStage.def + 2);
+                    break;
+                case "Rest":
+                    if (attacker.status === "sleeping") {
+                        console.log("move failed");
+                        return;
+                    }
+                    if (attackerVolatileStatus.bound.length > 0 && attackerVolatileStatus.bound.name === "Uproar")
+                        attacker.status = "sleeping";
+                    attacker.damageTaken = 0;
+                    break;
+                case "Conversion":
+                    console.log("user type is converted");
+                    attackerVolatileStatus.conversion = true;
                     break;
                 default:
                     console.log(`${move.name} is not programmed.`);
@@ -1753,7 +1772,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let firePunchEffectChance = Math.floor(Math.random() * 100);
-                if (firePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                if (firePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
                     console.log("enemy was burned")
                     defender.status = "burned";
                 }
@@ -1777,7 +1796,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let icePunchEffectChance = Math.floor(Math.random() * 100);
-                if (icePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                if (icePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
                     console.log("enemy was frozen")
                     defender.status = "frozen";
                 }
@@ -1801,7 +1820,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let thunderPunchEffectChance = Math.floor(Math.random() * 100);
-                if (thunderPunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange)) {
+                if (thunderPunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -1965,8 +1984,8 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`${attacker.name} missed and took crash damage`);
                     return;
                 }
-                let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
-                if (getTypeCalculation(move.type, fullDefenderDetails.types, defenderVolatileStatus.typeChange, defenderVolatileStatus.identified) === 0) {
+
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                     console.log(`${attacker.name} missed and took crash damage`);
@@ -2092,7 +2111,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let bodySlamEffectChance = Math.floor(Math.random() * 100);
-                if (bodySlamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "normal", defenderVolatileStatus.typeChange)) {
+                if (bodySlamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "normal", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -2207,7 +2226,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let poisonStingEffectChance = Math.floor(Math.random() * 100);
-                if (poisonStingEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                if (poisonStingEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
                     console.log("enemy was poisoned")
                     defender.status = "poisoned";
                 }
@@ -2230,7 +2249,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                     console.log(twineedleDamage);
                     let twineedleEffectChance = Math.floor(Math.random() * 100);
-                    if (twineedleEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus.typeChange) && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                    if (twineedleEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
                         console.log("enemy was poisoned")
                         defender.status = "poisoned";
                     }
@@ -2339,7 +2358,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let emberEffectChance = Math.floor(Math.random() * 100);
-                if (emberEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                if (emberEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
                     console.log("enemy was burned")
                     defender.status = "burned";
                 }
@@ -2361,7 +2380,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let flamethrowerEffectChance = Math.floor(Math.random() * 100);
-                if (flamethrowerEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                if (flamethrowerEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
                     console.log("enemy was burned")
                     defender.status = "burned";
                 }
@@ -2384,7 +2403,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let iceBeamEffectChance = Math.floor(Math.random() * 100);
-                if (iceBeamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                if (iceBeamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
                     console.log("enemy was frozen")
                     defender.status = "frozen";
                 }
@@ -2407,7 +2426,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let blizzardEffectChance = Math.floor(Math.random() * 100);
-                if (blizzardEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus.typeChange)) {
+                if (blizzardEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
                     console.log("enemy was frozen")
                     defender.status = "frozen";
                 }
@@ -2494,10 +2513,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
-                let moveDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
-                defender.damageTaken += moveDamage;
+                let hyperBeamDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += hyperBeamDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                console.log(moveDamage);
+                console.log(hyperBeamDamage);
                 attackerVolatileStatus.recharging.name = move.name;
                 attackerVolatileStatus.recharging.enabled = true;
                 break;
@@ -2550,7 +2569,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
-                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2567,7 +2586,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
-                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2586,7 +2605,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
-                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2618,7 +2637,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("move missed");
                     return;
                 }
-                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2760,7 +2779,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let thunderShockEffectChance = Math.floor(Math.random() * 100);
-                if (thunderShockEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange)) {
+                if (thunderShockEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -2783,7 +2802,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let thunderboltEffectChance = Math.floor(Math.random() * 100);
-                if (thunderboltEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange)) {
+                if (thunderboltEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -2806,7 +2825,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let thunderEffectChance = Math.floor(Math.random() * 100);
-                if (thunderEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange)) {
+                if (thunderEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -2919,7 +2938,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 let nightShadeDamage = attacker.level;
-                if (await isType(defender, "normal", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "normal", defenderVolatileStatus)) {
                     nightShadeDamage = 0;
                 }
 
@@ -2934,6 +2953,9 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 console.log("move not programmed");
                 break;
             case "Self-Destruct":
+                attacker.damageTaken += totalAttackerHp;
+                console.log("user fainted from self-destruction");
+
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
@@ -2945,9 +2967,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let selfDestructDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
                 defender.damageTaken += selfDestructDamage;
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-
-                attacker.damageTaken += totalAttackerHp;
-                console.log("user fainted from self-destruction")
 
                 console.log(selfDestructDamage);
                 break;
@@ -2967,7 +2986,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let lickEffectChance = Math.floor(Math.random() * 100);
-                if (lickEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus.typeChange) && !await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (lickEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ghost", defenderVolatileStatus)) {
                     console.log("enemy was paralyzed")
                     defender.status = "paralyzed";
                 }
@@ -2988,7 +3007,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let smogEffectChance = Math.floor(Math.random() * 100);
-                if (smogEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                if (smogEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
                     console.log("enemy was poisoned")
                     defender.status = "poisoned";
                 }
@@ -3009,7 +3028,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let sludgeEffectChance = Math.floor(Math.random() * 100);
-                if (sludgeEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus.typeChange)) {
+                if (sludgeEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
                     console.log("enemy was poisoned")
                     defender.status = "poisoned";
                 }
@@ -3031,7 +3050,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
 
                 let fireBlastEffectChance = Math.floor(Math.random() * 100);
-                if (fireBlastEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus.typeChange)) {
+                if (fireBlastEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
                     console.log("enemy was burned")
                     defender.status = "burned";
                 }
@@ -3116,7 +3135,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`${attacker.name} missed and took crash damage`);
                     return;
                 }
-                if (await isType(defender, "ghost", defenderVolatileStatus.typeChange)) {
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                     console.log(`${attacker.name} missed and took crash damage`);
@@ -3241,8 +3260,174 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             case "Splash":
                 console.log("nothing happened");
                 break;
+            case "Explosion":
+                attacker.damageTaken += totalAttackerHp;
+                console.log("user fainted from exploding themself")
 
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let explosionDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
 
+                defender.damageTaken += explosionDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                console.log(explosionDamage);
+                break;
+            case "Fury Swipes":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                let furySwipesCount;
+                let furySwipesChance = Math.floor(Math.random() * 100);
+                if (furySwipesChance >= 0 && furySwipesChance < 35)
+                    furySwipesCount = 2;
+                else if (furySwipesChance >= 35 && furySwipesChance < 70)
+                    furySwipesCount = 3;
+                else if (furySwipesChance >= 70 && furySwipesChance < 85)
+                    furySwipesCount = 4;
+                else
+                    furySwipesCount = 5;
+
+                for (let i = 0; i < furySwipesCount; i++) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        continue;
+                    }
+                    let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                    defender.damageTaken += damage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
+                    console.log(damage);
+                }
+
+                console.log(`dealt dmg ${furySwipesCount} times`)
+                break;
+            case "Bonemerang":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                for (let i = 0; i < 2; i++) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                        console.log("move missed");
+                        continue;
+                    }
+                    let damage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                    defender.damageTaken += damage;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp)
+
+                    console.log(damage);
+                }
+                console.log(`dealt dmg 2 times`)
+                break;
+            case "Rock Slide":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let rockSlideDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += rockSlideDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let rockSlideEffectChance = Math.floor(Math.random() * 100);
+                if (rockSlideEffectChance < move.effect_chance) {
+                    defenderVolatileStatus.flinch = true;
+                    console.log("made opponent flinch")
+                }
+                console.log(rockSlideDamage);
+                break;
+            case "Tri Attack":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let triAttackDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += triAttackDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let triAttackEffectChance = Math.floor(Math.random() * 100);
+                if (triAttackEffectChance < move.effect_chance) {
+                    let randomStatus = Math.floor(Math.random() * 3);
+                    if (randomStatus === 0) {
+                        if (defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
+                            console.log("enemy was frozen")
+                            defender.status = "frozen";
+                        }
+                    } else if (randomStatus === 1) {
+                        if (defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
+                            console.log("enemy was burned")
+                            defender.status = "burned";
+                        }
+                    } else {
+                        if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "normal", defenderVolatileStatus)) {
+                            console.log("enemy was paralyzed")
+                            defender.status = "paralyzed";
+                        }
+                    }
+                }
+                console.log(triAttackDamage);
+                break;
+            case "Super Fang":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                if (await isType(defender, "ghost", defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+
+                let superFangDamage = Math.max((Math.floor(totalDefenderHp - defender.damageTaken) / 2), 1);
+                defender.damageTaken += superFangDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(superFangDamage);
+                break;
+            case "Struggle":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let struggleDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += struggleDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                console.log(struggleDamage);
+
+                attacker.damageTaken += Math.round(struggleDamage / 2);
+                attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
+                console.log("recoil damage", Math.round(struggleDamage / 2));
+                break;
             // case "Move":
             //     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
             //         console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
@@ -3308,6 +3493,10 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
 
     // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
     let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
+    if (defenderVolatileStatus.conversion) {
+        fullDefenderDetails.types = [defender.currentMoves[0].type];
+    }
+    // console.log(fullDefenderDetails.types)
 
     let level = attacker.level;
 
@@ -3321,7 +3510,8 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     // var icon = (area == 1) ? icon1 : (area == 2) ? icon2 : icon0;
     let stage = attackerStatStage.crit;
 
-    if (move.name === "Karate Chop" || move.name === "Razor Wind" || move.name === "Razor Leaf" || move.name === "Sky Attack")
+    if (move.name === "Karate Chop" || move.name === "Razor Wind" || move.name === "Razor Leaf" ||
+        move.name === "Sky Attack" || move.name === "Crabhammer" || move.name === "Slash")
         stage += 1;
     let critical = (Math.floor(Math.random() * criticalStage[stage]) === 0) ? 2 : 1;
     if (critical === 2)
@@ -3380,6 +3570,10 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     }
 
     let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
+
+    if (defenderVolatileStatus.conversion) {
+        fullDefenderDetails.types = [defender.currentMoves[0].type];
+    }
 
     let stab = 1;
     if (fullDefenderDetails.types.includes(move.type) || defenderVolatileStatus.typeChange === move.type) {
@@ -4114,7 +4308,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
         console.log(`bounded by ${volatileStatus.bound.name} did ${boundDmg} dmg`)
 
         if (volatileStatus.bound.length === 0) {
-            console.log("freed from being bound")
+            console.log("freed from being bound");
         }
         // switch (volatileStatus.bound.name) {
         //     case "Bind":
@@ -4280,13 +4474,18 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
     // return pokemon.damageTaken >= totalHp;
 }
 
-async function isType(pokemon, type, typeChange) {
-    pokemon = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+async function isType(pokemon, type, volatileStatus) {
+    let typeChange = volatileStatus.typeChange;
+    let fullPokemon = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+
+    if (volatileStatus.conversion) {
+        fullPokemon.types = [pokemon.currentMoves[0].type];
+    }
 
     if (typeChange === type)
         return true;
-    for (let i = 0; i < pokemon.types.length; i++) {
-        if (pokemon.types[i] === type)
+    for (let i = 0; i < fullPokemon.types.length; i++) {
+        if (fullPokemon.types[i] === type)
             return true;
     }
 

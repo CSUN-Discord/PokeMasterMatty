@@ -347,7 +347,23 @@ async function setMoves(currentLevel, defaultPokemon) {
         // // "Flash",
         // // "Psywave",
         "Splash",
-        ""
+        "Acid Armor",
+        "Crabhammer",
+        "Explosion",
+        "Fury Swipes",
+        "Bonemerang",
+        "Rest",
+        "Rock Slide",
+        // // "Hyper Fang",
+        // // "Sharpen",
+        "Conversion",
+        "Tri Attack",
+        "Super Fang",
+        "Slash",
+        // // // "Substitute",
+        "Struggle",
+        // // //"Sketch",
+
     ]);
 
     let moves = defaultPokemon.moves.filter(obj => {

@@ -113,7 +113,8 @@ const battlingSchema = new Schema({
         },
         counter: Number,
         lightScreenLength: Number,
-        reflectLength: Number
+        reflectLength: Number,
+        conversion: Boolean
     },
     userTwoVolatileStatus: {
         badlyPoisonTurn: Number,
@@ -194,7 +195,8 @@ const battlingSchema = new Schema({
         },
         counter: Number,
         lightScreenLength: Number,
-        reflectLength: Number
+        reflectLength: Number,
+        conversion: Boolean
     }
 });
 
