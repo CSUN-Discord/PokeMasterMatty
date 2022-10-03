@@ -362,7 +362,21 @@ async function setMoves(currentLevel, defaultPokemon) {
         "Slash",
         // // // "Substitute",
         "Struggle",
-        // // //"Sketch",
+        // // // "Sketch",
+        "Triple Kick",
+        // // // "Thief",
+        // // "Spider Web",
+        "Mind Reader",
+        // // "Nightmare",
+        "Flame Wheel",
+        "Snore",
+        "Curse",
+        "Flail",
+        // // // "Conversion 2",
+        "Aeroblast",
+        "Cotton Spore",
+        "Reversal",
+        "Spite"
 
     ]);
 

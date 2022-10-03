@@ -107,6 +107,7 @@ module.exports = {
         } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
             //cant run if escape prevention
             //cant escape if thrash, petal dance or outrage
+            //cant escape if bound or if charging/recharging
 
             const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
             const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
@@ -1014,22 +1015,16 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         return;
     }
 
-    if (defenderVolatileStatus.protection && move.name !== "Whirlwind" && move.name !== "Roar" && move.name !== "Jump Kick") {
+    let movesThatBypassProtect = new Set(["Acupressure", "Aromatic Mist", "Bestow",
+        "Block", "Confide", "Converstion 2", "Curse", "Decorate", "Doom Desire", "Feint",
+        "Flower Shield", "Future Sight", "Hold Hands", "Hyperspace Fury", "Hyperspace Hole",
+        "Mean Look", "Nightmare", "Perish Song", "Phantom Force", "Play Nice", "Psych Up",
+        "Roar", "Role Play", "Rototiller", "Shadow Force", "Sketch", "Spider Web",
+        "Tearful Look", "Teatime", "Transform", "Whirlwind", "Jump Kick", "High Jump Kick"])
+    if (defenderVolatileStatus.protection && !movesThatBypassProtect.has(move.name)) {
         console.log("enemy pokemon is protected.")
         return;
     }
-
-    // if (defenderVolatileStatus.semiInvulnerable) {
-    //     if (!(attackerVolatileStatus.takingAim > 0 || move.name === "Toxic" || ((defenderVolatileStatus.chargingMove.name === "Fly" || defenderVolatileStatus.chargingMove.name === "Bounce" ||
-    //         defenderVolatileStatus.chargingMove.name === "Sky Drop") && (move.name === "Gust" || move.name === "Hurricane" ||
-    //         move.name === "Sky Uppercut" || move.name === "Smack Down" || move.name === "Thousand Arrows" || move.name === "Thunder" ||
-    //         move.name === "Twister")) || ((defenderVolatileStatus.chargingMove.name === "Fly") && (move.name === "Earthquake" ||
-    //         move.name === "Magnitude" || move.name === "Fissure")) || ((defenderVolatileStatus.chargingMove.name === "Dive") &&
-    //         (move.name === "Surf" || move.name === "Whirlpool")))) {
-    //         console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
-    //         return;
-    //     }
-    // }
 
     console.log(`${attacker.name} used ${move.name}`);
 
@@ -1054,6 +1049,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("raised atk by 2 (two) stages");
                     break;
                 case "Whirlwind":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
                     console.log("whirlwind ended the battle");
                     return "whirlwind";
                 case "Sand Attack":
@@ -1062,7 +1061,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1081,7 +1080,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1100,7 +1099,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1119,7 +1118,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1133,6 +1132,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     defenderStatStage.atk = Math.max(-6, defenderStatStage.atk - 1);
                     break;
                 case "Roar":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
                     console.log("Roar ended the battle");
                     return "roar";
                 case "Sing":
@@ -1141,7 +1144,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1159,7 +1162,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1171,7 +1174,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
                     break
                 case "Disable":
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1198,7 +1201,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1216,7 +1219,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1234,7 +1237,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1252,7 +1255,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1271,7 +1274,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1288,7 +1291,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1306,7 +1309,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1327,6 +1330,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("raised atk by 2 (two) stages");
                     break;
                 case "Teleport":
+                    let trappingMoves = new Set(["Anchor Shot", "Block", "Fairy Lock",
+                        "Ingrain", "Jaw Lock", "Mean Look", "No Retreat", "Octolock",
+                        "Shadow Hold", "Spider Web", "Spirit Shackle"]);
+
+                    if (!await isType(attacker, "Ghost", attackerVolatileStatus) && attackerVolatileStatus.escapePrevention.enabled && trappingMoves.has(attackerVolatileStatus.escapePrevention.name)) {
+                        console.log("move failed")
+                        break;
+                    }
                     console.log("teleport ended the battle");
                     return "teleport";
                 case "Mimic":
@@ -1343,7 +1354,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1385,7 +1396,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1404,7 +1415,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1480,7 +1491,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1509,7 +1520,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1526,7 +1537,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (!await isType(attacker, "poison", attackerVolatileStatus) && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1544,7 +1555,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1562,7 +1573,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1580,7 +1591,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1657,6 +1668,75 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log("user type is converted");
                     attackerVolatileStatus.conversion = true;
                     break;
+                case "Spider Web":
+                    if (await isType(defender, "ghost", defenderVolatileStatus)) {
+                        console.log("move failed");
+                        return;
+                    }
+                    defenderVolatileStatus.escapePrevention.enabled = true;
+                    console.log("enemy is prevented from escaping");
+                    break;
+                case "Mind Reader":
+                    attackerVolatileStatus.takingAim = 2;
+                    console.log("won't miss on it's next turn");
+                    break;
+                case "Curse":
+                    if (await isType(attacker, "ghost", attackerVolatileStatus)) {
+                        attacker.damageTaken += Math.round(totalAttackerHp / 2);
+                        attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
+                        console.log("lost half of it's maximum hp", Math.round(totalAttackerHp / 2));
+
+
+                        defenderVolatileStatus.cursed = true;
+                    } else {
+                        console.log("atk and def rose 1 (one) stage while speed dropped 1 (one) stage")
+
+                        attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 1);
+                        attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
+
+                        attackerStatStage.speed = Math.max(-6, defenderStatStage.speed - 1)
+                    }
+                    break;
+                case "Cotton Spore":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+
+                    if (defenderVolatileStatus.mistLength === 0) {
+                        console.log("enemy speed is decreased")
+                        defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 2)
+                    }
+
+                    break;
+                case "Spite":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                        console.log("move missed");
+                        return;
+                    }
+                    if (attackerVolatileStatus.mimicLastOpponentMove === "") {
+                        console.log("move failed");
+                        return;
+                    }
+
+                    let spiteMove = defender.currentMoves.filter((move) => {
+                        return move.name === attackerVolatileStatus.mimicLastOpponentMove;
+                    })
+                    spiteMove[0].currentPP = Math.max(0, spiteMove[0].currentPP - 2);
+
+                    console.log(spiteMove[0])
+                    console.log("decreased enemy's move pp by 2");
+                    break;
                 default:
                     console.log(`${move.name} is not programmed.`);
                     break;
@@ -1686,7 +1766,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     slapCount = 5;
 
                 for (let i = 0; i < slapCount; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -1718,7 +1798,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     cometCount = 5;
 
                 for (let i = 0; i < cometCount; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -1737,7 +1817,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1762,7 +1842,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 // console.log(move)
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1786,7 +1866,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 // console.log(move)
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1810,7 +1890,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 // console.log(move)
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1838,7 +1918,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
                 move.acc += attacker.level - defender.level;
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1859,7 +1939,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1883,7 +1963,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -1900,7 +1980,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1929,7 +2009,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -1952,7 +2032,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 for (let i = 0; i < 2; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -1978,7 +2058,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`enemy was invulnerable so ${attacker.name} missed and took crash damage`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                     console.log(`${attacker.name} missed and took crash damage`);
@@ -2004,7 +2084,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2026,7 +2106,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2060,7 +2140,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     furyAttackCount = 5;
 
                 for (let i = 0; i < furyAttackCount; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -2085,7 +2165,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
                 move.acc += attacker.level - defender.level;
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2101,7 +2181,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2122,7 +2202,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2150,7 +2230,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2173,7 +2253,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2195,7 +2275,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2216,7 +2296,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 // console.log(move)
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2240,7 +2320,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
                 for (let i = 0; i < 2; i++) {
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -2273,7 +2353,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     pinMissileCount = 5;
 
                 for (let i = 0; i < pinMissileCount; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -2293,7 +2373,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2314,7 +2394,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2327,7 +2407,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2348,7 +2428,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2370,7 +2450,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2393,7 +2473,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2416,7 +2496,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2439,7 +2519,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2464,7 +2544,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2487,7 +2567,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2509,7 +2589,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2525,7 +2605,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2544,7 +2624,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2565,7 +2645,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2582,7 +2662,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2601,7 +2681,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2633,7 +2713,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2665,7 +2745,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2683,7 +2763,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -2705,7 +2785,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2725,7 +2805,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2739,7 +2819,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2768,7 +2848,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2791,7 +2871,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2814,7 +2894,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2842,7 +2922,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
                 move.acc += attacker.level - defender.level;
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2864,7 +2944,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -2882,7 +2962,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2907,7 +2987,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2932,7 +3012,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2960,7 +3040,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2976,7 +3056,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -2997,7 +3077,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3018,7 +3098,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3040,7 +3120,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3063,7 +3143,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3103,7 +3183,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -3129,7 +3209,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`enemy was invulnerable so ${attacker.name} missed and took crash damage`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
                     console.log(`${attacker.name} missed and took crash damage`);
@@ -3152,7 +3232,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3184,7 +3264,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3219,7 +3299,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         return;
                     }
@@ -3241,7 +3321,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3268,7 +3348,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3297,7 +3377,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     furySwipesCount = 5;
 
                 for (let i = 0; i < furySwipesCount; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -3318,7 +3398,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
 
                 for (let i = 0; i < 2; i++) {
-                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                         console.log("move missed");
                         continue;
                     }
@@ -3337,7 +3417,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3359,7 +3439,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3395,7 +3475,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3415,7 +3495,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3428,12 +3508,77 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
                 console.log("recoil damage", Math.round(struggleDamage / 2));
                 break;
+            case "Triple Kick":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                let tripleKickDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                for (let i = 1; i <= 3; i++) {
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                        console.log("move missed");
+                        break;
+                    }
+                    defender.damageTaken += tripleKickDamage * i;
+                    defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+                    console.log(tripleKickDamage * i);
+                }
+                break;
+            case "Flame Wheel":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                let flameWheelDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+
+                defender.damageTaken += flameWheelDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let flameWheelEffectChance = Math.floor(Math.random() * 100);
+                if (flameWheelEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
+                    console.log("enemy was burned")
+                    defender.status = "burned";
+                }
+
+                console.log(flameWheelDamage);
+                break;
+            case "Snore":
+                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                    console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
+                    return;
+                }
+                if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                    console.log("move missed");
+                    return;
+                }
+                if (defender.status !== "sleeping") {
+                    console.log("move failed")
+                    return;
+                }
+
+                let snoreDamage = await getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus)
+                defender.damageTaken += snoreDamage;
+                defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
+
+                let snoreEffectChance = Math.floor(Math.random() * 100);
+                if (snoreEffectChance < move.effect_chance) {
+                    defenderVolatileStatus.flinch = true;
+                    console.log("made opponent flinch")
+                }
+                console.log(snoreDamage);
+                break;
             // case "Move":
             //     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
             //         console.log(`Enemy is invulnerable for this turn so ${move.name} missed.`);
             //         return;
             //     }
-            //     if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+            //     if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
             //                         console.log("move missed");
             //                         return;
             //                     }
@@ -3451,7 +3596,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 //Pound, Karate Chop, Mega Punch, Scratch, Vise Grip, Cut, Gust,
                 //Wing Attack, Slam, Vine Whip, Mega Kick, Horn Attack, Tackle,
                 //Water Gun, Hydro Pump, Surf, Strength, Rock Throw, Earthquake,
-                //Quick Attack
+                //Quick Attack, Flail, Aeroblast,
 
 
                 // if (defenderVolatileStatus.drowsy > 0) {
@@ -3469,7 +3614,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus)) {
+                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     console.log("move missed");
                     return;
                 }
@@ -3511,7 +3656,7 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     let stage = attackerStatStage.crit;
 
     if (move.name === "Karate Chop" || move.name === "Razor Wind" || move.name === "Razor Leaf" ||
-        move.name === "Sky Attack" || move.name === "Crabhammer" || move.name === "Slash")
+        move.name === "Sky Attack" || move.name === "Crabhammer" || move.name === "Slash" || move.name === "Aeroblast")
         stage += 1;
     let critical = (Math.floor(Math.random() * criticalStage[stage]) === 0) ? 2 : 1;
     if (critical === 2)
@@ -3530,6 +3675,28 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
         move.name === "Heat Crash" || move.name === "Heavy Slam" || move.name === "Flying Press" || move.name === "Malicious Moonsault")) {
         console.log("dealing double damage since opponent is minimized")
         power *= 2;
+    }
+
+    if (move.name === "Flail" || move.name === "Reversal") {
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.hp, pokemonHpMultiplier, attacker.level));
+        const pokemonTotalHp = Math.round(pokemonFunctions.hpCalculation(attacker.level, attacker.base.hp, pokemonElb));
+
+        let hpPercentage = Math.round(pokemonTotalHp / attacker.damageTaken);
+
+        if (hpPercentage >= 67) {
+            power = 20;
+        } else if (hpPercentage >= 34 && hpPercentage < 67) {
+            power = 40;
+        } else if (hpPercentage >= 20 && hpPercentage < 34) {
+            power = 80;
+        } else if (hpPercentage >= 9 && hpPercentage < 20) {
+            power = 100;
+        } else if (hpPercentage >= 3 && hpPercentage < 9) {
+            power = 120;
+        } else {
+            power = 200;
+        }
     }
 
     // console.log(power)
@@ -3570,10 +3737,6 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     }
 
     let random = Math.floor(Math.random() * (101 - 85) + 85) / 100;
-
-    if (defenderVolatileStatus.conversion) {
-        fullDefenderDetails.types = [defender.currentMoves[0].type];
-    }
 
     let stab = 1;
     if (fullDefenderDetails.types.includes(move.type) || defenderVolatileStatus.typeChange === move.type) {
@@ -3668,7 +3831,7 @@ function getEffectiveDef(stat, statStage, critical) {
     }
 }
 
-function getEffectiveAcc(move, accuracyStage, evasionStage, defenderVolatileStatus) {
+function getEffectiveAcc(move, accuracyStage, evasionStage, defenderVolatileStatus, attackerVolatileStatus) {
 
     if (defenderVolatileStatus.minimized && (move.name === "Body Slam" || move.name === "Stomp" || move.name === "Dragon Rush" || move.name === "Steamroller" ||
         move.name === "Heat Crash" || move.name === "Heavy Slam" || move.name === "Flying Press" || move.name === "Malicious Moonsault")) {
@@ -3676,7 +3839,7 @@ function getEffectiveAcc(move, accuracyStage, evasionStage, defenderVolatileStat
         return 1000;
     }
 
-    if (defenderVolatileStatus.takingAim > 0 || (defenderVolatileStatus.telekinesisLength > 0 && (move.name !== "Fissure" || move.name !== "Guillotine" || move.name !== "Horn Drill" || move.name !== "Sheer Cold"))) {
+    if (attackerVolatileStatus.takingAim > 0 || (defenderVolatileStatus.telekinesisLength > 0 && (move.name !== "Fissure" || move.name !== "Guillotine" || move.name !== "Horn Drill" || move.name !== "Sheer Cold"))) {
         return 101;
     }
 
