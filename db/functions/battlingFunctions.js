@@ -88,7 +88,10 @@ module.exports = {
                                 magneticLevitationLength: 0,
                                 mimicLastOpponentMove: "",
                                 minimized: false,
-                                protection: false,
+                                protection: {
+                                    enabled: false,
+                                    length: 1,
+                                },
                                 recharging: {
                                     name: "",
                                     enabled: false,
@@ -119,7 +122,10 @@ module.exports = {
                                 counter: 0,
                                 lightScreenLength: 0,
                                 reflectLength: 0,
-                                conversion: false
+                                conversion: false,
+                                previousMove: "",
+                                spikes: false,
+                                destinyBond: 0,
                             },
                             userTwoVolatileStatus: {
                                 badlyPoisonTurn: 0,
@@ -170,7 +176,10 @@ module.exports = {
                                 magneticLevitationLength: 0,
                                 mimicLastOpponentMove: "",
                                 minimized: false,
-                                protection: false,
+                                protection: {
+                                    enabled: false,
+                                    length: 1,
+                                },
                                 recharging: {
                                     name: "",
                                     enabled: false,
@@ -201,7 +210,10 @@ module.exports = {
                                 counter: 0,
                                 lightScreenLength: 0,
                                 reflectLength: 0,
-                                conversion: false
+                                conversion: false,
+                                previousMove: "",
+                                spikes: false,
+                                destinyBond: 0,
                             },
                         },
                     },

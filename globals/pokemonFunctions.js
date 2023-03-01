@@ -197,6 +197,7 @@ function isFemale(malePercentage) {
 async function setMoves(currentLevel, defaultPokemon) {
     // = programmed, but not in sw/sh
     // // = not programmed, but it not in sw/sh
+
     let allProgrammedMoves = new Set([
         "Pound",
         // "Karate Chop",
@@ -376,8 +377,27 @@ async function setMoves(currentLevel, defaultPokemon) {
         "Aeroblast",
         "Cotton Spore",
         "Reversal",
-        "Spite"
-
+        "Spite",
+        "Powder Snow",
+        "Protect",
+        "Mach Punch",
+        "Scary Face",
+        "Feint Attack",
+        "Sweet Kiss",
+        "Belly Drum",
+        "Sludge Bomb",
+        "Mud Slap",
+        "Octazooka",
+        "Spikes",
+        "Zap Cannon",
+        // // "Foresight",
+        "Destiny Bond",
+        "Perish Song",
+        "Icy Wind",
+        "Detect",
+        "Bone Rush",
+        "Lock-On",
+        "Outrage",
     ]);
 
     let moves = defaultPokemon.moves.filter(obj => {

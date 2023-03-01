@@ -83,7 +83,10 @@ const battlingSchema = new Schema({
         magneticLevitationLength: Number,
         mimicLastOpponentMove: String,
         minimized: Boolean,
-        protection: Boolean,
+        protection: {
+            enabled: Boolean,
+            length: Number,
+        },
         recharging: {
             name: String,
             enabled: Boolean,
@@ -114,7 +117,10 @@ const battlingSchema = new Schema({
         counter: Number,
         lightScreenLength: Number,
         reflectLength: Number,
-        conversion: Boolean
+        conversion: Boolean,
+        previousMove: String,
+        spikes: Boolean,
+        destinyBond: Number,
     },
     userTwoVolatileStatus: {
         badlyPoisonTurn: Number,
@@ -165,7 +171,10 @@ const battlingSchema = new Schema({
         magneticLevitationLength: Number,
         mimicLastOpponentMove: String,
         minimized: Boolean,
-        protection: Boolean,
+        protection: {
+            enabled: Boolean,
+            length: Number,
+        },
         recharging: {
             name: String,
             enabled: Boolean,
@@ -196,7 +205,10 @@ const battlingSchema = new Schema({
         counter: Number,
         lightScreenLength: Number,
         reflectLength: Number,
-        conversion: Boolean
+        conversion: Boolean,
+        previousMove: String,
+        spikes: Boolean,
+        destinyBond: Number,
     }
 });
 
