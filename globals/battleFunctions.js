@@ -7,7 +7,7 @@ const moveListFunctions = require("../db/functions/moveListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const battlingFunctions = require("../db/functions/battlingFunctions");
-const pokemon = require("pokemon");
+// const pokemon = require("pokemon");
 
 let inputChannel;
 
@@ -338,6 +338,70 @@ module.exports = {
             battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status = "normal";
         }
 
+        if (endType === "randomPokemonFeints") {
+
+            //increase pokemon xp
+            battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].exp += 5000;
+
+            let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
+
+            console.log("leveledup", leveledUp);
+            //if the pokemon leveled up check if it needs to evolve
+            if (leveledUp) {
+                if (isPokemonEvolving(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1])) {
+                    console.log("evolving", isPokemonEvolving(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]));
+
+                    let row = new MessageActionRow()
+                        .addComponents(
+                            new MessageButton()
+                                .setCustomId(`${battlingDetails.userOne.id}stop`)
+                                .setLabel('stop')
+                                .setStyle('Danger'),
+                        )
+
+                    //test if evolving
+                    
+                    let evolvingMsg;
+                    inputChannel.send({content: "Pokemon is evolving!", components: [row]}).then((msg) => {
+                        evolvingMsg = msg;
+                    })
+
+                    try {
+                        const collector = inputChannel.createMessageComponentCollector({
+                            time: 5000
+                        });
+
+                        collector.on('collect', async i => {
+                            if (evolvingMsg.user.id !== i.user.id) return;
+
+                            collector.stop();
+                            evolvingMsg.delete();
+                            if (i.customId === `${battlingDetails.userOne.id}stop`) {
+                                console.log("user chose not evolving")
+                            }
+                        })
+
+                        collector.on('end', async (collected, reason) => {
+                            console.log("user didn't choose")
+                            evolvingMsg.delete();
+                        })
+                    } catch (e) {
+
+                    }
+
+                    //ask if you want pokemon to evolve
+
+                    //start evolution process
+
+                    //update : pokeId, name, base,
+                }
+            }
+
+            //increase user gold depending on pokemon level
+
+            inputChannel.send(`Enemy pokemon feinted.`);
+        }
+
         //update bag
         await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
 
@@ -352,31 +416,6 @@ module.exports = {
 
         //update battling database
         await battlingFunctions.deletePVMBattle(battlingDetails._id);
-
-        //update win/loss
-
-        // console.log(`battle ended due to ${endType}`)
-
-        switch (endType) {
-            //     case "user feint":
-            //         break;
-            //     case "enemy feint":
-            //         break;
-            //     case "both feint":
-            //         break;
-            // case "ran":
-            //
-            //     break;
-            //     case "roar":
-            //         break;
-            //     case "teleport":
-            //         break;
-            // case "time":
-            //
-            //     break;
-            //     case "pokemonCaptured":
-            //         break;
-        }
     },
 
     setRowDefault: function (row, inp) {
@@ -524,37 +563,37 @@ function setRowItem(battlingDetails, inp) {
                 {
                     label: 'poke-ball',
                     description: 'Filter all poke-balls.',
-                    value: `${inp.user.id}poke-ballfilter`,
+                    value: `${inp.user.id}poke-ballFilter`,
                 },
                 {
                     label: 'recovery',
                     description: 'Filter all recovery items.',
-                    value: `${inp.user.id}recoveryfilter`,
+                    value: `${inp.user.id}recoveryFilter`,
                 },
                 {
                     label: 'hold-items',
                     description: 'Filter all holdable items.',
-                    value: `${inp.user.id}hold-itemsfilter`,
+                    value: `${inp.user.id}hold-itemsFilter`,
                 },
                 {
                     label: 'vitamins',
                     description: 'Filter all vitamins.',
-                    value: `${inp.user.id}vitaminsfilter`,
+                    value: `${inp.user.id}vitaminsFilter`,
                 },
                 {
                     label: 'battle-effect',
                     description: 'Filter all battle-effect items.',
-                    value: `${inp.user.id}battle-effectfilter`,
+                    value: `${inp.user.id}battle-effectFilter`,
                 },
                 {
                     label: 'miscellaneous',
                     description: 'Filter all miscellaneous items.',
-                    value: `${inp.user.id}miscellaneousfilter`,
+                    value: `${inp.user.id}miscellaneousFilter`,
                 },
                 {
                     label: 'all',
                     description: 'Remove filters.',
-                    value: `${inp.user.id}allfilter`,
+                    value: `${inp.user.id}allFilter`,
                 },
             ]),
     )
@@ -564,23 +603,23 @@ function setRowItem(battlingDetails, inp) {
     const row2 = new MessageActionRow();
     row2.addComponents(
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemone`)
+            .setCustomId(`${inp.user.id}itemOne`)
             .setLabel(`Use item 1 (one)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemtwo`)
+            .setCustomId(`${inp.user.id}itemTwo`)
             .setLabel(`Use item 2 (two)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemthree`)
+            .setCustomId(`${inp.user.id}itemThree`)
             .setLabel(`Use item 3 (three)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemfour`)
+            .setCustomId(`${inp.user.id}itemFour`)
             .setLabel(`Use item 4 (four)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemfive`)
+            .setCustomId(`${inp.user.id}itemFive`)
             .setLabel(`Use item 5 (five)`)
             .setStyle('PRIMARY'),
     )
@@ -588,23 +627,23 @@ function setRowItem(battlingDetails, inp) {
     const row3 = new MessageActionRow();
     row3.addComponents(
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemsix`)
+            .setCustomId(`${inp.user.id}itemSix`)
             .setLabel(`Use item 6 (six)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemseven`)
+            .setCustomId(`${inp.user.id}itemSeven`)
             .setLabel(`Use item 7 (seven)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemeight`)
+            .setCustomId(`${inp.user.id}itemEight`)
             .setLabel(`Use item 8 (eight)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemnine`)
+            .setCustomId(`${inp.user.id}itemNine`)
             .setLabel(`Use item 9 (nine)`)
             .setStyle('PRIMARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemten`)
+            .setCustomId(`${inp.user.id}itemTen`)
             .setLabel(`Use item 10 (ten)`)
             .setStyle('PRIMARY'),
     )
@@ -612,11 +651,11 @@ function setRowItem(battlingDetails, inp) {
     const row4 = new MessageActionRow();
     row4.addComponents(
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemsleft`)
+            .setCustomId(`${inp.user.id}itemsLeft`)
             .setLabel(`⏮`)
             .setStyle('SECONDARY'),
         new MessageButton()
-            .setCustomId(`${inp.user.id}itemsright`)
+            .setCustomId(`${inp.user.id}itemsRight`)
             .setLabel(`⏭`)
             .setStyle('SECONDARY'),
         new MessageButton()
@@ -1006,19 +1045,32 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
 
     if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
         //end battle function
-        await module.exports.endRandomBattleEncounter("feint", battleDetails);
+        if (user.damageTaken >= userTotalHp) {
+            await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+        } else {
+            await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
+        }
+
         return true;
     } else {
         runThroughStatusEffects(user, battleDetails.userOneVolatileStatus, userTotalHp, randomPokemon);
         if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
             //end battle function
-            await module.exports.endRandomBattleEncounter("feint", battleDetails);
+            if (user.damageTaken >= userTotalHp) {
+                await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+            } else {
+                await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
+            }
             return true;
         }
         runThroughStatusEffects(randomPokemon, battleDetails.userTwoVolatileStatus, pokemonTotalHp, user);
         if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
             //end battle function
-            await module.exports.endRandomBattleEncounter("feint", battleDetails);
+            if (user.damageTaken >= userTotalHp) {
+                await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+            } else {
+                await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
+            }
             return true;
         }
     }
@@ -4928,7 +4980,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
         let boundDmg = Math.round(totalHp / 8)
         pokemon.damageTaken += boundDmg;
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
-        inputChannel.send(`${volatileStatus.bound.name} did ${boundDmg} dmg to ${pokemon.name}`);
+        inputChannel.send(`${volatileStatus.bound.name} did ${boundDmg} dmg to ${pokemon.name}.`);
 
         if (volatileStatus.bound.length === 0) {
             inputChannel.send(`${pokemon.name} was freed from being bound.`);
@@ -5065,3 +5117,28 @@ async function isType(pokemon, type, volatileStatus) {
 
     return false;
 }
+
+async function getNewLevelAndXp(pokemon) {
+
+    const pokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+
+    let levelingRate = pokemonDetails.levelingRate;
+
+    let xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
+
+    let leveledUp = false;
+
+    while (pokemon.exp > xpNeededForNextLevel) {
+        leveledUp = true;
+        pokemon.level += 1;
+        pokemon.exp -= xpNeededForNextLevel;
+        xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
+    }
+
+    return leveledUp;
+}
+
+function isPokemonEvolving(pokemon) {
+    return pokemon.level >= pokemonFunctions.levelNeededToEvolve(pokemon.name);
+}
+

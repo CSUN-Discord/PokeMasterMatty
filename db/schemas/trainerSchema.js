@@ -22,10 +22,6 @@ const trainerSchema = new Schema({
         win: Number,
         loss: Number
     },
-    randomEncounter: {
-        win: Number,
-        loss: Number
-    },
     npc: {
         win: Number,
         loss: Number

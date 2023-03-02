@@ -103,10 +103,10 @@ module.exports = {
         }
 
         if (player.team.length < 6) {
-            newPokemon.teamNumber = player.team.length + 1;
+            // newPokemon.teamNumber = player.team.length + 1;
             await addPokemonToTeam(user.id, newPokemon);
         } else {
-            newPokemon.boxNumber = player.team.length + 1;
+            // newPokemon.boxNumber = player.team.length + 1;
             await addPokemonToBox(user.id, newPokemon);
         }
     },
@@ -242,10 +242,6 @@ async function addUser(user) {
                     achievements: new Map(),
                     badges: new Map(),
                     trainerBattles: {
-                        win: 0,
-                        loss: 0
-                    },
-                    randomEncounter: {
                         win: 0,
                         loss: 0
                     },

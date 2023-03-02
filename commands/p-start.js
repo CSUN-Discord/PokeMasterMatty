@@ -226,7 +226,7 @@ module.exports = {
                                                 })
 
                                                 if (messageValues.content.includes("The battle has ended")) {
-                                                    battleCollector.stop()
+                                                    battleCollector.stop();
                                                     // battleCollector = null;
                                                 }
                                             });
