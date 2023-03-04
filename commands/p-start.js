@@ -205,7 +205,11 @@ module.exports = {
                                             battleCollector.on('collect', async inp => {
                                                 if (inp.user.id !== i.user.id) return;
                                                 try {
-                                                    message.delete();
+                                                    if (i.customId !== `${battlingDetails.userOne.id}stop`) {
+                                                        console.log("deleting")
+                                                        message.delete();
+                                                    }
+
                                                 } catch (e) {
                                                     console.log("Error on collecting battle collector" + e)
                                                 }
@@ -243,6 +247,7 @@ module.exports = {
                                                         message.channel.send({embeds: [exampleEmbed], components: []});
 
                                                         await battleFunctions.endRandomBattleEncounter("time", battlingDetails[0]);
+                                                        console.log("delete 2")
                                                         message.delete();
                                                     } catch (e) {
                                                         console.log(e)
