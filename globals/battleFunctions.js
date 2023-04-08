@@ -10,6 +10,8 @@ const battlingFunctions = require("../db/functions/battlingFunctions");
 // const pokemon = require("pokemon");
 
 let inputChannel;
+let currentBagCategory = "poke-ball"
+let currentBagMin = 0;
 
 module.exports = {
 
@@ -79,108 +81,199 @@ module.exports = {
     battlingOptions: async function (inp, battlingDetails) {
 
         let row = new MessageActionRow();
-
         inputChannel = inp.channel;
-        // inp.channel.send("Battle option");
 
-        if (inp.customId === `${inp.user.id}spawnBattleAttack`) {
+        const actions = {
+            battleAttackButton: function (customId) {
+                row = setRowAttacks(row, battlingDetails, inp);
+                return {
+                    content: "_ _",
+                    embedDetails: createEmbedAfterAttackPVM(battlingDetails),
+                    components: [row]
+                };
+            },
+            battlePokemonButton: function (customId) {
+                console.log(`${inp.user.id}spawnBattlePokemon`)
+                // row = setRowPokemon(row, battlingDetails, inp)
+                // return {
+                //     content: "_ _",
+                //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
+                //     components: [row]
+                // };
+            },
+            battleBagButtons: function (customId) {
+                if (inp.isSelectMenu()) {
+                    const selectedOption = inp.values[0];
 
-            row = setRowAttacks(row, battlingDetails, inp);
+                    if (selectedOption === `${inp.user.id}poke-ballFilter`) {
+                        currentBagCategory = "poke-ball";
+                        currentBagMin = 0;
+                    } else if (selectedOption === `${inp.user.id}recoveryFilter`) {
+                        currentBagCategory = "recovery";
+                        currentBagMin = 0;
+                    } else if (selectedOption === `${inp.user.id}battle-effectFilter`) {
+                        currentBagCategory = "battle-effect";
+                        currentBagMin = 0;
+                    }
+                }
 
-            return {
-                content: "_ _",
-                embedDetails: createEmbedAfterAttackPVM(battlingDetails),
-                components: [row]
-            };
-        } else if (inp.customId === `${inp.user.id}spawnBattlePokemon`) {
-            console.log(`${inp.user.id}spawnBattlePokemon`)
-            // row = setRowPokemon(row, battlingDetails, inp)
-            // return {
-            //     content: "_ _",
-            //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
-            //     components: [row]
-            // };
-        } else if (inp.customId === `${inp.user.id}spawnBattleBag`) {
-            console.log(`${inp.user.id}spawnBattleBag`)
-            // row = setRowItem(battlingDetails, inp)
-            // return {
-            //     content: "_ _",
-            //     embedDetails: createEmbedAfterBagPVM(battlingDetails),
-            //     components: row
-            // };
-        } else if (inp.customId === `${inp.user.id}spawnBattleRun`) {
+                if (inp.customId === `${inp.user.id}spawnBattleBag`) {
+                    currentBagCategory = "poke-ball";
+                    currentBagMin = 0;
+                } else if (inp.customId === `${inp.user.id}itemsLeft`) {
+                    currentBagMin = Math.max(0, currentBagMin - 10);
+                } else if (inp.customId === `${inp.user.id}itemsRight`) {
+                    currentBagMin += 10;
+                    const bagArray = [];
+                    try {
+                        for (const key of Object.keys(battlingDetails.userOneBag.get(currentBagCategory))) {
+                            if (battlingDetails.userOneBag.get(currentBagCategory)[key] > 0) {
+                                bagArray.push(key);
+                            }
+                        }
+                    } catch (e) {
 
-            const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
-            const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
-            const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
-            let userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
-            if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "paralyzed") {
-                userOneEffectiveSpeed = Math.round(userOneEffectiveSpeed / 2);
-            }
+                    }
 
-            const userTwoSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.speed));
-            const userTwoSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, userTwoSpeedMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
-            const userTwoTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature), userTwoSpeedElb));
-            let userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
-            if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "paralyzed") {
-                userTwoEffectiveSpeed = Math.round(userTwoEffectiveSpeed / 2);
-            }
+                    if (currentBagMin > bagArray.length - 10) {
+                        currentBagMin = bagArray.length > 10 ? bagArray.length - 10 : 0;
+                    }
+                }
 
-            //cant escape if thrash, petal dance or outrage
-            //cant escape if bound or if charging/recharging
-            //allow ghost types to be able to escape if escape prevention is true
-            let isGhost = await isType(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], "ghost", battlingDetails.userOneVolatileStatus);
+                row = setRowBattleItem(battlingDetails, inp)
+                return {
+                    content: "_ _",
+                    embedDetails: createEmbedAfterBagPVM(battlingDetails),
+                    components: row
+                };
+            },
+            battleRunButton: async function (customId) {
+                const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
+                const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
+                const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
+                let userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
+                if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "paralyzed") {
+                    userOneEffectiveSpeed = Math.round(userOneEffectiveSpeed / 2);
+                }
 
-            if ((battlingDetails.userOneVolatileStatus.escapePrevention.enabled && !isGhost /*if user is ghost type*/) ||
-                battlingDetails.userOneVolatileStatus.bound.length > 0 ||
-                battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0 ||
-                battlingDetails.userOneVolatileStatus.recharging.enabled ||
-                battlingDetails.userOneVolatileStatus.thrashing.length > 0
-            ) {
-                if (battlingDetails.userOneVolatileStatus.escapePrevention.enabled && !isGhost)
-                    inputChannel.send("A move was used to prevent you from escaping.");
-                else if (battlingDetails.userOneVolatileStatus.bound.length > 0)
-                    inputChannel.send("Pokemon is bounded and can't escape.");
-                else if (battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0)
-                    inputChannel.send("Pokemon is busy charging and can't escape.");
-                else if (battlingDetails.userOneVolatileStatus.recharging.enabled)
-                    inputChannel.send("Pokemon is busy recharging and can't escape.");
-                else if (battlingDetails.userOneVolatileStatus.thrashing.length > 0)
-                    inputChannel.send("Pokemon is busy thrashing and can't escape.");
+                const userTwoSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.speed));
+                const userTwoSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, userTwoSpeedMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
+                const userTwoTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature), userTwoSpeedElb));
+                let userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
+                if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "paralyzed") {
+                    userTwoEffectiveSpeed = Math.round(userTwoEffectiveSpeed / 2);
+                }
 
+                //cant escape if thrash, petal dance or outrage
+                //cant escape if bound or if charging/recharging
+                //allow ghost types to be able to escape if escape prevention is true
+                let isGhost = await isType(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], "ghost", battlingDetails.userOneVolatileStatus);
+
+                if ((battlingDetails.userOneVolatileStatus.escapePrevention.enabled && !isGhost /*if user is ghost type*/) ||
+                    battlingDetails.userOneVolatileStatus.bound.length > 0 ||
+                    battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0 ||
+                    battlingDetails.userOneVolatileStatus.recharging.enabled ||
+                    battlingDetails.userOneVolatileStatus.thrashing.length > 0
+                ) {
+                    if (battlingDetails.userOneVolatileStatus.escapePrevention.enabled && !isGhost)
+                        inputChannel.send("A move was used to prevent you from escaping.");
+                    else if (battlingDetails.userOneVolatileStatus.bound.length > 0)
+                        inputChannel.send("Pokemon is bounded and can't escape.");
+                    else if (battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0)
+                        inputChannel.send("Pokemon is busy charging and can't escape.");
+                    else if (battlingDetails.userOneVolatileStatus.recharging.enabled)
+                        inputChannel.send("Pokemon is busy recharging and can't escape.");
+                    else if (battlingDetails.userOneVolatileStatus.thrashing.length > 0)
+                        inputChannel.send("Pokemon is busy thrashing and can't escape.");
+
+                    row = module.exports.setRowDefault(row, inp)
+
+                    return {
+                        content: "_ _",
+                        embedDetails: createEmbedDefault(battlingDetails),
+                        components: [row]
+                    };
+                }
+
+                if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
+                    //make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
+                    inputChannel.send("Escaped the battle.")
+                    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                    await module.exports.endRandomBattleEncounter("fled", battlingDetails)
+                    return {
+                        content: "_ _",
+                        embedDetails: [new MessageEmbed()
+                            .setTitle(`You have successfully fled the battle.`)
+                            .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
+                            gif,
+                            false],
+                        components: []
+                    };
+                } else {
+                    inputChannel.send("Failed to escape.")
+
+                    //increase escape count
+                    battlingFunctions.setFleeCount(battlingDetails._id, battlingDetails.fleeCount + 1)
+
+                    // do enemy move
+                    let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+                    enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
+
+                    if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                        let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                        currentMoves = currentMoves.filter(move => {
+                            return move.name === enemyMove.name;
+                        });
+                        currentMoves[0].currentPP--;
+                    }
+
+                    if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                        return {
+                            content: "The battle has ended.",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: []
+                        };
+                    } else {
+                        row = module.exports.setRowDefault(row, inp)
+                        return {
+                            content: "_ _",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: [row]
+                        };
+                    }
+                }
+            },
+            battleBackButton: function (customId) {
                 row = module.exports.setRowDefault(row, inp)
-
                 return {
                     content: "_ _",
                     embedDetails: createEmbedDefault(battlingDetails),
                     components: [row]
                 };
-            }
+            },
+            battleMoveButton: async function (customId) {
+                console.log("move used")
+                //user used a move
 
-            if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
-                //make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
-                inputChannel.send("Escaped the battle.")
-                const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
-                await module.exports.endRandomBattleEncounter("fled", battlingDetails)
-                return {
-                    content: "_ _",
-                    embedDetails: [new MessageEmbed()
-                        .setTitle(`You have successfully fled the battle.`)
-                        .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
-                        gif,
-                        false],
-                    components: []
-                };
-            } else {
-                inputChannel.send("Failed to escape.")
+                //reset flee count
+                battlingFunctions.setFleeCount(battlingDetails._id, 0)
 
-                //increase escape count
-                battlingFunctions.setFleeCount(battlingDetails._id, battlingDetails.fleeCount + 1)
-
-                // do enemy move
                 let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
                 enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
 
+                let userMoveName = inp.customId.replace(inp.user.id, "");
+                let userMove = (userMoveName !== "recharge") ? await moveListFunctions.getMove(userMoveName) : userMoveName;
+
+                //decrease pp
+                if (userMove !== "recharge" && userMove.name !== "Struggle" && battlingDetails.userOneVolatileStatus.thrashing.length === 0) {
+                    let currentMoves = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves;
+
+                    currentMoves = currentMoves.filter(move => {
+                        return move.name === userMove.name;
+                    });
+                    currentMoves[0].currentPP--;
+                }
                 if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
                     let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
 
@@ -190,7 +283,7 @@ module.exports = {
                     currentMoves[0].currentPP--;
                 }
 
-                if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
                     return {
                         content: "The battle has ended.",
                         embedDetails: module.exports.createEmbedPVM(battlingDetails),
@@ -204,72 +297,50 @@ module.exports = {
                         components: [row]
                     };
                 }
-            }
-        } else if (inp.customId === `${inp.user.id}back`) {
-            row = module.exports.setRowDefault(row, inp)
-
-            return {
-                content: "_ _",
-                embedDetails: createEmbedDefault(battlingDetails),
-                components: [row]
-            };
-        } else if (inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}` ||
-            inp.customId === `${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}` ||
-            inp.customId === `${inp.user.id}Struggle` || inp.customId === `${inp.user.id}recharge`
-        ) {
-            //user used a move
-
-            //reset flee count
-            battlingFunctions.setFleeCount(battlingDetails._id, 0)
-
-            let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
-            enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
-
-            let userMoveName = inp.customId.replace(inp.user.id, "");
-            let userMove = (userMoveName !== "recharge") ? await moveListFunctions.getMove(userMoveName) : userMoveName;
-
-
-            //decrease pp
-            if (userMove !== "recharge" && userMove.name !== "Struggle" && battlingDetails.userOneVolatileStatus.thrashing.length === 0) {
-                let currentMoves = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves;
-
-                currentMoves = currentMoves.filter(move => {
-                    return move.name === userMove.name;
-                });
-                currentMoves[0].currentPP--;
-            }
-            if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
-                let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
-
-                currentMoves = currentMoves.filter(move => {
-                    return move.name === enemyMove.name;
-                });
-                currentMoves[0].currentPP--;
-            }
-
-            if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
-                return {
-                    content: "The battle has ended.",
-                    embedDetails: module.exports.createEmbedPVM(battlingDetails),
-                    components: []
-                };
-            } else {
+            },
+            // battleRunButton: function (customId) {
+            //     console.log(`${inp.user.id}spawnBattlePokemon`)
+            //     // row = setRowPokemon(row, battlingDetails, inp)
+            //     // return {
+            //     //     content: "_ _",
+            //     //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
+            //     //     components: [row]
+            //     // };
+            // },
+            'default': function () {
+                console.log("not programmed custom id:", inp.customId)
                 row = module.exports.setRowDefault(row, inp)
                 return {
                     content: "_ _",
-                    embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                    embedDetails: createEmbedDefault(battlingDetails),
                     components: [row]
                 };
             }
-        }
-        row = module.exports.setRowDefault(row, inp)
-        return {
-            content: "_ _",
-            embedDetails: createEmbedDefault(battlingDetails),
-            components: [row]
         };
+
+        const battleFunctions = {
+            [`${inp.user.id}spawnBattleAttack`]: actions.battleAttackButton,
+            // [`${inp.user.id}spawnBattlePokemon`]: actions.battlePokemonButton,
+            [`${inp.user.id}spawnBattleBag`]: actions.battleBagButtons,
+            [`${inp.user.id}itemsLeft`]: actions.battleBagButtons,
+            [`${inp.user.id}itemsRight`]: actions.battleBagButtons,
+            [`${inp.user.id}battleItemSelectMenu`]: actions.battleBagButtons,
+            [`${inp.user.id}spawnBattleRun`]: actions.battleRunButton,
+            [`${inp.user.id}back`]: actions.battleBackButton,
+            [`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[0].name}`]: actions.battleMoveButton,
+            [`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[1].name}`]: actions.battleMoveButton,
+            [`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[2].name}`]: actions.battleMoveButton,
+            [`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`]: actions.battleMoveButton,
+            [`${inp.user.id}Struggle`]: actions.battleMoveButton,
+            [`${inp.user.id}recharge`]: actions.battleMoveButton,
+
+        };
+//TODO: add functions for items
+        if (battleFunctions.hasOwnProperty(inp.customId)) {
+            return battleFunctions[inp.customId]();
+        } else {
+            return actions['default']();
+        }
     },
 
     endRandomBattleEncounter: async function (endType, battlingDetails) {
@@ -579,11 +650,14 @@ function setRowPokemon(row, battlingDetails, inp) {
     return row;
 }
 
-function setRowItem(battlingDetails, inp) {
-    const row1 = new MessageActionRow();
-    row1.addComponents(
+function setRowBattleItem(battlingDetails, inp) {
+
+    let rows = [];
+
+    const selectRow = new MessageActionRow();
+    selectRow.addComponents(
         new MessageSelectMenu()
-            .setCustomId('select')
+            .setCustomId(`${inp.user.id}battleItemSelectMenu`)
             .setPlaceholder('Category')
             .addOptions([
                 {
@@ -597,99 +671,78 @@ function setRowItem(battlingDetails, inp) {
                     value: `${inp.user.id}recoveryFilter`,
                 },
                 {
-                    label: 'hold-items',
-                    description: 'Filter all holdable items.',
-                    value: `${inp.user.id}hold-itemsFilter`,
-                },
-                {
-                    label: 'vitamins',
-                    description: 'Filter all vitamins.',
-                    value: `${inp.user.id}vitaminsFilter`,
-                },
-                {
                     label: 'battle-effect',
                     description: 'Filter all battle-effect items.',
                     value: `${inp.user.id}battle-effectFilter`,
                 },
-                {
-                    label: 'miscellaneous',
-                    description: 'Filter all miscellaneous items.',
-                    value: `${inp.user.id}miscellaneousFilter`,
-                },
-                {
-                    label: 'all',
-                    description: 'Remove filters.',
-                    value: `${inp.user.id}allFilter`,
-                },
             ]),
     )
+    rows.push(selectRow);
 
-    //change this to a function so it gets all items with the required filter and then
-    //loop the filtered response and only create how many buttons are needed instead of always 10
-    const row2 = new MessageActionRow();
-    row2.addComponents(
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemOne`)
-            .setLabel(`Use item 1 (one)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemTwo`)
-            .setLabel(`Use item 2 (two)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemThree`)
-            .setLabel(`Use item 3 (three)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemFour`)
-            .setLabel(`Use item 4 (four)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemFive`)
-            .setLabel(`Use item 5 (five)`)
-            .setStyle('PRIMARY'),
-    )
+    const bagArray = [];
+    try {
+        for (const key of Object.keys(battlingDetails.userOneBag.get(currentBagCategory))) {
+            if (battlingDetails.userOneBag.get(currentBagCategory)[key] > 0) {
+                bagArray.push(key);
+            }
+        }
+    } catch (e) {
 
-    const row3 = new MessageActionRow();
-    row3.addComponents(
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemSix`)
-            .setLabel(`Use item 6 (six)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemSeven`)
-            .setLabel(`Use item 7 (seven)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemEight`)
-            .setLabel(`Use item 8 (eight)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemNine`)
-            .setLabel(`Use item 9 (nine)`)
-            .setStyle('PRIMARY'),
-        new MessageButton()
-            .setCustomId(`${inp.user.id}itemTen`)
-            .setLabel(`Use item 10 (ten)`)
-            .setStyle('PRIMARY'),
-    )
+    }
 
-    const row4 = new MessageActionRow();
-    row4.addComponents(
+    let max = Math.min(bagArray.length, currentBagMin + 10);
+    const diff = max - currentBagMin;
+
+    let itemRowOne = new MessageActionRow();
+    let itemRowTwo = new MessageActionRow();
+
+    for (let i = 0; i < Math.min(5, diff); i++) {
+        // console.log(bagArray[min + i])
+        itemRowOne.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}${bagArray[currentBagMin + i]}`)
+                .setLabel(`Use ${bagArray[currentBagMin + i]}`)
+                .setStyle('PRIMARY')
+        )
+    }
+
+    // console.log(min, max, diff)
+
+    // console.log(itemRowOne)
+
+    for (let i = 5; i < diff; i++) {
+        itemRowTwo.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}${bagArray[currentBagMin + i]}`)
+                .setLabel(`Use ${bagArray[currentBagMin + i]}`)
+                .setStyle('PRIMARY')
+        )
+    }
+
+    if (diff > 0) {
+        rows.push(itemRowOne)
+    }
+    if (diff > 4) {
+        rows.push(itemRowTwo)
+    }
+
+    const arrowRow = new MessageActionRow();
+    arrowRow.addComponents(
         new MessageButton()
             .setCustomId(`${inp.user.id}itemsLeft`)
-            .setLabel(`⏮`)
+            .setLabel(`⏪`)
             .setStyle('SECONDARY'),
         new MessageButton()
             .setCustomId(`${inp.user.id}itemsRight`)
-            .setLabel(`⏭`)
+            .setLabel(`⏩`)
             .setStyle('SECONDARY'),
         new MessageButton()
             .setCustomId(`${inp.user.id}back`)
             .setLabel(`back`)
             .setStyle('DANGER'),
     )
-    return [row1, row2, row3, row4];
+    rows.push(arrowRow);
+    return rows;
 }
 
 function createEmbedAfterAttackPVM(battlingDetails) {
@@ -787,12 +840,23 @@ function createEmbedAfterBagPVM(battlingDetails) {
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp()
 
-    let itemCount = 0;
+    const bagArray = [];
+    try {
+        for (const key of Object.keys(battlingDetails.userOneBag.get(currentBagCategory))) {
+            if (battlingDetails.userOneBag.get(currentBagCategory)[key] > 0) {
+                bagArray.push(key);
+            }
+        }
+    } catch (e) {
 
-    for (let [key, value] of battlingDetails.userOneBag.entries()) {
-        attackBagEmbed.addField(`${itemCount + 1}) ${key}`, `${value}`, true)
-        itemCount++;
-        if (itemCount > 4) break;
+    }
+
+    attackBagEmbed.addField(`${currentBagCategory}`, `\u200b`, false);
+
+    let max = Math.min(bagArray.length, currentBagMin + 10);
+
+    for (let i = currentBagMin; i < max; i++) {
+        attackBagEmbed.addField(`${i + 1}) ${bagArray[i]}`, `${battlingDetails.userOneBag.get(currentBagCategory)[bagArray[i]]}`, false);
     }
 
     const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);

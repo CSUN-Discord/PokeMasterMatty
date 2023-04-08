@@ -69,13 +69,13 @@ module.exports = {
         let superPotionCount = 0;
         let hyperPotionCount = 0;
 
-        pokeBallCount = createItem(10, 50, pokeBallCount, user.bag, "Poke Ball");
-        greatBallCount = createItem(5, 25, greatBallCount, user.bag, "Great Ball");
-        ultraBallCount = createItem(3, 10, ultraBallCount, user.bag, "Ultra Ball");
-        reviveCount = createItem(1, 10, reviveCount, user.bag, "Revive");
-        potionCount = createItem(5, 35, potionCount, user.bag, "Potion");
-        superPotionCount = createItem(3, 25, superPotionCount, user.bag, "Super Potion");
-        hyperPotionCount = createItem(1, 10, hyperPotionCount, user.bag, "Hyper Potion");
+        pokeBallCount = createItem(10, 50, pokeBallCount, user.bag, "Poke Ball", "poke-ball");
+        greatBallCount = createItem(5, 25, greatBallCount, user.bag, "Great Ball", "poke-ball");
+        ultraBallCount = createItem(3, 10, ultraBallCount, user.bag, "Ultra Ball", "poke-ball");
+        reviveCount = createItem(1, 10, reviveCount, user.bag, "Revive", "recovery");
+        potionCount = createItem(5, 35, potionCount, user.bag, "Potion", "recovery");
+        superPotionCount = createItem(3, 25, superPotionCount, user.bag, "Super Potion", "recovery");
+        hyperPotionCount = createItem(1, 10, hyperPotionCount, user.bag, "Hyper Potion", "recovery");
 
         let itemString = "You received: nothing."
         itemString = getItemString("Poke Ball", pokeBallCount, itemString);
@@ -99,15 +99,15 @@ module.exports = {
     },
 };
 
-function createItem(itemMax, percentage, itemCount, bag, name) {
+function createItem(itemMax, percentage, itemCount, bag, name, category) {
 
     for (let i = 0; i < itemMax; i++) {
         if (generalFunctions.randomIntFromInterval(0, 100) < percentage) {
             itemCount++;
-            if (bag.has(name)) {
-                bag.set(name, bag.get(name) + 1)
+            if (bag[category].has(name)) {
+                bag[category].set(name, bag[category].get(name) + 1)
             } else {
-                bag.set(name, 1)
+                bag[category].set(name, 1)
             }
         }
     }

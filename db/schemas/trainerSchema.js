@@ -8,7 +8,14 @@ const trainerSchema = new Schema({
     name: String,
     pokebox: Array,
     team: Array,
-    bag: Map,
+    bag: {
+        "battle-effect": Map,
+        "hold-items": Map,
+        "poke-ball": Map,
+        miscellaneous: Map,
+        recovery: Map,
+        vitamins: Map
+    },
     storyProgress: String,
     trainerCard: {
         background: String,

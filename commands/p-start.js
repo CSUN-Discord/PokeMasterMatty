@@ -173,7 +173,7 @@ module.exports = {
                                                 // invitable: false
                                             });
                                             thread.members.add(i.user.id);
-                                            await thread.setLocked(true);
+                                            // await thread.setLocked(true);
                                             let row = await battleFunctions.setRowDefault(new MessageActionRow(), i)
                                             thread.send({content: "You have 10 minutes for this battle."})
                                             let message;
@@ -206,7 +206,7 @@ module.exports = {
                                                 if (inp.user.id !== i.user.id) return;
                                                 try {
                                                     if (i.customId !== `${battlingDetails.userOne.id}stop`) {
-                                                        console.log("deleting")
+                                                        console.log("deleting here")
                                                         message.delete();
                                                     }
 

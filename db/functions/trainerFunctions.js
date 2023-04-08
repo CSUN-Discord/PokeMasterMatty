@@ -231,7 +231,14 @@ async function addUser(user) {
                     name: user.username,
                     pokebox: [],
                     team: [],
-                    bag: new Map(),
+                    bag: {
+                        "battle-effect": new Map(),
+                        "hold-items": new Map(),
+                        "poke-ball": new Map(),
+                        miscellaneous: new Map(),
+                        recovery: new Map(),
+                        vitamins: new Map()
+                    },
                     storyProgress: "0",
                     trainerCard: {
                         background: "/media/trainer-card/backgroundsOriginals/general/(1).png",
