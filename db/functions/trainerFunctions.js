@@ -111,6 +111,18 @@ module.exports = {
         }
     },
 
+    addPokemonToCreatedUser: async function (userId, newPokemon) {
+        let player = await module.exports.getUser(userId);
+
+        if (player.team.length < 6) {
+            // newPokemon.teamNumber = player.team.length + 1;
+            await addPokemonToTeam(userId, newPokemon);
+        } else {
+            // newPokemon.boxNumber = player.team.length + 1;
+            await addPokemonToBox(userId, newPokemon);
+        }
+    },
+
     addPresentToBag: async function (userId, bag) {
         try {
             await trainerSchema

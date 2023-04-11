@@ -56,6 +56,7 @@ module.exports = {
     },
 
     createStarterPokemonDetails: async function (level, defaultPokemon, user) {
+        const currentTime = Date.now();
         let fullDetailsPokemon = {
             "pokeId": defaultPokemon.pokeId,
             "name": defaultPokemon.name,
@@ -82,8 +83,8 @@ module.exports = {
             "shiny": false,
             "ball": "Poke Ball",
             "currentMoves": null,
-            "caughtTimestamp": Date.now(),
-            "receivedTimestamp": Date.now(),
+            "caughtTimestamp": currentTime,
+            "receivedTimestamp": currentTime,
             "nature": setNature(),
             "male": isFemale(defaultPokemon.genderPercentage.male),
             "friendship": defaultPokemon.baseFriendship

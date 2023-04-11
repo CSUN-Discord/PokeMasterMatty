@@ -37,7 +37,7 @@ module.exports = {
             return await itemsListSchema
                 .findOne(
                     {
-                        name: item.name,
+                        name: item,
                     })
         } catch (e) {
             console.log(e);

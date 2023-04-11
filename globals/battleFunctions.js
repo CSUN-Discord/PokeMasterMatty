@@ -7,11 +7,15 @@ const moveListFunctions = require("../db/functions/moveListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const battlingFunctions = require("../db/functions/battlingFunctions");
+const itemListFunctions = require("../db/functions/itemListFunctions");
 // const pokemon = require("pokemon");
 
 let inputChannel;
 let currentBagCategory = "poke-ball"
 let currentBagMin = 0;
+
+//TODO: Add turn counter and separate each msg into turns, can add pokeballs (timer ball) with this update
+//TODO: Add status to gif
 
 module.exports = {
 
@@ -298,6 +302,292 @@ module.exports = {
                     };
                 }
             },
+            battlePokeBallButton: async function (customId) {
+                let wildPokemon = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1];
+                let userPokemon = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1];
+
+                const ballUsed = inp.customId.replace(inp.user.id, "");
+
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(wildPokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(wildPokemon.base.hp, pokemonHpMultiplier, wildPokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(wildPokemon.level, wildPokemon.base.hp, pokemonElb));
+
+                let currentHP = maxHP - wildPokemon.damageTaken;
+                let ballBonus = 1;
+
+                const statusCatchRate = {
+                    "frozen": 2,
+                    "sleeping": 2,
+                    "paralyzed": 1.5,
+                    "burned": 1.5,
+                    "poisoned": 1.5,
+                    "normal": 1
+                }
+                let bonusStatus = statusCatchRate[wildPokemon.status] || 1;
+
+                let pokemonDefaultCatchRate = await pokemonListFunctions.getPokemonFromId(wildPokemon.pokeId);
+                pokemonDefaultCatchRate = pokemonDefaultCatchRate.catchRate;
+
+                inputChannel.send(`Used ${ballUsed}.`)
+
+                battlingDetails.userOneBag.get("poke-ball")[ballUsed] = battlingDetails.userOneBag.get("poke-ball")[ballUsed] - 1;
+                switch (ballUsed) {
+                    case "Great Ball":
+                        ballBonus = 1.5;
+                        break;
+                    case "Love Ball":
+                        if (userPokemon.male !== wildPokemon.male) {
+                            ballBonus = 8;
+                        }
+                        break;
+                    case "Moon Ball":
+                        const moonStoneEvolution = new Set([
+                            "Clefairy", "Jigglypuff", "Nidorina", "Nidorino", "Skitty", "Munna"
+                        ]);
+                        if (moonStoneEvolution.has(wildPokemon.name)) {
+                            ballBonus = 4;
+                        }
+                        break;
+                    case "Net Ball":
+                        if (await isType(wildPokemon, "bug", battlingDetails.userTwoVolatileStatus) || await isType(wildPokemon, "water", battlingDetails.userTwoVolatileStatus)) {
+                            ballBonus = 3.5;
+                        }
+                        break;
+                    case "Master Ball":
+                        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                        await module.exports.endRandomBattleEncounter("wildPokemonCaught", battlingDetails, ballUsed);
+                        return {
+                            content: "_ _",
+                            embedDetails: [new MessageEmbed()
+                                .setTitle(`You have successfully caught ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}.`)
+                                .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
+                                gif,
+                                false],
+                            components: []
+                        };
+                    case "Heal Ball":
+                        ballBonus = 1;
+                        break;
+                    case "Poke Ball":
+                        ballBonus = 1;
+                        break;
+                    case "Heavy Ball":
+                        const weight = await getWeight(wildPokemon.pokeId);
+                        console.log(weight)
+                        if (weight <= 220.2) {
+                            ballBonus = -20;
+                        } else if (220.2 < weight && weight <= 440.7) {
+                            ballBonus = 1;
+                        } else if (440.7 < weight && weight <= 661.2) {
+                            ballBonus = 20;
+                        } else if (661.2 < weight) {
+                            ballBonus = 30;
+                        } else {
+                            ballBonus = 1;
+                        }
+                        break;
+                    case "Level Ball":
+                        if (userPokemon.level <= wildPokemon.level) {
+                            ballBonus = 1;
+                        } else {
+                            let levelRatio = userPokemon.level / wildPokemon.level;
+                            if (levelRatio < 2) {
+                                ballBonus = 2;
+                            } else if (levelRatio < 4) {
+                                ballBonus = 4;
+                            } else {
+                                ballBonus = 8;
+                            }
+                        }
+                        break;
+                    case "Nest Ball":
+                        if (wildPokemon.level < 30) {
+                            ballBonus = ((((41 - wildPokemon.level) * 4096) / 10) / 4096);
+                        }
+                        break;
+                    case "Ultra Ball":
+                        ballBonus = 2;
+                        break;
+                    default:
+                        console.log(`${ballUsed} not programmed`);
+                        break;
+                }
+
+                let catchRate = Math.floor((((1 + (maxHP * 3 - currentHP * 2) * pokemonDefaultCatchRate * ballBonus * bonusStatus) / (maxHP * 3)) / 256) * 100);
+
+                let randomNum = generalFunctions.randomIntFromInterval(1, 100);
+
+                if (randomNum <= catchRate) {
+                    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                    await module.exports.endRandomBattleEncounter("wildPokemonCaught", battlingDetails, ballUsed);
+                    return {
+                        content: "_ _",
+                        embedDetails: [new MessageEmbed()
+                            .setTitle(`You have successfully caught ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}.`)
+                            .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
+                            gif,
+                            false],
+                        components: []
+                    };
+                } else {
+                    inputChannel.send("Failed to catch pokemon.")
+
+                    // do enemy move
+                    let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+                    enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
+
+                    if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                        let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                        currentMoves = currentMoves.filter(move => {
+                            return move.name === enemyMove.name;
+                        });
+                        currentMoves[0].currentPP--;
+                    }
+
+                    if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                        return {
+                            content: "The battle has ended.",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: []
+                        };
+                    } else {
+                        row = module.exports.setRowDefault(row, inp)
+                        return {
+                            content: "_ _",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: [row]
+                        };
+                    }
+                }
+            },
+            battleRecoveryButton: function (customId) {
+                const recoveryItemUsed = inp.customId.replace(inp.user.id, "");
+
+                // inputChannel.send(`Used ${recoveryItemUsed}.`);
+
+                battlingDetails.userOneBag.get("recovery")[recoveryItemUsed] = battlingDetails.userOneBag.get("recovery")[recoveryItemUsed] - 1;
+
+                const aliveOnly = new Set(['Antidote', 'Soda Pop', 'Burn Heal', 'Full Heal', 'Ice Heal', 'Lemonade', 'Awakening', 'Fresh Water', 'Hyper Potion', 'Max Potion', 'Moomoo Milk', 'Paralyze Heal', 'Potion', 'Super Potion']);
+                const deadOnly = new Set(['Max Revive', 'Revive']);
+                const aliveAndDead = new Set(['Full Restore', 'Elixir', 'Ether', 'Max Elixir', 'Max Ether']);
+
+                if (aliveOnly.has(recoveryItemUsed)) {
+                    row = setRowItemUsed(battlingDetails, inp, recoveryItemUsed, "aliveOnly")
+                    return {
+                        content: "_ _",
+                        embedDetails: createEmbedAfterItemUsed(battlingDetails, "aliveOnly"),
+                        components: row
+                    };
+                } else if (deadOnly.has(recoveryItemUsed)) {
+                    row = setRowItemUsed(battlingDetails, inp, recoveryItemUsed, "deadOnly")
+                    return {
+                        content: "_ _",
+                        embedDetails: createEmbedAfterItemUsed(battlingDetails, "deadOnly"),
+                        components: row
+                    };
+                } else if (aliveAndDead.has(recoveryItemUsed)) {
+                    row = setRowItemUsed(battlingDetails, inp, recoveryItemUsed, "deadAndAlive")
+                    return {
+                        content: "_ _",
+                        embedDetails: createEmbedAfterItemUsed(battlingDetails, "deadAndAlive"),
+                        components: row
+                    };
+                }
+            },
+            battleBackToItemsButton: function (customId) {
+                row = setRowBattleItem(battlingDetails, inp)
+                return {
+                    content: "_ _",
+                    embedDetails: createEmbedAfterBagPVM(battlingDetails),
+                    components: row
+                };
+            },
+            usedItemOnPokemon: async function (itemUsed, pokemonUsedOn) {
+                console.log(`used item ${itemUsed} on ${pokemonUsedOn}`)
+                const fullItemDetails = await itemListFunctions.getItem(itemUsed);
+
+                inputChannel.send(`Used ${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}.`);
+                battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] = battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] - 1;
+
+                //TODO: apply item effect
+
+                switch (itemUsed) {
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    case "Antidote":
+                        break;
+                    default:
+                        console.log(`${itemUsed} not programmed`);
+                        break;
+                }
+
+                // do enemy move
+                let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+                enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
+
+                if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                    let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                    currentMoves = currentMoves.filter(move => {
+                        return move.name === enemyMove.name;
+                    });
+                    currentMoves[0].currentPP--;
+                }
+
+                if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                    return {
+                        content: "The battle has ended.",
+                        embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                        components: []
+                    };
+                } else {
+                    row = module.exports.setRowDefault(row, inp)
+                    return {
+                        content: "_ _",
+                        embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                        components: [row]
+                    };
+                }
+            },
             // battleRunButton: function (customId) {
             //     console.log(`${inp.user.id}spawnBattlePokemon`)
             //     // row = setRowPokemon(row, battlingDetails, inp)
@@ -333,17 +623,59 @@ module.exports = {
             [`${inp.user.id}${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].currentMoves[3].name}`]: actions.battleMoveButton,
             [`${inp.user.id}Struggle`]: actions.battleMoveButton,
             [`${inp.user.id}recharge`]: actions.battleMoveButton,
+            [`${inp.user.id}Poke Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Great Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Ultra Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Master Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Love Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Moon Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Net Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Heal Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Heavy Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Level Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Nest Ball`]: actions.battlePokeBallButton,
+            [`${inp.user.id}Super Potion`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Max Revive`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Full Restore`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Antidote`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Soda Pop`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Burn Heal`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Full Heal`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Ice Heal`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Lemonade`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Max Revive`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Awakening`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Elixir`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Ether`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Max Elixir`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Revive`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Fresh Water`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Hyper Potion`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Max Ether`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Max Potion`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Moomoo Milk`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Paralyze Heal`]: actions.battleRecoveryButton,
+            [`${inp.user.id}Potion`]: actions.battleRecoveryButton,
+            [`${inp.user.id}backToItems`]: actions.battleBackToItemsButton,
 
         };
-//TODO: add functions for items
+        //TODO: add functions for items
         if (battleFunctions.hasOwnProperty(inp.customId)) {
             return battleFunctions[inp.customId]();
+        } else if (inp.customId.includes(`${inp.user.id}itemUsed`)) {
+            const splitString = inp.customId.replace(`${inp.user.id}itemUsed`, "");
+            const splitIndex = splitString.search(/\d/);
+
+            const item = splitString.substring(0, splitIndex);
+            const pokemon = splitString.substring(splitIndex);
+
+            return actions.usedItemOnPokemon(item.trim(), pokemon.trim());
         } else {
             return actions['default']();
         }
     },
 
-    endRandomBattleEncounter: async function (endType, battlingDetails) {
+    endRandomBattleEncounter: async function (endType, battlingDetails, ballUsed = "Poke Ball") {
         //check if transform was used
         if (battlingDetails.userOneVolatileStatus.transform.enabled) {
             let volatileStatus = battlingDetails.userOneVolatileStatus;
@@ -415,6 +747,7 @@ module.exports = {
         if (endType === "randomPokemonFeints") {
             inputChannel.send(`Enemy pokemon feinted.`);
 
+            //TODO: check if exp needs to be shared, create a set of all pokemon that was in battle and didnt feint and divide exp equally
             //increase pokemon xp
             let newXp = getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
             battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].exp += newXp;
@@ -499,6 +832,29 @@ module.exports = {
                     })
                 }
             }
+        } else if (endType === "wildPokemonCaught") {
+            inputChannel.send(`Wild pokemon was caught.`);
+
+            const currentTime = Date.now();
+            battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].owner = battlingDetails.userOne.userId;
+            battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].ball = ballUsed;
+            battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].caughtTimestamp = currentTime;
+            battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].receivedTimestamp = currentTime;
+
+            if (ballUsed === "Heal Ball") {
+                battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken = 0;
+                battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status = "normal";
+            }
+
+            //add pokemon to user
+            await trainerFunctions.addPokemonToCreatedUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+
+            //update battling to false
+            await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+
+            //update bag
+            await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+
         } else {
             //update bag
             await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
@@ -745,6 +1101,67 @@ function setRowBattleItem(battlingDetails, inp) {
     return rows;
 }
 
+function setRowItemUsed(battlingDetails, inp, item, itemType) {
+
+    const pokemonArray = [];
+    const unfilteredPokemon = battlingDetails.userOneTeam;
+
+    for (let i = 0; i < unfilteredPokemon.length; i++) {
+        const currentPokemon = unfilteredPokemon[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        switch (itemType) {
+            case "aliveOnly":
+                if (currentHP > 0)
+                    pokemonArray.push(currentPokemon);
+                break;
+            case "deadOnly":
+                if (currentHP < 1)
+                    pokemonArray.push(currentPokemon);
+                break;
+            case "deadAndAlive":
+                pokemonArray.push(currentPokemon);
+                break;
+        }
+    }
+    let rows = [];
+    const pokemonRow = new MessageActionRow();
+    const backRow = new MessageActionRow();
+
+    for (let i = 0; i < Math.min(pokemonArray.length, 5); i++) {
+        pokemonRow.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}itemUsed${item} ${i}`)
+                .setLabel(`Use ${item} on ${i + 1}) ${pokemonArray[i].name}`)
+                .setStyle('PRIMARY'),
+        )
+    }
+
+    if (pokemonArray.length > 0) {
+        rows.push(pokemonRow);
+    }
+
+    if (pokemonArray.length > 5) {
+        backRow.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}itemUsed${item}${5}`)
+                .setLabel(`Use ${item} on 6) ${pokemonArray[5].name}`)
+                .setStyle('PRIMARY'),
+        )
+    }
+    backRow.addComponents(
+        new MessageButton()
+            .setCustomId(`${inp.user.id}backToItems`)
+            .setLabel(`back`)
+            .setStyle('DANGER'),
+    )
+    rows.push(backRow);
+    return rows;
+}
+
 function createEmbedAfterAttackPVM(battlingDetails) {
 
     let attackDetailsEmbed = new MessageEmbed()
@@ -861,6 +1278,60 @@ function createEmbedAfterBagPVM(battlingDetails) {
 
     const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [attackBagEmbed,
+        gif,
+        false
+    ]
+}
+
+function createEmbedAfterItemUsed(battlingDetails, itemType) {
+
+    let pokemonListEmbed = new MessageEmbed()
+        .setColor('RANDOM')
+        .setTitle(`Available Pokemon to use item on:`)
+        .setTimestamp()
+
+    const pokemonArray = [];
+    const unfilteredPokemon = battlingDetails.userOneTeam;
+
+    for (let i = 0; i < unfilteredPokemon.length; i++) {
+        const currentPokemon = unfilteredPokemon[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        switch (itemType) {
+            case "aliveOnly":
+                if (currentHP > 0)
+                    pokemonArray.push(currentPokemon);
+                break;
+            case "deadOnly":
+                if (currentHP < 1)
+                    pokemonArray.push(currentPokemon);
+                break;
+            case "deadAndAlive":
+                pokemonArray.push(currentPokemon);
+                break;
+        }
+    }
+
+    for (let i = 0; i < pokemonArray.length; i++) {
+        const currentPokemon = pokemonArray[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        let moves = "";
+        for (let j = 0; j < currentPokemon.currentMoves.length; j++) {
+            const currentMove = currentPokemon.currentMoves[j];
+            moves += `• ${currentMove.name} ${currentMove.currentPP}/${currentMove.pp}\n`;
+        }
+        pokemonListEmbed.addField(`${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`, `${moves}`, false);
+    }
+
+    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    return [pokemonListEmbed,
         gif,
         false
     ]
@@ -5206,6 +5677,14 @@ async function isType(pokemon, type, volatileStatus) {
     }
 
     return false;
+}
+
+async function getWeight(pokeId) {
+    let fullPokemon = await pokemonListFunctions.getPokemonFromId(pokeId);
+    const weight = fullPokemon.weight;
+    const match = weight.match(/\(([^)]+)\)/);
+
+    return parseFloat(match[1].replace("lbs"));
 }
 
 async function getNewLevelAndXp(pokemon) {
