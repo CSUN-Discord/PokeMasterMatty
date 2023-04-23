@@ -15,11 +15,11 @@ let currentBagCategory = "poke-ball"
 let currentBagMin = 0;
 
 //TODO: Add turn counter and separate each msg into turns, can add pokeballs (timer ball) with this update
-//TODO: Add status to gif
 
 module.exports = {
 
     createEmbedPVM: function (battlingDetails) {
+        // console.log()
         //player, playerCurrentPokemonNumber, playerTeam, pokemonCurrentPokemonNumber, pokemonTeam
 
         const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
@@ -61,7 +61,7 @@ module.exports = {
             pythonOptions: ['-u'], // get print results in real-time
             args: [enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
                 user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
-                enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny]
+                enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status]
         };
 
         PythonShell.run('./python/battle_image.py', options, function (err, results) {
@@ -88,7 +88,7 @@ module.exports = {
         inputChannel = inp.channel;
 
         const actions = {
-            battleAttackButton: function (customId) {
+            battleAttackButton: function () {
                 row = setRowAttacks(row, battlingDetails, inp);
                 return {
                     content: "_ _",
@@ -96,16 +96,15 @@ module.exports = {
                     components: [row]
                 };
             },
-            battlePokemonButton: function (customId) {
-                console.log(`${inp.user.id}spawnBattlePokemon`)
-                // row = setRowPokemon(row, battlingDetails, inp)
-                // return {
-                //     content: "_ _",
-                //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
-                //     components: [row]
-                // };
+            battlePokemonButton: function () {
+                row = setRowSwapPokemon(battlingDetails, inp, true)
+                return {
+                    content: "_ _",
+                    embedDetails: createSwapEmbed(battlingDetails),
+                    components: row
+                };
             },
-            battleBagButtons: function (customId) {
+            battleBagButtons: function () {
                 if (inp.isSelectMenu()) {
                     const selectedOption = inp.values[0];
 
@@ -151,7 +150,7 @@ module.exports = {
                     components: row
                 };
             },
-            battleRunButton: async function (customId) {
+            battleRunButton: async function () {
                 const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
                 const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
                 const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
@@ -203,7 +202,8 @@ module.exports = {
                     //make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
                     inputChannel.send("Escaped the battle.")
                     const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
-                    await module.exports.endRandomBattleEncounter("fled", battlingDetails)
+
+                    await module.exports.endRandomBattleEncounter("fled", battlingDetails);
                     return {
                         content: "_ _",
                         embedDetails: [new MessageEmbed()
@@ -214,7 +214,7 @@ module.exports = {
                         components: []
                     };
                 } else {
-                    inputChannel.send("Failed to escape.")
+                    inputChannel.send("Failed to escape.");
 
                     //increase escape count
                     battlingFunctions.setFleeCount(battlingDetails._id, battlingDetails.fleeCount + 1)
@@ -232,23 +232,35 @@ module.exports = {
                         currentMoves[0].currentPP--;
                     }
 
-                    if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                    let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails);
+                    if (output === true) {
                         return {
                             content: "The battle has ended.",
                             embedDetails: module.exports.createEmbedPVM(battlingDetails),
                             components: []
                         };
-                    } else {
-                        row = module.exports.setRowDefault(row, inp)
+                    } else if (output === false) {
+                        battlingDetails.turnCounter += 1;
+                        battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                        inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+
+                        row = module.exports.setRowDefault(row, inp);
                         return {
                             content: "_ _",
                             embedDetails: module.exports.createEmbedPVM(battlingDetails),
                             components: [row]
                         };
+                    } else if (output === "swapping") {
+                        row = setRowSwapPokemon(battlingDetails, inp)
+                        return {
+                            content: "_ _",
+                            embedDetails: createSwapEmbed(battlingDetails),
+                            components: row
+                        };
                     }
                 }
             },
-            battleBackButton: function (customId) {
+            battleBackButton: function () {
                 row = module.exports.setRowDefault(row, inp)
                 return {
                     content: "_ _",
@@ -256,7 +268,7 @@ module.exports = {
                     components: [row]
                 };
             },
-            battleMoveButton: async function (customId) {
+            battleMoveButton: async function () {
                 console.log("move used")
                 //user used a move
 
@@ -287,22 +299,34 @@ module.exports = {
                     currentMoves[0].currentPP--;
                 }
 
-                if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails)) {
+                let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], userMove, enemyMove, battlingDetails);
+                if (output === true) {
                     return {
                         content: "The battle has ended.",
                         embedDetails: module.exports.createEmbedPVM(battlingDetails),
                         components: []
                     };
-                } else {
-                    row = module.exports.setRowDefault(row, inp)
+                } else if (output === false) {
+                    battlingDetails.turnCounter += 1;
+                    battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                    inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+
+                    row = module.exports.setRowDefault(row, inp);
                     return {
                         content: "_ _",
                         embedDetails: module.exports.createEmbedPVM(battlingDetails),
                         components: [row]
                     };
+                } else if (output === "swapping") {
+                    row = setRowSwapPokemon(battlingDetails, inp)
+                    return {
+                        content: "_ _",
+                        embedDetails: createSwapEmbed(battlingDetails),
+                        components: row
+                    };
                 }
             },
-            battlePokeBallButton: async function (customId) {
+            battlePokeBallButton: async function () {
                 let wildPokemon = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1];
                 let userPokemon = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1];
 
@@ -321,6 +345,7 @@ module.exports = {
                     "paralyzed": 1.5,
                     "burned": 1.5,
                     "poisoned": 1.5,
+                    "badly poisoned": 1.5,
                     "normal": 1
                 }
                 let bonusStatus = statusCatchRate[wildPokemon.status] || 1;
@@ -355,6 +380,7 @@ module.exports = {
                         break;
                     case "Master Ball":
                         const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+
                         await module.exports.endRandomBattleEncounter("wildPokemonCaught", battlingDetails, ballUsed);
                         return {
                             content: "_ _",
@@ -373,7 +399,6 @@ module.exports = {
                         break;
                     case "Heavy Ball":
                         const weight = await getWeight(wildPokemon.pokeId);
-                        console.log(weight)
                         if (weight <= 220.2) {
                             ballBonus = -20;
                         } else if (220.2 < weight && weight <= 440.7) {
@@ -445,23 +470,35 @@ module.exports = {
                         currentMoves[0].currentPP--;
                     }
 
-                    if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                    let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails);
+                    if (output === true) {
                         return {
                             content: "The battle has ended.",
                             embedDetails: module.exports.createEmbedPVM(battlingDetails),
                             components: []
                         };
-                    } else {
-                        row = module.exports.setRowDefault(row, inp)
+                    } else if (output === false) {
+                        battlingDetails.turnCounter += 1;
+                        battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                        inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+
+                        row = module.exports.setRowDefault(row, inp);
                         return {
                             content: "_ _",
                             embedDetails: module.exports.createEmbedPVM(battlingDetails),
                             components: [row]
                         };
+                    } else if (output === "swapping") {
+                        row = setRowSwapPokemon(battlingDetails, inp)
+                        return {
+                            content: "_ _",
+                            embedDetails: createSwapEmbed(battlingDetails),
+                            components: row
+                        };
                     }
                 }
             },
-            battleRecoveryButton: function (customId) {
+            battleRecoveryButton: function () {
                 const recoveryItemUsed = inp.customId.replace(inp.user.id, "");
 
                 // inputChannel.send(`Used ${recoveryItemUsed}.`);
@@ -495,7 +532,7 @@ module.exports = {
                     };
                 }
             },
-            battleBackToItemsButton: function (customId) {
+            battleBackToItemsButton: function () {
                 row = setRowBattleItem(battlingDetails, inp)
                 return {
                     content: "_ _",
@@ -503,62 +540,276 @@ module.exports = {
                     components: row
                 };
             },
-            usedItemOnPokemon: async function (itemUsed, pokemonUsedOn) {
-                console.log(`used item ${itemUsed} on ${pokemonUsedOn}`)
-                const fullItemDetails = await itemListFunctions.getItem(itemUsed);
+            usedItemOnPokemon: async function (itemUsed, pokemonUsedOn, moveNumber = null) {
+                // console.log(`used item ${itemUsed} on ${pokemonUsedOn}`)
+                let fullItemDetails = await itemListFunctions.getItem(itemUsed);
 
-                inputChannel.send(`Used ${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}.`);
-                battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] = battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] - 1;
+                if (itemUsed !== "Used Max Ether" && itemUsed !== "Used Ether") {
+                    inputChannel.send(`Used ${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}.`);
+                    battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] = battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] - 1;
+                } else {
+                    // console.log("used ether")
+                    const realName = itemUsed.replace("Used", "").trim();
+                    // console.log(realName)
+                    fullItemDetails = await itemListFunctions.getItem(realName);
+
+                    inputChannel.send(`${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ${battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].name}.`);
+                    battlingDetails.userOneBag.get(fullItemDetails.category)[realName] = battlingDetails.userOneBag.get(fullItemDetails.category)[realName] - 1;
+                }
 
                 //TODO: apply item effect
 
                 switch (itemUsed) {
                     case "Antidote":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "poisoned" || battlingDetails.userOneTeam[pokemonUsedOn].status === "badly poisoned") {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of poison.`);
+                        } else {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Full Restore":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "normal" && battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Soda Pop":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 50);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Burn Heal":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "burned") {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s burn was healed.`);
+                        } else {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Full Heal":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "normal") {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of all status problems!`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Ice Heal":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "frozen") {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
+                        } else {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Lemonade":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 70);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Max Revive":
+                        battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
+                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was fully revived.`);
                         break;
-                    case "Antidote":
+                    case "Awakening":
+                        //only the current pokemon in battle will be sleeping
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "sleeping") {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            battlingDetails.userOneVolatileStatus.sleepTurnLength = 0;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
+                        } else {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Revive":
+                        battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = Math.floor(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken / 2);
+                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was revived with half if it's health.`);
                         break;
-                    case "Antidote":
+                    case "Fresh Water":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 30);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Hyper Potion":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 120);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Max Potion":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Moomoo Milk":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 100);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Paralyze Heal":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].status === "paralyzed") {
+                            battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s paralysis was healed.`);
+                        } else {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Potion":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 20);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Super Potion":
+                        if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
+                            inputChannel.send(`${itemUsed} had no effect.`);
+                        } else {
+                            let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 50);
+                            battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                        }
                         break;
-                    case "Antidote":
+                    case "Max Elixir":
+                        for (let i = 0; i < battlingDetails.userOneTeam[pokemonUsedOn].currentMoves.length; i++) {
+                            battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[i].currentPP = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[i].pp;
+                        }
                         break;
-                    case "Antidote":
+                    case "Elixir":
+                        for (let i = 0; i < battlingDetails.userOneTeam[pokemonUsedOn].currentMoves.length; i++) {
+                            battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[i].currentPP = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[i].currentPP + 10, battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[i].pp);
+                        }
                         break;
-                    case "Antidote":
+                    case "Max Ether":
+                        row = setRowEther(battlingDetails, inp, "Max Ether", pokemonUsedOn);
+                        return {
+                            content: "_ _",
+                            embedDetails: createEtherEmbed(battlingDetails, "Max Ether", pokemonUsedOn),
+                            components: [row]
+                        };
+                    case "Used Max Ether":
+                        battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].currentPP = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].pp;
                         break;
-                    case "Antidote":
+                    case "Ether":
+                        row = setRowEther(battlingDetails, inp, "Ether", pokemonUsedOn);
+                        return {
+                            content: "_ _",
+                            embedDetails: createEtherEmbed(battlingDetails, "Ether", pokemonUsedOn),
+                            components: [row]
+                        };
+                    case "Used Ether":
+                        battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].currentPP = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].currentPP + 10, battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].pp);
                         break;
                     default:
                         console.log(`${itemUsed} not programmed`);
+                        console.log(pokemonUsedOn, moveNumber);
                         break;
                 }
+                // do enemy move
+                let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+                enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
+
+                if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                    let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                    currentMoves = currentMoves.filter(move => {
+                        return move.name === enemyMove.name;
+                    });
+                    currentMoves[0].currentPP--;
+                }
+
+                let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails);
+                if (output === true) {
+                    return {
+                        content: "The battle has ended.",
+                        embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                        components: []
+                    };
+                } else if (output === false) {
+                    battlingDetails.turnCounter += 1;
+                    battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                    inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+
+                    row = module.exports.setRowDefault(row, inp);
+                    return {
+                        content: "_ _",
+                        embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                        components: [row]
+                    };
+                } else if (output === "swapping") {
+                    row = setRowSwapPokemon(battlingDetails, inp)
+                    return {
+                        content: "_ _",
+                        embedDetails: createSwapEmbed(battlingDetails),
+                        components: row
+                    };
+                }
+            },
+            usedBattleEffect: async function (customId) {
+                const itemUsed = customId.replace(`${inp.user.id}`, "")
+                const fullItemDetails = await itemListFunctions.getItem(itemUsed);
+
+                inputChannel.send(`Used ${itemUsed}.`);
+                battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] = battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] - 1;
+
+                switch (itemUsed) {
+                    case "X Attack":
+                        battlingDetails.userOneStatStage.atk += 1;
+                        break;
+                    case "Dire Hit":
+                        battlingDetails.userOneStatStage.crit += 2;
+                        break;
+                    case "Guard Spec":
+                        battlingDetails.userOneVolatileStatus.mistLength = 6;
+                        break;
+                    case "X Accuracy":
+                        battlingDetails.userOneStatStage.accuracy += 1;
+                        break;
+                    case "X Defense":
+                        battlingDetails.userOneStatStage.def += 1;
+                        break;
+                    case "X Sp. Atk":
+                        battlingDetails.userOneStatStage.spAtk += 1;
+                        break;
+                    case "X Sp. Def":
+                        battlingDetails.userOneStatStage.spDef += 1;
+                        break;
+                    case "X Speed":
+                        battlingDetails.userOneStatStage.speed += 1;
+                        break;
+                    default:
+                        console.log("battle effect item not programmed")
+                        break;
+                }
+
 
                 // do enemy move
                 let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
@@ -573,24 +824,206 @@ module.exports = {
                     currentMoves[0].currentPP--;
                 }
 
-                if (await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails)) {
+                let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails);
+                if (output === true) {
                     return {
                         content: "The battle has ended.",
                         embedDetails: module.exports.createEmbedPVM(battlingDetails),
                         components: []
                     };
-                } else {
-                    row = module.exports.setRowDefault(row, inp)
+                } else if (output === false) {
+                    battlingDetails.turnCounter += 1;
+                    battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                    inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+
+                    row = module.exports.setRowDefault(row, inp);
                     return {
                         content: "_ _",
                         embedDetails: module.exports.createEmbedPVM(battlingDetails),
                         components: [row]
                     };
+                } else if (output === "swapping") {
+                    row = setRowSwapPokemon(battlingDetails, inp)
+                    return {
+                        content: "_ _",
+                        embedDetails: createSwapEmbed(battlingDetails),
+                        components: row
+                    };
                 }
+            },
+            swapPokemonButton: async function (customId) {
+                // console.log(customId)
+                // console.log(pokemon)
+
+                battlingFunctions.setFleeCount(battlingDetails._id, 0);
+
+
+                if (customId.includes("voluntarily")) {
+                    // let name = parseInt(customId.replace(`${inp.user.id}voluntarilySwapTo`, ""));
+                    // console.log(customId, name)
+                    battlingDetails.userOneCurrentPokemon = parseInt(customId.replace(`${inp.user.id}voluntarilySwapTo`, ""));
+                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
+                } else {
+                    battlingDetails.userOneCurrentPokemon = parseInt(customId.replace(`${inp.user.id}swapTo`, ""));
+                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
+
+                    battlingDetails.turnCounter += 1;
+                    battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                    inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+                }
+                battlingDetails.userOneStatStage = {
+                    atk: 0,
+                    def: 0,
+                    spAtk: 0,
+                    spDef: 0,
+                    speed: 0,
+                    evasion: 0,
+                    accuracy: 0,
+                    crit: 0,
+                };
+                battlingDetails.userOneVolatileStatus = {
+                    badlyPoisonTurn: 0,
+                    sleepTurnLength: 0,
+                    bound: {
+                        name: "",
+                        length: 0
+                    },
+                    escapePrevention: {
+                        name: "",
+                        enabled: false
+                    },
+                    confusionLength: 0,
+                    cursed: false,
+                    drowsy: 0,
+                    embargoLength: 0,
+                    encore: {
+                        moveToRepeat: "",
+                        encoreLength: 0,
+                    },
+                    flinch: false,
+                    healBlockLength: 0,
+                    identified: {
+                        name: "",
+                        activated: false,
+                    },
+                    infatuation: false,
+                    leechSeed: false,
+                    nightmare: false,
+                    perishSongLength: 0,
+                    tauntLength: 0,
+                    telekinesisLength: 0,
+                    torment: {
+                        lastMove: "",
+                        enabled: false
+                    },
+                    typeChange: "",
+                    aquaRing: false,
+                    bracing: false,
+                    chargingMove: {
+                        name: "",
+                        chargingLength: 0,
+                    },
+                    centerOfAttention: false,
+                    defenseCurl: false,
+                    rooting: false,
+                    magicCoat: false,
+                    magneticLevitationLength: 0,
+                    mimicLastOpponentMove: "",
+                    minimized: false,
+                    protection: {
+                        enabled: false,
+                        length: 1,
+                    },
+                    recharging: {
+                        name: "",
+                        enabled: false,
+                    },
+                    semiInvulnerable: false,
+                    substituteHP: 0,
+                    takingAim: 0,
+                    thrashing: {
+                        name: "",
+                        length: 0
+                    },
+                    disable: {
+                        name: "",
+                        length: 0
+                    },
+                    mistLength: 0,
+                    transform: {
+                        enabled: false,
+                        details: {
+                            pokeId: 0,
+                            name: "String",
+                            currentMoves: {},
+                            ivStats: {},
+                            evLevels: {},
+                            base: {}
+                        }
+                    },
+                    counter: 0,
+                    lightScreenLength: 0,
+                    reflectLength: 0,
+                    conversion: false,
+                    previousMove: "",
+                    spikes: false,
+                    destinyBond: 0,
+                }
+
+                await battlingFunctions.updatePokemonRandomEncounterBattle(battlingDetails._id, battlingDetails.userOneBag, battlingDetails.userOneCurrentPokemon, battlingDetails.userOneStatStage, battlingDetails.userOneTeam, battlingDetails.userOneVolatileStatus, battlingDetails.userTwoStatStage, battlingDetails.userTwoTeam, battlingDetails.userTwoVolatileStatus, battlingDetails.userOne);
+
+                //if user chooses to swap pokemon then the enemy does their move
+                if (customId.includes("voluntarily")) {
+                    // do enemy move
+                    let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+                    enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
+
+                    if (enemyMove !== "recharge" && enemyMove.name !== "Struggle" && battlingDetails.userTwoVolatileStatus.thrashing.length === 0) {
+                        let currentMoves = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].currentMoves;
+
+                        currentMoves = currentMoves.filter(move => {
+                            return move.name === enemyMove.name;
+                        });
+                        currentMoves[0].currentPP--;
+                    }
+
+                    let output = await useMove(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], null, enemyMove, battlingDetails);
+                    if (output === true) {
+                        return {
+                            content: "The battle has ended.",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: []
+                        };
+                    } else if (output === false) {
+                        battlingDetails.turnCounter += 1;
+                        battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
+                        inputChannel.send(`🔴🔴🔴 TURN ${battlingDetails.turnCounter} 🔴🔴🔴`);
+                        row = module.exports.setRowDefault(row, inp);
+                        return {
+                            content: "_ _",
+                            embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                            components: [row]
+                        };
+                    } else if (output === "swapping") {
+                        row = setRowSwapPokemon(battlingDetails, inp)
+                        return {
+                            content: "_ _",
+                            embedDetails: createSwapEmbed(battlingDetails),
+                            components: row
+                        };
+                    }
+                }
+
+                row = module.exports.setRowDefault(row, inp)
+                return {
+                    content: "_ _",
+                    embedDetails: module.exports.createEmbedPVM(battlingDetails),
+                    components: [row]
+                };
             },
             // battleRunButton: function (customId) {
             //     console.log(`${inp.user.id}spawnBattlePokemon`)
-            //     // row = setRowPokemon(row, battlingDetails, inp)
+            //     // row = setRowPokemon(battlingDetails, inp)
             //     // return {
             //     //     content: "_ _",
             //     //     embedDetails: createEmbedAfterPokemonPVM(battlingDetails),
@@ -610,7 +1043,7 @@ module.exports = {
 
         const battleFunctions = {
             [`${inp.user.id}spawnBattleAttack`]: actions.battleAttackButton,
-            // [`${inp.user.id}spawnBattlePokemon`]: actions.battlePokemonButton,
+            [`${inp.user.id}spawnBattlePokemon`]: actions.battlePokemonButton,
             [`${inp.user.id}spawnBattleBag`]: actions.battleBagButtons,
             [`${inp.user.id}itemsLeft`]: actions.battleBagButtons,
             [`${inp.user.id}itemsRight`]: actions.battleBagButtons,
@@ -657,19 +1090,44 @@ module.exports = {
             [`${inp.user.id}Paralyze Heal`]: actions.battleRecoveryButton,
             [`${inp.user.id}Potion`]: actions.battleRecoveryButton,
             [`${inp.user.id}backToItems`]: actions.battleBackToItemsButton,
-
+            [`${inp.user.id}swapTo1`]: actions.swapPokemonButton,
+            [`${inp.user.id}swapTo2`]: actions.swapPokemonButton,
+            [`${inp.user.id}swapTo3`]: actions.swapPokemonButton,
+            [`${inp.user.id}swapTo4`]: actions.swapPokemonButton,
+            [`${inp.user.id}swapTo5`]: actions.swapPokemonButton,
+            [`${inp.user.id}swapTo6`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo1`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo2`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo3`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo4`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo5`]: actions.swapPokemonButton,
+            [`${inp.user.id}voluntarilySwapTo6`]: actions.swapPokemonButton,
+            [`${inp.user.id}X Attack`]: actions.usedBattleEffect,
+            [`${inp.user.id}Dire Hit`]: actions.usedBattleEffect,
+            [`${inp.user.id}Guard Spec`]: actions.usedBattleEffect,
+            [`${inp.user.id}X Accuracy`]: actions.usedBattleEffect,
+            [`${inp.user.id}X Sp. Atk`]: actions.usedBattleEffect,
+            [`${inp.user.id}X Sp. Def`]: actions.usedBattleEffect,
+            [`${inp.user.id}X Speed`]: actions.usedBattleEffect,
+            [`${inp.user.id}X Defense`]: actions.usedBattleEffect,
         };
         //TODO: add functions for items
         if (battleFunctions.hasOwnProperty(inp.customId)) {
-            return battleFunctions[inp.customId]();
+            return battleFunctions[inp.customId](inp.customId);
         } else if (inp.customId.includes(`${inp.user.id}itemUsed`)) {
             const splitString = inp.customId.replace(`${inp.user.id}itemUsed`, "");
             const splitIndex = splitString.search(/\d/);
 
             const item = splitString.substring(0, splitIndex);
-            const pokemon = splitString.substring(splitIndex);
+            let pokemon = splitString.substring(splitIndex);
+            if (item.includes("Used Ether") || item.includes("Used Max Ether")) {
+                const moveNumber = splitString.charAt(splitString.length - 1);
+                pokemon = pokemon.charAt(0);
+                // console.log(item.trim(), parseInt(pokemon.trim()), parseInt(moveNumber.trim()))
+                return actions.usedItemOnPokemon(item.trim(), parseInt(pokemon.trim()), parseInt(moveNumber.trim()));
+            }
 
-            return actions.usedItemOnPokemon(item.trim(), pokemon.trim());
+            return actions.usedItemOnPokemon(item.trim(), parseInt(pokemon.trim()));
         } else {
             return actions['default']();
         }
@@ -733,13 +1191,16 @@ module.exports = {
             pokemonToUpdate.base.speed = volatileStatus.transform.details.base.speed;
         }
 
-        if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "sleeping") {
-            battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status = "normal";
+        for (let i = 0; i < battlingDetails.userOneTeam.length; i++) {
+            battlingDetails.userOneTeam[i].status = "normal";
         }
-
-        if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "sleeping") {
-            battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status = "normal";
-        }
+        // if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "sleeping") {
+        //     battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status = "normal";
+        // }
+        //
+        // if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "sleeping") {
+        //     battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status = "normal";
+        // }
 
         //update battling database
         await battlingFunctions.deletePVMBattle(battlingDetails._id);
@@ -749,11 +1210,11 @@ module.exports = {
 
             //TODO: check if exp needs to be shared, create a set of all pokemon that was in battle and didnt feint and divide exp equally
             //increase pokemon xp
-            let newXp = getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
+            let newXp = await getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
             battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].exp += newXp;
             inputChannel.send(`Gained ${newXp} xp.`);
 
-            let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
+            let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], inputChannel);
 
             //if the pokemon leveled up check if it needs to evolve
             if (leveledUp) {
@@ -792,7 +1253,7 @@ module.exports = {
                                 }
                             })
 
-                            collector.on('end', async (collected, reason) => {
+                            collector.on('end', async () => {
                                 evolvingMsg.delete();
 
                                 const pokemonDetails = await pokemonListFunctions.getPokemonFromId(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].pokeId);
@@ -830,7 +1291,42 @@ module.exports = {
                             console.log(e)
                         }
                     })
+                } else {
+                    //update bag
+                    await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+
+                    //update team
+                    await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
+
+                    //update battling to false
+                    await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+
+                    //increase user gold depending on pokemon level
+                    let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
+                    battlingDetails.userOne.money += money;
+                    inputChannel.send(`Got ${money} coins.`);
+
+                    //update set gold
+                    await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
                 }
+            } else {
+                //update bag
+                await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+
+                //update team
+                await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
+
+                //update battling to false
+                await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+
+                //increase user gold depending on pokemon level
+                let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
+                battlingDetails.userOne.money += money;
+                inputChannel.send(`Got ${money} coins.`);
+
+                //update set gold
+                await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
+
             }
         } else if (endType === "wildPokemonCaught") {
             inputChannel.send(`Wild pokemon was caught.`);
@@ -845,6 +1341,9 @@ module.exports = {
                 battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken = 0;
                 battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status = "normal";
             }
+
+            //update team
+            await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
 
             //add pokemon to user
             await trainerFunctions.addPokemonToCreatedUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
@@ -983,29 +1482,6 @@ function setRowAttacks(row, battlingDetails, inp) {
     return row;
 }
 
-function setRowPokemon(row, battlingDetails, inp) {
-    //cant swap pokemon if user is using a recharge move
-
-    for (let j = 0; j < battlingDetails.userOneTeam.length; j++) {
-
-        const name = battlingDetails.userOneTeam[j].nickname || battlingDetails.userOneTeam[j].name
-        // const name = battlingDetails.userOneTeam[j].name
-        row.addComponents(
-            new MessageButton()
-                .setCustomId(`${j}${inp.user.id}${name}`)
-                .setLabel(`Swap to ${name}`)
-                .setStyle('PRIMARY'),
-        )
-    }
-    row.addComponents(
-        new MessageButton()
-            .setCustomId(`${inp.user.id}back`)
-            .setLabel(`back`)
-            .setStyle('DANGER'),
-    )
-    return row;
-}
-
 function setRowBattleItem(battlingDetails, inp) {
 
     let rows = [];
@@ -1103,8 +1579,10 @@ function setRowBattleItem(battlingDetails, inp) {
 
 function setRowItemUsed(battlingDetails, inp, item, itemType) {
 
-    const pokemonArray = [];
     const unfilteredPokemon = battlingDetails.userOneTeam;
+    const pokemonArray = [];
+    let rows = [];
+    const pokemonRow = new MessageActionRow();
 
     for (let i = 0; i < unfilteredPokemon.length; i++) {
         const currentPokemon = unfilteredPokemon[i];
@@ -1113,37 +1591,54 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
         const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
+
         switch (itemType) {
             case "aliveOnly":
-                if (currentHP > 0)
+                if (currentHP > 0) {
                     pokemonArray.push(currentPokemon);
+                    if (pokemonArray.length < 6) {
+                        pokemonRow.addComponents(
+                            new MessageButton()
+                                .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
+                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
+                                .setStyle('PRIMARY'),
+                        )
+                    }
+                }
                 break;
             case "deadOnly":
-                if (currentHP < 1)
+                if (currentHP < 1) {
                     pokemonArray.push(currentPokemon);
+                    if (pokemonArray.length < 6) {
+                        pokemonRow.addComponents(
+                            new MessageButton()
+                                .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
+                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
+                                .setStyle('PRIMARY'),
+                        )
+                    }
+                }
                 break;
             case "deadAndAlive":
                 pokemonArray.push(currentPokemon);
+                if (pokemonArray.length < 6) {
+                    pokemonRow.addComponents(
+                        new MessageButton()
+                            .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
+                            .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
+                            .setStyle('PRIMARY'),
+                    )
+                }
                 break;
         }
     }
-    let rows = [];
-    const pokemonRow = new MessageActionRow();
-    const backRow = new MessageActionRow();
 
-    for (let i = 0; i < Math.min(pokemonArray.length, 5); i++) {
-        pokemonRow.addComponents(
-            new MessageButton()
-                .setCustomId(`${inp.user.id}itemUsed${item} ${i}`)
-                .setLabel(`Use ${item} on ${i + 1}) ${pokemonArray[i].name}`)
-                .setStyle('PRIMARY'),
-        )
-    }
 
     if (pokemonArray.length > 0) {
         rows.push(pokemonRow);
     }
 
+    const backRow = new MessageActionRow();
     if (pokemonArray.length > 5) {
         backRow.addComponents(
             new MessageButton()
@@ -1152,6 +1647,7 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
                 .setStyle('PRIMARY'),
         )
     }
+
     backRow.addComponents(
         new MessageButton()
             .setCustomId(`${inp.user.id}backToItems`)
@@ -1160,6 +1656,93 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
     )
     rows.push(backRow);
     return rows;
+}
+
+function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
+
+    const unfilteredPokemon = battlingDetails.userOneTeam;
+    const pokemonArray = [];
+
+    const pokemonRow = new MessageActionRow();
+
+    for (let i = 0; i < unfilteredPokemon.length; i++) {
+        if (i === battlingDetails.userOneCurrentPokemon - 1) {
+            continue;
+        }
+
+        const currentPokemon = unfilteredPokemon[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        if (currentHP > 0) {
+            pokemonArray.push(currentPokemon);
+
+            if (voluntarily) {
+                pokemonRow.addComponents(
+                    new MessageButton()
+                        .setCustomId(`${inp.user.id}voluntarilySwapTo${i + 1}`)
+                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
+                        .setStyle('PRIMARY'),
+                )
+            } else {
+                pokemonRow.addComponents(
+                    new MessageButton()
+                        .setCustomId(`${inp.user.id}swapTo${i + 1}`)
+                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
+                        .setStyle('PRIMARY'),
+                )
+            }
+        }
+    }
+    let row = [];
+
+    if (pokemonArray.length === 0 || pokemonArray.length > 5) {
+        pokemonRow.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}back`)
+                .setLabel(`back`)
+                .setStyle('DANGER'),
+        )
+        row.push(pokemonRow);
+    } else {
+        const backRow = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId(`${inp.user.id}back`)
+                    .setLabel(`back`)
+                    .setStyle('DANGER')
+            )
+        row.push(pokemonRow);
+        row.push(backRow);
+    }
+
+    return row;
+}
+
+function setRowEther(battlingDetails, inp, etherType, pokemonUsedOn) {
+
+    const moveRow = new MessageActionRow();
+    let moveList = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves;
+
+    for (let i = 0; i < moveList.length; i++) {
+        moveRow.addComponents(
+            new MessageButton()
+                .setCustomId(`${inp.user.id}itemUsedUsed ${etherType}${pokemonUsedOn}${i}`)
+                .setLabel(`Use ${etherType} on ${moveList[i].name}`)
+                .setStyle('PRIMARY'),
+        )
+    }
+
+    moveRow.addComponents(
+        new MessageButton()
+            .setCustomId(`${inp.user.id}${etherType}`)
+            .setLabel(`back`)
+            .setStyle('DANGER')
+    )
+
+    return moveRow;
 }
 
 function createEmbedAfterAttackPVM(battlingDetails) {
@@ -1219,31 +1802,6 @@ function createEmbedDefault(battlingDetails) {
         .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp(),
-        gif,
-        false
-    ]
-}
-
-function createEmbedAfterPokemonPVM(battlingDetails) {
-
-    let attackPokemonEmbed = new MessageEmbed()
-        .setColor('RANDOM')
-        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
-        .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
-        .setTimestamp()
-
-    for (let j = 0; j < battlingDetails.userOneTeam.length; j++) {
-        const userOneHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[j].evLevels.hp));
-        const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[j].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[j].level));
-        const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[j].level, battlingDetails.userOneTeam[j].base.hp, userOneElb));
-
-        attackPokemonEmbed.addField(
-            `${j + 1}) ${battlingDetails.userOneTeam[j].nickname || battlingDetails.userOneTeam[j].name}`,
-            `${userOneTotalHp - battlingDetails.userOneTeam[j].damageTaken}/${userOneTotalHp}`
-        )
-    }
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
-    return [attackPokemonEmbed,
         gif,
         false
     ]
@@ -1335,6 +1893,118 @@ function createEmbedAfterItemUsed(battlingDetails, itemType) {
         gif,
         false
     ]
+}
+
+function createSwapEmbed(battlingDetails) {
+    let pokemonToSwapEmbed = new MessageEmbed()
+        .setColor('RANDOM')
+        .setTitle(`Available Pokemon to swap:`)
+        .setTimestamp()
+
+    const pokemonArray = [];
+    const unfilteredPokemon = battlingDetails.userOneTeam;
+
+    for (let i = 0; i < unfilteredPokemon.length; i++) {
+
+        if (i === battlingDetails.userOneCurrentPokemon - 1) {
+            continue;
+        }
+
+        const currentPokemon = unfilteredPokemon[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        if (currentHP > 0)
+            pokemonArray.push(currentPokemon);
+    }
+
+    for (let i = 0; i < pokemonArray.length; i++) {
+        const currentPokemon = pokemonArray[i];
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - currentPokemon.damageTaken;
+
+        pokemonToSwapEmbed.addField(`${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`, '\u200b', false);
+    }
+    const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
+
+    const userTwoElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoHpMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
+
+    const userTwoTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoElb));
+
+    const userOneHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.hp));
+
+    const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
+
+    const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
+
+    let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
+    let enemy_pokemon_gender = true;
+    if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].male) {
+        enemy_pokemon_gender = false;
+    }
+    const enemy_pokemon_level = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level;
+    const enemy_pokemon_current_hp = userTwoTotalHp - battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].damageTaken;
+
+    const enemy_pokemon_total_hp = userTwoTotalHp;
+    const user_id = battlingDetails.userOne.userId;
+    let user_pokemon_name = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name;
+    let user_pokemon_gender = true;
+    if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].male) {
+        user_pokemon_gender = false;
+    }
+
+    const user_pokemon_level = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level;
+    const user_pokemon_current_hp = userOneTotalHp - battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].damageTaken;
+    const user_pokemon_total_hp = userOneTotalHp;
+    const enemy_pokemon_id = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].pokeId;
+    const user_pokemon_id = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].pokeId;
+    const enemy_pokemon_shiny = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].shiny;
+    const team_pokemon_shiny = battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].shiny;
+
+    let options = {
+        pythonOptions: ['-u'], // get print results in real-time
+        args: [enemy_pokemon_name, enemy_pokemon_gender, enemy_pokemon_level, enemy_pokemon_current_hp, enemy_pokemon_total_hp, user_id,
+            user_pokemon_name, user_pokemon_gender, user_pokemon_level, user_pokemon_current_hp, user_pokemon_total_hp,
+            enemy_pokemon_id, user_pokemon_id, enemy_pokemon_shiny, team_pokemon_shiny, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status]
+    };
+
+    PythonShell.run('./python/battle_image.py', options, function (err, results) {
+        if (err)
+            throw err;
+        // Results is an array consisting of messages collected during execution
+        console.log('python code results: %j', results);
+    });
+
+    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    return [pokemonToSwapEmbed,
+        gif,
+        false
+    ]
+}
+
+function createEtherEmbed(battlingDetails, etherType, pokemonUsedOn) {
+    let pokemonToSwapEmbed = new MessageEmbed()
+        .setColor('RANDOM')
+        .setTitle(`Choose move to use ${etherType} on:`)
+        .setTimestamp()
+
+    let moveList = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves;
+
+    for (let i = 0; i < moveList.length; i++) {
+        pokemonToSwapEmbed.addField(`${i + 1}) ${moveList[i].name} ${moveList[i].currentPP}/${moveList[i].pp}`, `\u200b`, false);
+
+    }
+
+    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    return [pokemonToSwapEmbed,
+        gif,
+        false
+    ]
+
 }
 
 function escapeCalculation(userSpeed, opponentSpeed, attemptNumber) {
@@ -1606,8 +2276,30 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
 
     if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
         //end battle function
+
         if (user.damageTaken >= userTotalHp) {
-            await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+            battleDetails.userOneTeam[battleDetails.userOneCurrentPokemon - 1].status = "normal";
+
+            let usablePokemon = [];
+            for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
+                const pokemon = battleDetails.userOneTeam[i];
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
+
+                if (maxHP > pokemon.damageTaken) {
+                    usablePokemon.push(i);
+                }
+            }
+
+            if (usablePokemon.length === 0) {
+                inputChannel.send(`All usable pokemon have feinted.`);
+                await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+            } else {
+                await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
+                return "swapping";
+            }
         } else {
             await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
         }
@@ -1618,7 +2310,38 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
             //end battle function
             if (user.damageTaken >= userTotalHp) {
-                await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                battleDetails.userOneTeam[battleDetails.userOneCurrentPokemon - 1].status = "normal";
+
+                let usablePokemon = [];
+                for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
+                    const pokemon = battleDetails.userOneTeam[i];
+                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                    const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
+
+                    if (maxHP > pokemon.damageTaken) {
+                        usablePokemon.push(i);
+                    }
+                }
+
+                if (usablePokemon.length === 0) {
+                    inputChannel.send(`All usable pokemon have feinted.`);
+                    await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                } else {
+                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                    inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
+                    return "swapping";
+                }
+
+                // if (usablePokemon.length === 0)
+                //     await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                // else {
+                //     inputChannel.send(`Swapped to ${battleDetails.userOneTeam[usablePokemon[0]].name}.`)
+                //     battleDetails.userOneCurrentPokemon = usablePokemon[0] + 1;
+                //     //update battle details in db
+                //     await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                //     return false;
+                // }
             } else {
                 await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
             }
@@ -1628,7 +2351,39 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         if (user.damageTaken >= userTotalHp || randomPokemon.damageTaken >= pokemonTotalHp) {
             //end battle function
             if (user.damageTaken >= userTotalHp) {
-                await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                battleDetails.userOneTeam[battleDetails.userOneCurrentPokemon - 1].status = "normal";
+
+                let usablePokemon = [];
+                for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
+                    const pokemon = battleDetails.userOneTeam[i];
+                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                    const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
+
+                    if (maxHP > pokemon.damageTaken) {
+                        usablePokemon.push(i);
+                    }
+                }
+
+                if (usablePokemon.length === 0) {
+                    inputChannel.send(`All usable pokemon have feinted.`);
+                    await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                } else {
+                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                    inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
+                    return "swapping";
+                }
+
+                // if (usablePokemon.length === 0)
+                //     await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
+                // else {
+                //     // console.log(inputChannel, 3)
+                //     inputChannel.send(`Swapped to ${battleDetails.userOneTeam[usablePokemon[0]].name}.`)
+                //     battleDetails.userOneCurrentPokemon = usablePokemon[0] + 1;
+                //     //update battle details in db
+                //     await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                //     return false;
+                // }
             } else {
                 await module.exports.endRandomBattleEncounter("randomPokemonFeints", battleDetails);
             }
@@ -1989,7 +2744,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "grass", defenderVolatileStatus)) {
-                        inputChannel.send(`${move.name} was paralyzed.`)
+                        inputChannel.send(`${defender.name} was paralyzed.`)
                         defender.status = "paralyzed";
                     } else {
                         inputChannel.send(`${move.name} failed.`)
@@ -4741,7 +5496,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
 async function getDmg(attacker, defender, move, attackerStatStage, defenderStatStage, defenderVolatileStatus) {
     //dmg calculations: https://bulbapedia.bulbagarden.net/wiki/Damage#Damage_calculation
-
     // let fullAttackerDetails = pokemonListFunctions.getPokemonFromId(attacker.pokeId);
     let fullDefenderDetails = await pokemonListFunctions.getPokemonFromId(defender.pokeId);
     if (defenderVolatileStatus.conversion) {
@@ -5687,7 +6441,7 @@ async function getWeight(pokeId) {
     return parseFloat(match[1].replace("lbs"));
 }
 
-async function getNewLevelAndXp(pokemon) {
+async function getNewLevelAndXp(pokemon, inputChannel) {
 
     const pokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
 
@@ -5700,6 +6454,7 @@ async function getNewLevelAndXp(pokemon) {
     while (pokemon.exp > xpNeededForNextLevel) {
         leveledUp = true;
         pokemon.level += 1;
+        inputChannel.send(`${pokemon.name} leveled up to ${pokemon.level}.`);
         pokemon.exp -= xpNeededForNextLevel;
         xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
     }
@@ -5728,8 +6483,8 @@ function getMoneyFromSpawnedPokemon(pokemonLevel) {
         return Math.floor(Math.random() * 1200) + 800;
 }
 
-function getGainedXpFromBattle(feintedPokemon, winningPokemon) {
-    let feintedPokemonDetails = pokemonListFunctions.getPokemonFromId(feintedPokemon.pokeId);
+async function getGainedXpFromBattle(feintedPokemon, winningPokemon) {
+    let feintedPokemonDetails = await pokemonListFunctions.getPokemonFromId(feintedPokemon.pokeId);
 
     //base experience yield of feinted pokemon
     let b = feintedPokemonDetails.baseExperience;
@@ -5754,11 +6509,17 @@ function getGainedXpFromBattle(feintedPokemon, winningPokemon) {
     //depends on exp point power
     let p = 1;
 
+
     let firstPart = Math.floor(((b * L) / 5) * (1 / s));
+
 
     let num = ((2 * L) + 10);
     let dem = (L + L_p + 10);
     let secondPart = Math.floor(firstPart * Math.pow(num / dem, 2.5));
+
+    // console.log(b, L, s, firstPart);
+    // console.log(num, dem, secondPart);
+    // console.log(t, e, v, f, p);
 
     return Math.floor(secondPart * t * e * v * f * p);
 }

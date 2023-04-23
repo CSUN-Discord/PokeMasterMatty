@@ -8,9 +8,12 @@ module.exports = {
         try {
             await battlingSchema
                 .findOneAndUpdate(
-                    {},
+                    {
+                        "userOne.userId": userId
+                    },
                     {
                         $set: {
+                            turnCounter: 1,
                             userOne: player,
                             userOneTeam: player.team,
                             userOneBag: player.bag,
@@ -285,7 +288,27 @@ module.exports = {
         }
     },
 
+    setTurnCount: function (battleID, count) {
+        try {
+            battlingSchema
+                .findOneAndUpdate({
+                        _id: battleID
+                    },
+                    {
+                        $set: {
+                            turnCounter: count
+                        }
+                    },
+                    (err, res) => {
+                        if (err) console.log(err);
+                    });
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
     updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus, userOne) {
+        // console.log(userOneCurrentPokemon)
         try {
             battlingSchema
                 .updateOne({

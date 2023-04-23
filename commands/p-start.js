@@ -48,13 +48,15 @@ module.exports = {
                         await pokemonGameFunctions.setPlaying(interaction.guild.id, true);
                         await pokemonGameFunctions.resetTimer(interaction.guild.id);
                         await pokemonGameFunctions.resetMessages(interaction.guild.id);
+                        await trainerFunctions.resetBattling();
 
                         interaction.reply({content: `A game has started in ${channel.name}.`, ephemeral: true});
 
                         // spawnJob = schedule.scheduleJob('* * * * *', async function () {
                         const gameDocument = await pokemonGameFunctions.getPokemonDocument(interaction.guild.id);
 
-                        if ((gameDocument.spawnTime - (gameDocument.messageCounter * 10000) - 60000) <= 0) {
+                        // console.log(gameDocument.spawnTime, gameDocument.messageCounter * 10, (gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60))
+                        if ((gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60) <= 0) {
                             await pokemonGameFunctions.resetTimer(interaction.guild.id);
                             await pokemonGameFunctions.resetMessages(interaction.guild.id);
 
@@ -101,8 +103,8 @@ module.exports = {
                             }
 
 
-                            const pokemon = [await pokemonListFunctions.getPokemonFromId(4)];
-                            // const pokemon = shuffleBag.splice(Math.floor(Math.random() * shuffleBag.length), 1);
+                            // const pokemon = [await pokemonListFunctions.getPokemonFromId(4)];
+                            const pokemon = shuffleBag.splice(Math.floor(Math.random() * shuffleBag.length), 1);
                             let quantity = pokemonFunctions.setQuantity(pokemon[0].spawnRate);
                             await pokemonGameFunctions.setSpawned(interaction.guild.id, pokemon[0]);
 
@@ -145,7 +147,8 @@ module.exports = {
                                         if (i.customId === 'spawnBattle') {
                                             await i.deferUpdate()
 
-                                            const user = await trainerFunctions.getUser(interaction.user.id);
+                                            const user = await trainerFunctions.getUser(i.user.id);
+
                                             if (user == null) return i.channel.send({
                                                 content: "Join the game first before battling.",
                                             }).then((msg) => {
@@ -153,9 +156,25 @@ module.exports = {
                                             });
 
                                             //check if user is in battle
-                                            //check if user has a usable pokemon
+                                            if (user.battling) return i.channel.send({
+                                                content: "Already in battle.",
+                                            }).then((msg) => {
+                                                setTimeout(() => msg.delete(), 5000);
+                                            });
 
-                                            await trainerFunctions.setBattling(interaction.user.id, true);
+                                            //check if user has a usable pokemon
+                                            const currentPokemon = user.team[0];
+                                            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                                            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                                            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+                                            let currentHP = maxHP - currentPokemon.damageTaken;
+                                            if (currentHP < 1) return i.channel.send({
+                                                content: "Current starting pokemon is too weak to battle.",
+                                            }).then((msg) => {
+                                                setTimeout(() => msg.delete(), 5000);
+                                            });
+                                            
+                                            await trainerFunctions.setBattling(i.user.id, true);
 
                                             quantity--;
 
@@ -176,6 +195,8 @@ module.exports = {
                                             // await thread.setLocked(true);
                                             let row = await battleFunctions.setRowDefault(new MessageActionRow(), i)
                                             thread.send({content: "You have 10 minutes for this battle."})
+                                            thread.send(`🔴🔴🔴 TURN 1 🔴🔴🔴`);
+
                                             let message;
 
                                             let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
@@ -305,7 +326,7 @@ module.exports = {
 
                             console.log(shuffleBag.length)
                         } else {
-                            const newTimer = gameDocument.spawnTime - (gameDocument.messageCounter * 10000) - 60000;
+                            const newTimer = gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60;
                             await pokemonGameFunctions.setTimer(interaction.guild.id, newTimer)
                             await pokemonGameFunctions.resetMessages(interaction.guild.id);
                         }

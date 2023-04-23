@@ -51,6 +51,26 @@ module.exports = {
         }
     },
 
+    resetBattling: async function () {
+        try {
+            await trainerSchema
+                .updateMany(
+                    {},
+                    {
+                        $set: {
+                            battling: false
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
     setBag: async function (userId, bag) {
         try {
             await trainerSchema
@@ -116,9 +136,12 @@ module.exports = {
 
         if (player.team.length < 6) {
             // newPokemon.teamNumber = player.team.length + 1;
+            newPokemon.status = "normal";
             await addPokemonToTeam(userId, newPokemon);
         } else {
             // newPokemon.boxNumber = player.team.length + 1;
+            newPokemon.status = "normal";
+            newPokemon.damageTaken = 0;
             await addPokemonToBox(userId, newPokemon);
         }
     },

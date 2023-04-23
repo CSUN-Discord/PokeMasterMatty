@@ -4,6 +4,7 @@ const {Schema} = mongoose;
 //database table for all battles
 
 const battlingSchema = new Schema({
+    turnCounter: Number,
     userOne: Schema.Types.Mixed,
     userOneTeam: Array,
     userOneBag: Map,
