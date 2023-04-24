@@ -22,6 +22,8 @@ module.exports = {
                             userTwoCurrentPokemon: 1,
                             battleType: "pokemonRandomEncounter",
                             fleeCount: 0,
+                            userOneBattledPokemon: ([1]),
+                            userTwoBattledPokemon: ([1]),
                             userTwoStatStage: {
                                 atk: 0,
                                 def: 0,
@@ -307,7 +309,7 @@ module.exports = {
         }
     },
 
-    updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus, userOne) {
+    updatePokemonRandomEncounterBattle: function (objectId, userOneBag, userOneCurrentPokemon, userOneStatStage, userOneTeam, userOneVolatileStatus, userTwoStatStage, userTwoTeam, userTwoVolatileStatus, userOne, userOneBattledPokemon, userTwoBattledPokemon) {
         // console.log(userOneCurrentPokemon)
         try {
             battlingSchema
@@ -323,7 +325,9 @@ module.exports = {
                         userOneVolatileStatus: userOneVolatileStatus,
                         userTwoStatStage: userTwoStatStage,
                         userTwoTeam: userTwoTeam,
-                        userTwoVolatileStatus: userTwoVolatileStatus
+                        userTwoVolatileStatus: userTwoVolatileStatus,
+                        userOneBattledPokemon: userOneBattledPokemon,
+                        userTwoBattledPokemon: userTwoBattledPokemon
                     },
                     (err, res) => {
                         if (err) console.log(err);

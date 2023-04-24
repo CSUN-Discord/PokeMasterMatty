@@ -22,6 +22,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const {MessageEmbed} = require("discord.js");
 const {updateMove} = require("../db/functions/moveListFunctions");
 const moveListFunction = require("../db/functions/moveListFunctions");
+const emojiListFunctions = require("../db/functions/emojiListFunctions");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test")
@@ -37,18 +38,34 @@ module.exports = {
 
         interaction.reply({content: "checking stuff", ephemeral: true});
 
-        // for (let i = 0; i < 2; i++) {
-        for (let i = 0; i < 900; i++) {
-            if (i > 826) {
+        // await emojiListFunctions.addBoxIcon(2, "<:2_:1099844263078015039>");
+        // await emojiListFunctions.addBoxIcon(3, "<:3_:1099844297777500220>");
+        // await emojiListFunctions.addBoxIcon(4, "<:4_:1099845956914126858>");
+        // await emojiListFunctions.addBoxIcon(5, "<:5_:1099845958809952356>");
+        // await emojiListFunctions.addBoxIcon(6, "<:6_:1099845959938215967>");
+        // await emojiListFunctions.addBoxIcon(7, "<:7_:1099845961062285322>");
+        // await emojiListFunctions.addBoxIcon(8, "<:8_:1099845962941353996>");
+        // await emojiListFunctions.addBoxIcon(9, "<:9_:1099861124196868136>");
+        // await emojiListFunctions.addBoxIcon(10, "<:10:1099861160649576449>");
 
-            } else {
-                try {
-                    updateAllTypes(`https://pokeapi.co/api/v2/move/?offset=${i}&limit=${1}`, i)
-                } catch (e) {
-                    console.log(e)
-                }
-            }
-        }
+        // for (let i = 1; i < 152; i++) {
+        //     await emojiListFunctions.addShinyGif(i, "");
+        // }
+
+        // await emojiListFunctions.addNormalGif(1, "<a:1_:1099844401397764137>");
+
+        // for (let i = 0; i < 2; i++) {
+        // for (let i = 0; i < 900; i++) {
+        //     if (i > 826) {
+        //
+        //     } else {
+        //         try {
+        //             updateAllTypes(`https://pokeapi.co/api/v2/move/?offset=${i}&limit=${1}`, i)
+        //         } catch (e) {
+        //             console.log(e)
+        //         }
+        //     }
+        // }
 
         // const enemy_pokemon_name = "Test nam";
         // const enemy_pokemon_gender = false;

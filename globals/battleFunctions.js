@@ -969,8 +969,11 @@ module.exports = {
                     spikes: false,
                     destinyBond: 0,
                 }
+                if (!battlingDetails.userOneBattledPokemon.includes(battlingDetails.userOneCurrentPokemon)) {
+                    battlingDetails.userOneBattledPokemon.push(battlingDetails.userOneCurrentPokemon);
+                }
 
-                await battlingFunctions.updatePokemonRandomEncounterBattle(battlingDetails._id, battlingDetails.userOneBag, battlingDetails.userOneCurrentPokemon, battlingDetails.userOneStatStage, battlingDetails.userOneTeam, battlingDetails.userOneVolatileStatus, battlingDetails.userTwoStatStage, battlingDetails.userTwoTeam, battlingDetails.userTwoVolatileStatus, battlingDetails.userOne);
+                await battlingFunctions.updatePokemonRandomEncounterBattle(battlingDetails._id, battlingDetails.userOneBag, battlingDetails.userOneCurrentPokemon, battlingDetails.userOneStatStage, battlingDetails.userOneTeam, battlingDetails.userOneVolatileStatus, battlingDetails.userTwoStatStage, battlingDetails.userTwoTeam, battlingDetails.userTwoVolatileStatus, battlingDetails.userOne, battlingDetails.userOneBattledPokemon, battlingDetails.userTwoBattledPokemon);
 
                 //if user chooses to swap pokemon then the enemy does their move
                 if (customId.includes("voluntarily")) {
@@ -1209,125 +1212,123 @@ module.exports = {
             inputChannel.send(`Enemy pokemon feinted.`);
 
             //TODO: check if exp needs to be shared, create a set of all pokemon that was in battle and didnt feint and divide exp equally
-            //increase pokemon xp
-            let newXp = await getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
-            battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].exp += newXp;
-            inputChannel.send(`Gained ${newXp} xp.`);
 
-            let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], inputChannel);
+            let battledAndAlive = [];
+            for (let i = 0; i < battlingDetails.userOneBattledPokemon.length; i++) {
+                const currentPokemon = battlingDetails.userOneTeam[battlingDetails.userOneBattledPokemon[i] - 1];
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+                let currentHP = maxHP - currentPokemon.damageTaken;
 
-            //if the pokemon leveled up check if it needs to evolve
-            if (leveledUp) {
-                if (isPokemonEvolving(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1])) {
+                if (currentHP > 0) {
+                    battledAndAlive.push(battlingDetails.userOneBattledPokemon[i])
+                }
+            }
 
-                    const row = new MessageActionRow()
-                        .addComponents(
-                            new MessageButton()
-                                .setCustomId(`${battlingDetails.userOne.userId}stop`)
-                                .setLabel('stop evolving')
-                                .setStyle('DANGER'),
-                        )
+            for (let i = 0; i < battledAndAlive.length; i++) {
+                //increase pokemon xp
+                let newXp = await getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battledAndAlive[i] - 1]);
+                newXp = Math.floor(newXp / battledAndAlive.length);
+                battlingDetails.userOneTeam[battledAndAlive[i] - 1].exp += newXp;
+                inputChannel.send(`${battlingDetails.userOneTeam[battledAndAlive[i] - 1].name} gained ${newXp} xp.`);
 
-                    let evolvingMsg;
+                let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battledAndAlive[i] - 1], inputChannel);
+                // console.log(leveledUp)
+                // console.log(`${battlingDetails.userOneTeam[battledAndAlive[i] - 1].name} lvled up`)
 
-                    inputChannel.send({
-                        content: "Pokemon is evolving!",
-                        components: [row]
-                    }).then(async (msg) => {
-                        evolvingMsg = msg;
+                //if the pokemon leveled up check if it needs to evolve
+                if (leveledUp) {
+                    if (isPokemonEvolving(battlingDetails.userOneTeam[battledAndAlive[i] - 1])) {
 
-                        let evolving = true;
+                        const row = new MessageActionRow()
+                            .addComponents(
+                                new MessageButton()
+                                    .setCustomId(`${battlingDetails.userOne.userId}stop${battledAndAlive[i]}`)
+                                    .setLabel('stop evolving')
+                                    .setStyle('DANGER'),
+                            )
 
-                        try {
-                            const collector = inputChannel.createMessageComponentCollector({
-                                time: 10000
-                            });
+                        let pokemonNum = battledAndAlive[i];
+                        let evolvingMsg;
 
-                            collector.on('collect', async i => {
-                                if (battlingDetails.userOne.userId !== i.user.id) return;
+                        inputChannel.send({
+                            content: `${battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving!`,
+                            components: [row]
+                        }).then(async (msg) => {
+                            evolvingMsg = msg;
 
-                                if (i.customId === `${battlingDetails.userOne.userId}stop`) {
-                                    evolving = false;
+                            let evolving = true;
 
-                                    collector.stop();
-                                }
-                            })
+                            try {
+                                const collector = inputChannel.createMessageComponentCollector({
+                                    time: 10000
+                                });
 
-                            collector.on('end', async () => {
-                                evolvingMsg.delete();
+                                collector.on('collect', async i => {
+                                    if (battlingDetails.userOne.userId !== i.user.id) return;
+                                    // console.log(i.customId)
+                                    // console.log(`${battlingDetails.userOne.userId}stop${pokemonNum}`)
 
-                                const pokemonDetails = await pokemonListFunctions.getPokemonFromId(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].pokeId);
-                                const pokemonEvolutionDetails = await pokemonListFunctions.getPokemonFromId(pokemonDetails.evolution);
+                                    if (i.customId === `${battlingDetails.userOne.userId}stop${pokemonNum}`) {
+                                        // console.log("stopped")
+                                        evolving = false;
 
-                                if (evolving) {
-                                    battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].pokeId = pokemonEvolutionDetails.pokeId;
-                                    battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name = pokemonEvolutionDetails.name;
-                                    battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base = pokemonEvolutionDetails.baseStats;
+                                        collector.stop();
+                                    }
+                                })
 
-                                    inputChannel.send(`${pokemonDetails.name} evolved into ${pokemonEvolutionDetails.name}.`);
-                                } else {
-                                    inputChannel.send(`${pokemonDetails.name} is no longer evolving.`);
-                                }
+                                collector.on('end', async () => {
+                                    evolvingMsg.delete();
 
-                                //update bag
-                                await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+                                    const pokemonDetails = await pokemonListFunctions.getPokemonFromId(battlingDetails.userOneTeam[pokemonNum - 1].pokeId);
+                                    const pokemonEvolutionDetails = await pokemonListFunctions.getPokemonFromId(pokemonDetails.evolution);
 
-                                //update team
-                                await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
+                                    if (evolving) {
+                                        battlingDetails.userOneTeam[pokemonNum - 1].pokeId = pokemonEvolutionDetails.pokeId;
+                                        battlingDetails.userOneTeam[pokemonNum - 1].name = pokemonEvolutionDetails.name;
+                                        battlingDetails.userOneTeam[pokemonNum - 1].base = pokemonEvolutionDetails.baseStats;
 
-                                //update battling to false
-                                await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+                                        inputChannel.send(`${pokemonDetails.name} evolved into ${pokemonEvolutionDetails.name}.`);
+                                    } else {
+                                        inputChannel.send(`${pokemonDetails.name} is no longer evolving.`);
+                                    }
 
-                                //increase user gold depending on pokemon level
-                                let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
-                                battlingDetails.userOne.money += money;
-                                inputChannel.send(`Got ${money} coins.`);
+                                    //update bag
+                                    await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
 
-                                //update set gold
-                                await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
+                                    //update team
+                                    await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
 
-                            })
-                        } catch (e) {
-                            console.log(e)
-                        }
-                    })
+                                })
+                            } catch (e) {
+                                console.log(e)
+                            }
+                        })
+                    } else {
+                        //update bag
+                        await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
+
+                        //update team
+                        await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
+                    }
                 } else {
                     //update bag
                     await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
 
                     //update team
                     await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
-
-                    //update battling to false
-                    await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
-
-                    //increase user gold depending on pokemon level
-                    let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
-                    battlingDetails.userOne.money += money;
-                    inputChannel.send(`Got ${money} coins.`);
-
-                    //update set gold
-                    await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
                 }
-            } else {
-                //update bag
-                await trainerFunctions.setBag(battlingDetails.userOne.userId, battlingDetails.userOneBag);
-
-                //update team
-                await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
-
-                //update battling to false
-                await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
-
-                //increase user gold depending on pokemon level
-                let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
-                battlingDetails.userOne.money += money;
-                inputChannel.send(`Got ${money} coins.`);
-
-                //update set gold
-                await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
-
             }
+            //update battling to false
+            await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
+            //increase user gold depending on pokemon level
+            let money = getMoneyFromSpawnedPokemon(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level);
+            battlingDetails.userOne.money += money;
+            inputChannel.send(`Got ${money} coins.`);
+            //update set gold
+            await trainerFunctions.setMoney(battlingDetails.userOne.userId, battlingDetails.userOne.money);
+
         } else if (endType === "wildPokemonCaught") {
             inputChannel.send(`Wild pokemon was caught.`);
 
@@ -2296,7 +2297,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 inputChannel.send(`All usable pokemon have feinted.`);
                 await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
             } else {
-                await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battlingDetails.userTwoBattledPokemon);
                 inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
                 return "swapping";
             }
@@ -2328,7 +2329,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                     inputChannel.send(`All usable pokemon have feinted.`);
                     await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
                 } else {
-                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battleDetails.userTwoBattledPokemon);
                     inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
                     return "swapping";
                 }
@@ -2369,7 +2370,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                     inputChannel.send(`All usable pokemon have feinted.`);
                     await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
                 } else {
-                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+                    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battleDetails.userTwoBattledPokemon);
                     inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
                     return "swapping";
                 }
@@ -2392,7 +2393,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     }
 
     //update battle details in db
-    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne);
+    await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battleDetails.userTwoBattledPokemon);
     return false;
 }
 

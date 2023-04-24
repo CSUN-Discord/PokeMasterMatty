@@ -15,6 +15,8 @@ const battlingSchema = new Schema({
     userTwoCurrentPokemon: Number,
     battleType: String,
     fleeCount: Number,
+    userOneBattledPokemon: [],
+    userTwoBattledPokemon: [],
     userOneStatStage: {
         atk: Number,
         def: Number,
