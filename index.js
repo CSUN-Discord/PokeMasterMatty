@@ -1,3 +1,7 @@
+// was uninstalled
+//   @discordjs/rest@0.1.0-canary
+//    {discord-api-types}@0.24.0
+
 // Import classes and files
 
 const {token} = require("./config.json");
@@ -81,4 +85,5 @@ require("./handlers/events")(client);
 // });
 
 //start the bot with the token from the config file
-client.login(token);
+client.login(token).then(r => {
+});

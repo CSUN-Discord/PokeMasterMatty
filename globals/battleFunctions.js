@@ -1,4 +1,10 @@
-const {MessageEmbed, MessageActionRow, MessageButton, MessageAttachment, MessageSelectMenu} = require('discord.js');
+const {
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    AttachmentBuilder,
+    StringSelectMenuBuilder
+} = require('discord.js');
 const pokemonFunctions = require("./pokemonFunctions");
 const generalFunctions = require("./generalFunctions");
 const {PythonShell} = require("python-shell");
@@ -8,6 +14,7 @@ const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const battlingFunctions = require("../db/functions/battlingFunctions");
 const itemListFunctions = require("../db/functions/itemListFunctions");
+const emojiListFunctions = require("../db/functions/emojiListFunctions");
 // const pokemon = require("pokemon");
 
 let inputChannel;
@@ -34,7 +41,7 @@ module.exports = {
 
         const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
-        let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
+        let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
         let enemy_pokemon_gender = true;
         if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].male) {
             enemy_pokemon_gender = false;
@@ -71,10 +78,10 @@ module.exports = {
             console.log('python code results: %j', results);
         });
 
-        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
-        return [new MessageEmbed()
-            .setColor('RANDOM')
-            .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+        const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+        return [new EmbedBuilder()
+            .setColor('Random')
+            .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
             .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
             .setTimestamp(),
             gif,
@@ -84,7 +91,7 @@ module.exports = {
 
     battlingOptions: async function (inp, battlingDetails) {
 
-        let row = new MessageActionRow();
+        let row = new ActionRowBuilder();
         inputChannel = inp.channel;
 
         const actions = {
@@ -105,7 +112,7 @@ module.exports = {
                 };
             },
             battleBagButtons: function () {
-                if (inp.isSelectMenu()) {
+                if (inp.isStringSelectMenu()) {
                     const selectedOption = inp.values[0];
 
                     if (selectedOption === `${inp.user.id}poke-ballFilter`) {
@@ -201,12 +208,12 @@ module.exports = {
                 if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
                     //make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
                     inputChannel.send("Escaped the battle.")
-                    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
 
                     await module.exports.endRandomBattleEncounter("fled", battlingDetails);
                     return {
                         content: "_ _",
-                        embedDetails: [new MessageEmbed()
+                        embedDetails: [new EmbedBuilder()
                             .setTitle(`You have successfully fled the battle.`)
                             .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
                             gif,
@@ -379,12 +386,12 @@ module.exports = {
                         }
                         break;
                     case "Master Ball":
-                        const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                        const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
 
                         await module.exports.endRandomBattleEncounter("wildPokemonCaught", battlingDetails, ballUsed);
                         return {
                             content: "_ _",
-                            embedDetails: [new MessageEmbed()
+                            embedDetails: [new EmbedBuilder()
                                 .setTitle(`You have successfully caught ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}.`)
                                 .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
                                 gif,
@@ -443,11 +450,11 @@ module.exports = {
                 let randomNum = generalFunctions.randomIntFromInterval(1, 100);
 
                 if (randomNum <= catchRate) {
-                    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+                    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
                     await module.exports.endRandomBattleEncounter("wildPokemonCaught", battlingDetails, ballUsed);
                     return {
                         content: "_ _",
-                        embedDetails: [new MessageEmbed()
+                        embedDetails: [new EmbedBuilder()
                             .setTitle(`You have successfully caught ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}.`)
                             .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
                             gif,
@@ -545,7 +552,7 @@ module.exports = {
                 let fullItemDetails = await itemListFunctions.getItem(itemUsed);
 
                 if (itemUsed !== "Used Max Ether" && itemUsed !== "Used Ether") {
-                    inputChannel.send(`Used ${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}.`);
+                    inputChannel.send(`Used ${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}.`);
                     battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] = battlingDetails.userOneBag.get(fullItemDetails.category)[itemUsed] - 1;
                 } else {
                     // console.log("used ether")
@@ -553,7 +560,7 @@ module.exports = {
                     // console.log(realName)
                     fullItemDetails = await itemListFunctions.getItem(realName);
 
-                    inputChannel.send(`${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ${battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].name}.`);
+                    inputChannel.send(`${itemUsed} on ${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}'s ${battlingDetails.userOneTeam[pokemonUsedOn].currentMoves[moveNumber].name}.`);
                     battlingDetails.userOneBag.get(fullItemDetails.category)[realName] = battlingDetails.userOneBag.get(fullItemDetails.category)[realName] - 1;
                 }
 
@@ -563,7 +570,7 @@ module.exports = {
                     case "Antidote":
                         if (battlingDetails.userOneTeam[pokemonUsedOn].status === "poisoned" || battlingDetails.userOneTeam[pokemonUsedOn].status === "badly poisoned") {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of poison.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of poison.`);
                         } else {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         }
@@ -574,7 +581,7 @@ module.exports = {
                         } else {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
                         }
                         break;
                     case "Soda Pop":
@@ -583,13 +590,13 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 50);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Burn Heal":
                         if (battlingDetails.userOneTeam[pokemonUsedOn].status === "burned") {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s burn was healed.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}'s burn was healed.`);
                         } else {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         }
@@ -599,13 +606,13 @@ module.exports = {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         } else {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of all status problems!`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was cured of all status problems!`);
                         }
                         break;
                     case "Ice Heal":
                         if (battlingDetails.userOneTeam[pokemonUsedOn].status === "frozen") {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
                         } else {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         }
@@ -616,26 +623,26 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 70);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Max Revive":
                         battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
-                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was fully revived.`);
+                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was fully revived.`);
                         break;
                     case "Awakening":
                         //only the current pokemon in battle will be sleeping
                         if (battlingDetails.userOneTeam[pokemonUsedOn].status === "sleeping") {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
                             battlingDetails.userOneVolatileStatus.sleepTurnLength = 0;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}'s ice melted away.`);
                         } else {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         }
                         break;
                     case "Revive":
                         battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = Math.floor(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken / 2);
-                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was revived with half if it's health.`);
+                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was revived with half if it's health.`);
                         break;
                     case "Fresh Water":
                         if (battlingDetails.userOneTeam[pokemonUsedOn].damageTaken === 0) {
@@ -643,7 +650,7 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 30);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Hyper Potion":
@@ -652,7 +659,7 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 120);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Max Potion":
@@ -660,7 +667,7 @@ module.exports = {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         } else {
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = 0;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} was restored to full health.`);
                         }
                         break;
                     case "Moomoo Milk":
@@ -669,13 +676,13 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 100);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Paralyze Heal":
                         if (battlingDetails.userOneTeam[pokemonUsedOn].status === "paralyzed") {
                             battlingDetails.userOneTeam[pokemonUsedOn].status = "normal";
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name}'s paralysis was healed.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name}'s paralysis was healed.`);
                         } else {
                             inputChannel.send(`${itemUsed} had no effect.`);
                         }
@@ -686,7 +693,7 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 20);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Super Potion":
@@ -695,7 +702,7 @@ module.exports = {
                         } else {
                             let healAmount = Math.min(battlingDetails.userOneTeam[pokemonUsedOn].damageTaken, 50);
                             battlingDetails.userOneTeam[pokemonUsedOn].damageTaken = battlingDetails.userOneTeam[pokemonUsedOn].damageTaken - healAmount;
-                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
+                            inputChannel.send(`${battlingDetails.userOneTeam[pokemonUsedOn].nickname || battlingDetails.userOneTeam[pokemonUsedOn].name} gained ${healAmount} health.`);
                         }
                         break;
                     case "Max Elixir":
@@ -862,10 +869,10 @@ module.exports = {
                     // let name = parseInt(customId.replace(`${inp.user.id}voluntarilySwapTo`, ""));
                     // console.log(customId, name)
                     battlingDetails.userOneCurrentPokemon = parseInt(customId.replace(`${inp.user.id}voluntarilySwapTo`, ""));
-                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
+                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
                 } else {
                     battlingDetails.userOneCurrentPokemon = parseInt(customId.replace(`${inp.user.id}swapTo`, ""));
-                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
+                    inputChannel.send(`Swapped to ${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name}`);
 
                     battlingDetails.turnCounter += 1;
                     battlingFunctions.setTurnCount(battlingDetails._id, battlingDetails.turnCounter);
@@ -1211,8 +1218,6 @@ module.exports = {
         if (endType === "randomPokemonFeints") {
             inputChannel.send(`Enemy pokemon feinted.`);
 
-            //TODO: check if exp needs to be shared, create a set of all pokemon that was in battle and didnt feint and divide exp equally
-
             let battledAndAlive = [];
             for (let i = 0; i < battlingDetails.userOneBattledPokemon.length; i++) {
                 const currentPokemon = battlingDetails.userOneTeam[battlingDetails.userOneBattledPokemon[i] - 1];
@@ -1231,7 +1236,7 @@ module.exports = {
                 let newXp = await getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battledAndAlive[i] - 1]);
                 newXp = Math.floor(newXp / battledAndAlive.length);
                 battlingDetails.userOneTeam[battledAndAlive[i] - 1].exp += newXp;
-                inputChannel.send(`${battlingDetails.userOneTeam[battledAndAlive[i] - 1].name} gained ${newXp} xp.`);
+                inputChannel.send(`${battlingDetails.userOneTeam[battledAndAlive[i] - 1].nickname || battlingDetails.userOneTeam[battledAndAlive[i] - 1].name} gained ${newXp} xp.`);
 
                 let leveledUp = await getNewLevelAndXp(battlingDetails.userOneTeam[battledAndAlive[i] - 1], inputChannel);
                 // console.log(leveledUp)
@@ -1241,19 +1246,19 @@ module.exports = {
                 if (leveledUp) {
                     if (isPokemonEvolving(battlingDetails.userOneTeam[battledAndAlive[i] - 1])) {
 
-                        const row = new MessageActionRow()
+                        const row = new ActionRowBuilder()
                             .addComponents(
-                                new MessageButton()
+                                new ButtonBuilder()
                                     .setCustomId(`${battlingDetails.userOne.userId}stop${battledAndAlive[i]}`)
                                     .setLabel('stop evolving')
-                                    .setStyle('DANGER'),
+                                    .setStyle('Danger'),
                             )
 
                         let pokemonNum = battledAndAlive[i];
                         let evolvingMsg;
 
                         inputChannel.send({
-                            content: `${battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving!`,
+                            content: `${battlingDetails.userOneTeam[pokemonNum - 1].nickname || battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving!`,
                             components: [row]
                         }).then(async (msg) => {
                             evolvingMsg = msg;
@@ -1289,9 +1294,9 @@ module.exports = {
                                         battlingDetails.userOneTeam[pokemonNum - 1].name = pokemonEvolutionDetails.name;
                                         battlingDetails.userOneTeam[pokemonNum - 1].base = pokemonEvolutionDetails.baseStats;
 
-                                        inputChannel.send(`${pokemonDetails.name} evolved into ${pokemonEvolutionDetails.name}.`);
+                                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonNum - 1].nickname || pokemonDetails.name} evolved into ${pokemonEvolutionDetails.name}.`);
                                     } else {
-                                        inputChannel.send(`${pokemonDetails.name} is no longer evolving.`);
+                                        inputChannel.send(`${battlingDetails.userOneTeam[pokemonNum - 1].nickname || pokemonDetails.name} is no longer evolving.`);
                                     }
 
                                     //update bag
@@ -1372,30 +1377,30 @@ module.exports = {
     },
 
     setRowDefault: function (row, inp) {
-        return new MessageActionRow()
+        return new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${inp.user.id}spawnBattleAttack`)
                     .setLabel('attack')
-                    .setStyle('PRIMARY'),
+                    .setStyle('Primary'),
             )
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${inp.user.id}spawnBattlePokemon`)
                     .setLabel('pokemon')
-                    .setStyle('PRIMARY'),
+                    .setStyle('Primary'),
             )
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${inp.user.id}spawnBattleBag`)
                     .setLabel('bag')
-                    .setStyle('PRIMARY'),
+                    .setStyle('Primary'),
             )
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${inp.user.id}spawnBattleRun`)
                     .setLabel('run')
-                    .setStyle('DANGER'),
+                    .setStyle('Danger'),
             );
     }
 }
@@ -1427,58 +1432,58 @@ function setRowAttacks(row, battlingDetails, inp) {
     //do an if statement and set move to recharging
     if (battlingDetails.userOneVolatileStatus.chargingMove.chargingLength > 0) {
         row.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(
                     `${inp.user.id}${battlingDetails.userOneVolatileStatus.chargingMove.name}`
                 )
                 .setLabel(
                     `${battlingDetails.userOneVolatileStatus.chargingMove.name}`
                 )
-                .setStyle('PRIMARY'),
+                .setStyle('Primary'),
         )
     } else if (battlingDetails.userOneVolatileStatus.recharging.enabled) {
         row.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(
                     `${inp.user.id}recharge`
                 )
                 .setLabel(
                     `recharge`
                 )
-                .setStyle('PRIMARY'),
+                .setStyle('Primary'),
         )
     } else if (currentMoves.length < 1) {
         row.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(
                     `${inp.user.id}Struggle`
                 )
                 .setLabel(
                     `struggle`
                 )
-                .setStyle('PRIMARY'),
+                .setStyle('Primary'),
         )
     } else {
         for (let j = 0; j < currentMoves.length; j++) {
 
             row.addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(
                         `${inp.user.id}${currentMoves[j].name}`
                     )
                     .setLabel(
                         `${currentMoves[j].name}`
                     )
-                    .setStyle('PRIMARY'),
+                    .setStyle('Primary'),
             )
         }
     }
 
     row.addComponents(
-        new MessageButton()
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}back`)
             .setLabel(`back`)
-            .setStyle('DANGER'),
+            .setStyle('Danger'),
     )
     return row;
 }
@@ -1487,9 +1492,9 @@ function setRowBattleItem(battlingDetails, inp) {
 
     let rows = [];
 
-    const selectRow = new MessageActionRow();
+    const selectRow = new ActionRowBuilder();
     selectRow.addComponents(
-        new MessageSelectMenu()
+        new StringSelectMenuBuilder()
             .setCustomId(`${inp.user.id}battleItemSelectMenu`)
             .setPlaceholder('Category')
             .addOptions([
@@ -1526,16 +1531,16 @@ function setRowBattleItem(battlingDetails, inp) {
     let max = Math.min(bagArray.length, currentBagMin + 10);
     const diff = max - currentBagMin;
 
-    let itemRowOne = new MessageActionRow();
-    let itemRowTwo = new MessageActionRow();
+    let itemRowOne = new ActionRowBuilder();
+    let itemRowTwo = new ActionRowBuilder();
 
     for (let i = 0; i < Math.min(5, diff); i++) {
         // console.log(bagArray[min + i])
         itemRowOne.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(`${inp.user.id}${bagArray[currentBagMin + i]}`)
                 .setLabel(`Use ${bagArray[currentBagMin + i]}`)
-                .setStyle('PRIMARY')
+                .setStyle('Primary')
         )
     }
 
@@ -1545,10 +1550,10 @@ function setRowBattleItem(battlingDetails, inp) {
 
     for (let i = 5; i < diff; i++) {
         itemRowTwo.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(`${inp.user.id}${bagArray[currentBagMin + i]}`)
                 .setLabel(`Use ${bagArray[currentBagMin + i]}`)
-                .setStyle('PRIMARY')
+                .setStyle('Primary')
         )
     }
 
@@ -1559,20 +1564,20 @@ function setRowBattleItem(battlingDetails, inp) {
         rows.push(itemRowTwo)
     }
 
-    const arrowRow = new MessageActionRow();
+    const arrowRow = new ActionRowBuilder();
     arrowRow.addComponents(
-        new MessageButton()
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}itemsLeft`)
             .setLabel(`⏪`)
-            .setStyle('SECONDARY'),
-        new MessageButton()
+            .setStyle('Secondary'),
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}itemsRight`)
             .setLabel(`⏩`)
-            .setStyle('SECONDARY'),
-        new MessageButton()
+            .setStyle('Secondary'),
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}back`)
             .setLabel(`back`)
-            .setStyle('DANGER'),
+            .setStyle('Danger'),
     )
     rows.push(arrowRow);
     return rows;
@@ -1583,7 +1588,7 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
     const unfilteredPokemon = battlingDetails.userOneTeam;
     const pokemonArray = [];
     let rows = [];
-    const pokemonRow = new MessageActionRow();
+    const pokemonRow = new ActionRowBuilder();
 
     for (let i = 0; i < unfilteredPokemon.length; i++) {
         const currentPokemon = unfilteredPokemon[i];
@@ -1599,10 +1604,10 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
                     pokemonArray.push(currentPokemon);
                     if (pokemonArray.length < 6) {
                         pokemonRow.addComponents(
-                            new MessageButton()
+                            new ButtonBuilder()
                                 .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
-                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
-                                .setStyle('PRIMARY'),
+                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].nickname || unfilteredPokemon[i].name}`)
+                                .setStyle('Primary'),
                         )
                     }
                 }
@@ -1612,10 +1617,10 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
                     pokemonArray.push(currentPokemon);
                     if (pokemonArray.length < 6) {
                         pokemonRow.addComponents(
-                            new MessageButton()
+                            new ButtonBuilder()
                                 .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
-                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
-                                .setStyle('PRIMARY'),
+                                .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].nickname || unfilteredPokemon[i].name}`)
+                                .setStyle('Primary'),
                         )
                     }
                 }
@@ -1624,10 +1629,10 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
                 pokemonArray.push(currentPokemon);
                 if (pokemonArray.length < 6) {
                     pokemonRow.addComponents(
-                        new MessageButton()
+                        new ButtonBuilder()
                             .setCustomId(`${inp.user.id}itemUsed${item}${i}`)
-                            .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
-                            .setStyle('PRIMARY'),
+                            .setLabel(`Use ${item} on ${pokemonArray.length}) ${unfilteredPokemon[i].nickname || unfilteredPokemon[i].name}`)
+                            .setStyle('Primary'),
                     )
                 }
                 break;
@@ -1639,21 +1644,21 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
         rows.push(pokemonRow);
     }
 
-    const backRow = new MessageActionRow();
+    const backRow = new ActionRowBuilder();
     if (pokemonArray.length > 5) {
         backRow.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(`${inp.user.id}itemUsed${item}${5}`)
-                .setLabel(`Use ${item} on 6) ${pokemonArray[5].name}`)
-                .setStyle('PRIMARY'),
+                .setLabel(`Use ${item} on 6) ${pokemonArray[5].nickname || pokemonArray[5].name}`)
+                .setStyle('Primary'),
         )
     }
 
     backRow.addComponents(
-        new MessageButton()
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}backToItems`)
             .setLabel(`back`)
-            .setStyle('DANGER'),
+            .setStyle('Danger'),
     )
     rows.push(backRow);
     return rows;
@@ -1664,7 +1669,7 @@ function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
     const unfilteredPokemon = battlingDetails.userOneTeam;
     const pokemonArray = [];
 
-    const pokemonRow = new MessageActionRow();
+    const pokemonRow = new ActionRowBuilder();
 
     for (let i = 0; i < unfilteredPokemon.length; i++) {
         if (i === battlingDetails.userOneCurrentPokemon - 1) {
@@ -1682,17 +1687,17 @@ function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
 
             if (voluntarily) {
                 pokemonRow.addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(`${inp.user.id}voluntarilySwapTo${i + 1}`)
-                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
-                        .setStyle('PRIMARY'),
+                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].nickname || unfilteredPokemon[i].name}`)
+                        .setStyle('Primary'),
                 )
             } else {
                 pokemonRow.addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(`${inp.user.id}swapTo${i + 1}`)
-                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].name}`)
-                        .setStyle('PRIMARY'),
+                        .setLabel(`Swap to ${pokemonArray.length}) ${unfilteredPokemon[i].nickname || unfilteredPokemon[i].name}`)
+                        .setStyle('Primary'),
                 )
             }
         }
@@ -1701,19 +1706,19 @@ function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
 
     if (pokemonArray.length === 0 || pokemonArray.length > 5) {
         pokemonRow.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(`${inp.user.id}back`)
                 .setLabel(`back`)
-                .setStyle('DANGER'),
+                .setStyle('Danger'),
         )
         row.push(pokemonRow);
     } else {
-        const backRow = new MessageActionRow()
+        const backRow = new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${inp.user.id}back`)
                     .setLabel(`back`)
-                    .setStyle('DANGER')
+                    .setStyle('Danger')
             )
         row.push(pokemonRow);
         row.push(backRow);
@@ -1724,23 +1729,23 @@ function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
 
 function setRowEther(battlingDetails, inp, etherType, pokemonUsedOn) {
 
-    const moveRow = new MessageActionRow();
+    const moveRow = new ActionRowBuilder();
     let moveList = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves;
 
     for (let i = 0; i < moveList.length; i++) {
         moveRow.addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId(`${inp.user.id}itemUsedUsed ${etherType}${pokemonUsedOn}${i}`)
                 .setLabel(`Use ${etherType} on ${moveList[i].name}`)
-                .setStyle('PRIMARY'),
+                .setStyle('Primary'),
         )
     }
 
     moveRow.addComponents(
-        new MessageButton()
+        new ButtonBuilder()
             .setCustomId(`${inp.user.id}${etherType}`)
             .setLabel(`back`)
-            .setStyle('DANGER')
+            .setStyle('Danger')
     )
 
     return moveRow;
@@ -1748,9 +1753,9 @@ function setRowEther(battlingDetails, inp, etherType, pokemonUsedOn) {
 
 function createEmbedAfterAttackPVM(battlingDetails) {
 
-    let attackDetailsEmbed = new MessageEmbed()
-        .setColor('RANDOM')
-        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+    let attackDetailsEmbed = new EmbedBuilder()
+        .setColor('Random')
+        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp()
 
@@ -1773,9 +1778,10 @@ function createEmbedAfterAttackPVM(battlingDetails) {
             },
         )
         if (currentMoves[j].pwr == null)
-            attackDetailsEmbed.addField('Power', `0`, true)
+            attackDetailsEmbed.addFields([{name: 'Power', value: `0`, inline: true}])
         else
-            attackDetailsEmbed.addField('Power', `${currentMoves[j].pwr}`, true)
+            attackDetailsEmbed.addFields([{name: 'Power', value: `${currentMoves[j].pwr}`, inline: true}])
+
         attackDetailsEmbed.addFields(
             {
                 name: 'Type',
@@ -1789,7 +1795,7 @@ function createEmbedAfterAttackPVM(battlingDetails) {
             }
         )
     }
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [attackDetailsEmbed,
         gif,
         false
@@ -1797,10 +1803,10 @@ function createEmbedAfterAttackPVM(battlingDetails) {
 }
 
 function createEmbedDefault(battlingDetails) {
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
-    return [new MessageEmbed()
-        .setColor('RANDOM')
-        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    return [new EmbedBuilder()
+        .setColor('Random')
+        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp(),
         gif,
@@ -1810,9 +1816,9 @@ function createEmbedDefault(battlingDetails) {
 
 function createEmbedAfterBagPVM(battlingDetails) {
 
-    let attackBagEmbed = new MessageEmbed()
-        .setColor('RANDOM')
-        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
+    let attackBagEmbed = new EmbedBuilder()
+        .setColor('Random')
+        .setTitle(`${battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nickname || battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].name} VS ${battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name}`)
         .setImage(`attachment://${battlingDetails.userOne.userId}.gif`)
         .setTimestamp()
 
@@ -1827,15 +1833,20 @@ function createEmbedAfterBagPVM(battlingDetails) {
 
     }
 
-    attackBagEmbed.addField(`${currentBagCategory}`, `\u200b`, false);
+    attackBagEmbed.addFields([{name: `${currentBagCategory}`, value: `\u200b`, inline: false}])
 
     let max = Math.min(bagArray.length, currentBagMin + 10);
 
+    //TODO: add description of item
     for (let i = currentBagMin; i < max; i++) {
-        attackBagEmbed.addField(`${i + 1}) ${bagArray[i]}`, `${battlingDetails.userOneBag.get(currentBagCategory)[bagArray[i]]}`, false);
+        attackBagEmbed.addFields([{
+            name: `${i + 1}) ${bagArray[i]}`,
+            value: `${battlingDetails.userOneBag.get(currentBagCategory)[bagArray[i]]}`,
+            inline: false
+        }]);
     }
 
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [attackBagEmbed,
         gif,
         false
@@ -1844,8 +1855,8 @@ function createEmbedAfterBagPVM(battlingDetails) {
 
 function createEmbedAfterItemUsed(battlingDetails, itemType) {
 
-    let pokemonListEmbed = new MessageEmbed()
-        .setColor('RANDOM')
+    let pokemonListEmbed = new EmbedBuilder()
+        .setColor('Random')
         .setTitle(`Available Pokemon to use item on:`)
         .setTimestamp()
 
@@ -1886,10 +1897,21 @@ function createEmbedAfterItemUsed(battlingDetails, itemType) {
             const currentMove = currentPokemon.currentMoves[j];
             moves += `• ${currentMove.name} ${currentMove.currentPP}/${currentMove.pp}\n`;
         }
-        pokemonListEmbed.addField(`${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`, `${moves}`, false);
+
+        // let result;
+        // if (currentPokemon.shiny)
+        //     result = await emojiListFunctions.getShinyGif(currentPokemon.pokeId);
+        // else
+        //     result = await emojiListFunctions.getNormalGif(currentPokemon.pokeId);
+
+        pokemonListEmbed.addFields([{
+            name: `${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`,
+            value: `${moves}`,
+            inline: false
+        }])
     }
 
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [pokemonListEmbed,
         gif,
         false
@@ -1897,8 +1919,8 @@ function createEmbedAfterItemUsed(battlingDetails, itemType) {
 }
 
 function createSwapEmbed(battlingDetails) {
-    let pokemonToSwapEmbed = new MessageEmbed()
-        .setColor('RANDOM')
+    let pokemonToSwapEmbed = new EmbedBuilder()
+        .setColor('Random')
         .setTitle(`Available Pokemon to swap:`)
         .setTimestamp()
 
@@ -1928,7 +1950,17 @@ function createSwapEmbed(battlingDetails) {
         const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
-        pokemonToSwapEmbed.addField(`${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`, '\u200b', false);
+        // let result;
+        // if (currentPokemon.shiny)
+        //     result = await emojiListFunctions.getShinyGif(currentPokemon.pokeId);
+        // else
+        //     result = await emojiListFunctions.getNormalGif(currentPokemon.pokeId);
+
+        pokemonToSwapEmbed.addFields([{
+            name: `${i + 1}) ${currentPokemon.level} ${currentPokemon.name} ${currentHP}/${maxHP}`,
+            value: '\u200b',
+            inline: false
+        }]);
     }
     const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
 
@@ -1942,7 +1974,7 @@ function createSwapEmbed(battlingDetails) {
 
     const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
-    let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
+    let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
     let enemy_pokemon_gender = true;
     if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].male) {
         enemy_pokemon_gender = false;
@@ -1980,7 +2012,7 @@ function createSwapEmbed(battlingDetails) {
         console.log('python code results: %j', results);
     });
 
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [pokemonToSwapEmbed,
         gif,
         false
@@ -1988,19 +2020,22 @@ function createSwapEmbed(battlingDetails) {
 }
 
 function createEtherEmbed(battlingDetails, etherType, pokemonUsedOn) {
-    let pokemonToSwapEmbed = new MessageEmbed()
-        .setColor('RANDOM')
+    let pokemonToSwapEmbed = new EmbedBuilder()
+        .setColor('Random')
         .setTitle(`Choose move to use ${etherType} on:`)
         .setTimestamp()
 
     let moveList = battlingDetails.userOneTeam[pokemonUsedOn].currentMoves;
 
     for (let i = 0; i < moveList.length; i++) {
-        pokemonToSwapEmbed.addField(`${i + 1}) ${moveList[i].name} ${moveList[i].currentPP}/${moveList[i].pp}`, `\u200b`, false);
-
+        pokemonToSwapEmbed.addFields([{
+            name: `${i + 1}) ${moveList[i].name} ${moveList[i].currentPP}/${moveList[i].pp}`,
+            value: '\u200b',
+            inline: false
+        }]);
     }
 
-    const gif = new MessageAttachment(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
+    const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
     return [pokemonToSwapEmbed,
         gif,
         false
@@ -2069,7 +2104,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
 
     if (userMove == null) {
         if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-            inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+            inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
             battleDetails.userTwoVolatileStatus.recharging.enabled = false;
         } else {
             let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2083,7 +2118,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     else if (userMove.priority > randomPokemonMove.priority) {
         //user1 atks first
         if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-            inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+            inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
             battleDetails.userOneVolatileStatus.recharging.enabled = false;
         } else {
             let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2096,7 +2131,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         //check HP of both pokemon, it can hurt itself in confusion
         if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
             if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-                inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
                 battleDetails.userTwoVolatileStatus.recharging.enabled = false;
             } else {
                 let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2109,7 +2144,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     } else if (userMove.priority < randomPokemonMove.priority) {
         //user2 attacks first
         if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-            inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+            inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
             battleDetails.userTwoVolatileStatus.recharging.enabled = false;
         } else {
             let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2123,7 +2158,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         //check HP of both pokemon, it can hurt itself in confusion
         if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
             if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-                inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+                inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
                 battleDetails.userOneVolatileStatus.recharging.enabled = false;
             } else {
                 let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2155,7 +2190,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         if (userEffectiveSpeed > pokemonEffectiveSpeed) {
             //user1 atks first
             if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-                inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+                inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
                 battleDetails.userOneVolatileStatus.recharging.enabled = false;
             } else {
                 let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2168,7 +2203,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             //check HP of both pokemon, it can hurt itself in confusion
             if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
                 if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-                    inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                    inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
                     battleDetails.userTwoVolatileStatus.recharging.enabled = false;
                 } else {
                     let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2181,7 +2216,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         } else if (userTotalSpeed < pokemonTotalSpeed) {
             //user2 attacks first
             if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-                inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
                 battleDetails.userTwoVolatileStatus.recharging.enabled = false;
             } else {
                 let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2195,7 +2230,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             //check HP of both pokemon, it can hurt itself in confusion
             if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
                 if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-                    inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+                    inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
                     battleDetails.userOneVolatileStatus.recharging.enabled = false;
                 } else {
                     let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2211,7 +2246,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             if (Math.floor(Math.random() * 2) === 0) {
                 //user1 atks first
                 if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-                    inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+                    inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
                     battleDetails.userOneVolatileStatus.recharging.enabled = false;
                 } else {
                     let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2224,7 +2259,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 //check HP of both pokemon, it can hurt itself in confusion
                 if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
                     if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-                        inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                        inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
                         battleDetails.userTwoVolatileStatus.recharging.enabled = false;
                     } else {
                         let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2237,7 +2272,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             } else {
                 //user2 attacks first
                 if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
-                    inputChannel.send(`${randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
+                    inputChannel.send(`${randomPokemon.nickname || randomPokemon.name} is recharging from ${battleDetails.userTwoVolatileStatus.recharging.name}`)
                     battleDetails.userTwoVolatileStatus.recharging.enabled = false;
                 } else {
                     let moveOutput = await executeMove(randomPokemon, user, randomPokemonMove, battleDetails.userTwoStatStage, battleDetails.userOneStatStage, battleDetails.userTwoVolatileStatus, battleDetails.userOneVolatileStatus, userTotalHp, pokemonTotalHp, battleDetails);
@@ -2251,7 +2286,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 //check HP of both pokemon, it can hurt itself in confusion
                 if (randomPokemon.damageTaken < pokemonTotalHp && user.damageTaken < userTotalHp) {
                     if (battleDetails.userOneVolatileStatus.recharging.enabled) {
-                        inputChannel.send(`${user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
+                        inputChannel.send(`${user.nickname || user.name} is recharging from ${battleDetails.userOneVolatileStatus.recharging.name}`)
                         battleDetails.userOneVolatileStatus.recharging.enabled = false;
                     } else {
                         let moveOutput = await executeMove(user, randomPokemon, userMove, battleDetails.userOneStatStage, battleDetails.userTwoStatStage, battleDetails.userOneVolatileStatus, battleDetails.userTwoVolatileStatus, pokemonTotalHp, userTotalHp, battleDetails);
@@ -2297,7 +2332,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 inputChannel.send(`All usable pokemon have feinted.`);
                 await module.exports.endRandomBattleEncounter("userFeints", battleDetails);
             } else {
-                await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battlingDetails.userTwoBattledPokemon);
+                await battlingFunctions.updatePokemonRandomEncounterBattle(battleDetails._id, battleDetails.userOneBag, battleDetails.userOneCurrentPokemon, battleDetails.userOneStatStage, battleDetails.userOneTeam, battleDetails.userOneVolatileStatus, battleDetails.userTwoStatStage, battleDetails.userTwoTeam, battleDetails.userTwoVolatileStatus, battleDetails.userOne, battleDetails.userOneBattledPokemon, battleDetails.userTwoBattledPokemon);
                 inputChannel.send(`Pokemon feinted, choose a pokemon to swap to.`);
                 return "swapping";
             }
@@ -2447,16 +2482,16 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
         if (Math.floor(Math.random() * 5) === 0 || movesThatThaw.has(move.name)) {
             attacker.status = "normal";
-            inputChannel.send(`${attacker.name} managed to thaw out.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} managed to thaw out.`)
         } else {
-            inputChannel.send(`${attacker.name} is frozen.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} is frozen.`)
             return;
         }
     }
 
     if (attacker.status === "paralyzed") {
         if (Math.floor(Math.random() * 4) === 0) {
-            inputChannel.send(`${attacker.name} is paralyzed and can't move.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} is paralyzed and can't move.`)
             return;
         }
     }
@@ -2464,29 +2499,29 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     //make user pokemon awake if the battle ends
     if (attacker.status === "sleeping") {
         if (attackerVolatileStatus.sleepTurnLength === 1) {
-            inputChannel.send(`${attacker.name} woke up.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} woke up.`)
             attacker.status = "normal";
         } else {
-            inputChannel.send(`${attacker.name} is fast asleep.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} is fast asleep.`)
             return;
         }
     }
 
     if (attackerVolatileStatus.flinch) {
-        inputChannel.send(`${attacker.name} flinched.`)
+        inputChannel.send(`${attacker.nickname || attacker.name} flinched.`)
         return;
     }
 
     let infatuation = Math.floor(Math.random() * 2);
     if (attackerVolatileStatus.infatuation && infatuation === 0) {
-        inputChannel.send(`${attacker.name} is in love.`)
+        inputChannel.send(`${attacker.nickname || attacker.name} is in love.`)
         return;
         // if any pokemon switches out infatuation is removed
     }
 
     if (attackerVolatileStatus.confusionLength) {
         if (attackerVolatileStatus.confusionLength === 1) {
-            inputChannel.send(`${attacker.name} snapped out of it's confusion.`)
+            inputChannel.send(`${attacker.nickname || attacker.name} snapped out of it's confusion.`)
         } else {
             if (Math.floor(Math.random() * 2) === 0) {
                 let burn = (attacker.status === "burned" && move.category === "physical") ? 0.5 : 1;
@@ -2519,19 +2554,19 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 attacker.damageTaken += damage;
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp)
-                inputChannel.send(`${attacker.name} hurt itself in it's confusion and did ${damage} dmg.`)
+                inputChannel.send(`${attacker.nickname || attacker.name} hurt itself in it's confusion and did ${damage} dmg.`)
                 return;
             }
         }
     }
 
     if (move.type === "ground" && defenderVolatileStatus.magneticLevitationLength > 0) {
-        inputChannel.send(`Due to magnetic levitation ${attacker.name}'s ground move had no effect.`)
+        inputChannel.send(`Due to magnetic levitation ${attacker.nickname || attacker.name}'s ground move had no effect.`)
         return;
     }
 
     if (move.type === "ground" && defenderVolatileStatus.telekinesisLength > 0) {
-        inputChannel.send(`Due to telekinesis ${attacker.name}'s ground move had no effect.`)
+        inputChannel.send(`Due to telekinesis ${attacker.nickname || attacker.name}'s ground move had no effect.`)
         return;
     }
 
@@ -2542,21 +2577,21 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         "Roar", "Role Play", "Rototiller", "Shadow Force", "Sketch", "Spider Web",
         "Tearful Look", "Teatime", "Transform", "Whirlwind", "Jump Kick", "High Jump Kick"])
     if (defenderVolatileStatus.protection.enabled && !movesThatBypassProtect.has(move.name)) {
-        inputChannel.send(`${defender.name} is protected.`)
+        inputChannel.send(`${defender.nickname || defender.name} is protected.`)
         return;
     }
 
-    inputChannel.send(`${attacker.name} used ${move.name} on ${defender.name}.`);
+    inputChannel.send(`${attacker.nickname || attacker.name} used ${move.name} on ${defender.nickname || defender.name}.`);
 
     if (move.type === "fire" && defender.status === "frozen") {
         defender.status = "normal";
 
-        inputChannel.send(`${move.name} thawed out ${defender.name}.`);
+        inputChannel.send(`${move.name} thawed out ${defender.nickname || defender.name}.`);
     }
 
     if (move.category === "status") {
         if (attackerVolatileStatus.tauntLength > 0) {
-            inputChannel.send(`Move failed, ${attacker.name} used a status move while taunted.`);
+            inputChannel.send(`Move failed, ${attacker.nickname || attacker.name} used a status move while taunted.`);
             return;
         }
 
@@ -2566,18 +2601,18 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             switch (move.name) {
                 case "Swords Dance":
                     attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 2);
-                    inputChannel.send(`${attacker.name}'s attack was raised.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s attack was raised.`);
                     break;
                 case "Whirlwind":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
                     inputChannel.send("Whirlwind ended the battle.");
                     return "whirlwind";
                 case "Sand Attack":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2591,12 +2626,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s accuracy was decreased.`)
+                    inputChannel.send(`${defender.nickname || defender.name}'s accuracy was decreased.`)
                     defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
                     break;
                 case "Tail Whip":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2610,12 +2645,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s defense was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s defense was decreased.`);
                     defenderStatStage.def = Math.max(-6, defenderStatStage.def - 1)
                     break;
                 case "Leer":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2629,12 +2664,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s defense was decreased.`)
+                    inputChannel.send(`${defender.nickname || defender.name}'s defense was decreased.`)
                     defenderStatStage.def = Math.max(-6, defenderStatStage.def - 1)
                     break;
                 case "Growl":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2648,19 +2683,19 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s attack was decreased.`)
+                    inputChannel.send(`${defender.nickname || defender.name}'s attack was decreased.`)
                     defenderStatStage.atk = Math.max(-6, defenderStatStage.atk - 1);
                     break;
                 case "Roar":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
                     inputChannel.send("Roar ended the battle.");
                     return "roar";
                 case "Sing":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2669,7 +2704,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal") {
-                        inputChannel.send(`${defender.name} was put to sleep.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was put to sleep.`)
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
@@ -2678,7 +2713,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break
                 case "Supersonic":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2687,7 +2722,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defenderVolatileStatus.confusionLength === 0) {
-                        inputChannel.send(`${defender.name} is now confused.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is now confused.`);
                         defenderVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
                         inputChannel.send(`${move.name} failed.`);
@@ -2711,13 +2746,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     inputChannel.send("A mist has enveloped the battlefield.")
                     break;
                 case "Growth":
-                    inputChannel.send(`${attacker.name}'s attack and special attack was raised.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s attack and special attack was raised.`);
                     attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 1);
                     attackerStatStage.spAtk = Math.min(6, attackerStatStage.spAtk + 1);
                     break;
                 case "Poison Powder":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2727,7 +2762,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus) && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was poisoned`)
+                        inputChannel.send(`${defender.nickname || defender.name} was poisoned`)
                         defender.status = "poisoned";
                     } else {
                         inputChannel.send("move failed")
@@ -2735,7 +2770,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Stun Spore":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2745,7 +2780,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "grass", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was paralyzed.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`)
                         defender.status = "paralyzed";
                     } else {
                         inputChannel.send(`${move.name} failed.`)
@@ -2753,7 +2788,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Sleep Powder":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2762,7 +2797,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal" && !await isType(defender, "grass", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was put to sleep`)
+                        inputChannel.send(`${defender.nickname || defender.name} was put to sleep`)
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
@@ -2771,7 +2806,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "String Shot":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2785,12 +2820,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s speed was decreased.`)
+                    inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`)
                     defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 2);
                     break;
                 case "Thunder Wave":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2799,7 +2834,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ground", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was paralyzed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                         defender.status = "paralyzed";
                     } else {
                         inputChannel.send(`${move.name} failed.`)
@@ -2807,7 +2842,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Toxic":
                     if (!await isType(attacker, "poison", attackerVolatileStatus) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2817,7 +2852,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was badly poisoned.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was badly poisoned.`)
                         defender.status = "badly poisoned";
                     } else {
                         inputChannel.send(`${move.name} failed.`)
@@ -2825,7 +2860,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Hypnosis":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2834,7 +2869,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal") {
-                        inputChannel.send(`${defender.name} was put to sleep.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was put to sleep.`)
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
@@ -2843,11 +2878,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Meditate":
                     attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 1);
-                    inputChannel.send(`${attacker.name}'s attack was raised.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s attack was raised.`);
                     break;
                 case "Agility":
                     attackerStatStage.speed = Math.min(6, attackerStatStage.speed + 2);
-                    inputChannel.send(`${attacker.name}'s attack was raised.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s attack was raised.`);
                     break;
                 case "Teleport":
                     let trappingMoves = new Set(["Anchor Shot", "Block", "Fairy Lock",
@@ -2865,12 +2900,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         inputChannel.send("Move failed, nothing to mimic.");
                         return;
                     }
-                    inputChannel.send(`${attacker.name} copied ${attackerVolatileStatus.mimicLastOpponentMove}.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} copied ${attackerVolatileStatus.mimicLastOpponentMove}.`);
                     let newMove = await moveListFunctions.getMove(attackerVolatileStatus.mimicLastOpponentMove);
                     return await executeMove(attacker, defender, newMove, attackerStatStage, defenderStatStage, attackerVolatileStatus, defenderVolatileStatus, totalDefenderHp, totalAttackerHp, battleDetails);
                 case "Screech":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2884,11 +2919,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s defense was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s defense was decreased.`);
                     defenderStatStage.def = Math.max(-6, defenderStatStage.def - 2);
                     break;
                 case "Double Team":
-                    inputChannel.send(`${attacker.name}'s evasion was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s evasion was increased.`);
                     attackerStatStage.evasion = Math.min(6, attackerStatStage.evasion + 1);
                     break;
                 case "Recover":
@@ -2896,23 +2931,23 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         let healAmount = Math.round(totalAttackerHp / 2);
                         attacker.damageTaken -= healAmount;
                         attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                        inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                     } else {
-                        inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                     }
                     break;
                 case "Harden":
-                    inputChannel.send(`${attacker.name}'s defense was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was increased.`);
                     attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
                     break;
                 case "Minimize":
-                    inputChannel.send(`${attacker.name}'s evasion was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s evasion was increased.`);
                     attackerVolatileStatus.minimized = true;
                     attackerStatStage.evasion = Math.min(6, attackerStatStage.evasion + 2);
                     break;
                 case "Smokescreen":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2926,12 +2961,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s accuracy was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s accuracy was decreased.`);
                     defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
                     break;
                 case "Confuse Ray":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -2941,18 +2976,18 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defenderVolatileStatus.confusionLength === 0) {
-                        inputChannel.send(`${defender.name} is now confused.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is now confused.`);
                         defenderVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
                         inputChannel.send(`${move.name} failed.`);
                     }
                     break;
                 case "Withdraw":
-                    inputChannel.send(`${attacker.name}'s defense was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was increased.`);
                     attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
                     break;
                 case "Defense Curl":
-                    inputChannel.send(`${attacker.name}'s defense was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was increased.`);
                     attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
                     attackerVolatileStatus.defenseCurl = true;
                     break;
@@ -2990,15 +3025,15 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Focus Energy":
                     attackerStatStage.crit = Math.min(3, attackerStatStage.crit + 2);
-                    inputChannel.send(`${attacker.name}'s crit was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s crit was increased.`);
                     break;
                 case "Amnesia":
                     attackerStatStage.spDef = Math.min(6, attackerStatStage.spDef + 2);
-                    inputChannel.send(`${attacker.name}'s defense was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was increased.`);
                     break;
                 case "Kinesis":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3012,7 +3047,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s accuracy was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s accuracy was decreased.`);
                     defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
                     break;
                 case "Soft-Boiled":
@@ -3020,14 +3055,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         let healAmount = Math.round(totalAttackerHp / 2);
                         attacker.damageTaken -= healAmount;
                         attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                        inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                     } else {
-                        inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                     }
                     break;
                 case "Glare":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3038,13 +3073,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                     let glareEffectChance = Math.floor(Math.random() * 100);
                     if (glareEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ghost", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was paralyzed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                         defender.status = "paralyzed";
                     }
                     break;
                 case "Poison Gas":
                     if (!await isType(attacker, "poison", attackerVolatileStatus) && doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3054,7 +3089,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was poisoned.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was poisoned.`)
                         defender.status = "poisoned";
                     } else {
                         inputChannel.send(`${move.name} failed.`)
@@ -3062,7 +3097,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Lovely Kiss":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3071,7 +3106,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal") {
-                        inputChannel.send(`${defender.name} was put to sleep.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was put to sleep.`)
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
@@ -3080,7 +3115,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Spore":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3089,7 +3124,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     if (defender.status === "normal") {
-                        inputChannel.send(`${defender.name} was put to sleep.`)
+                        inputChannel.send(`${defender.nickname || defender.name} was put to sleep.`)
                         defender.status = "sleeping";
                         defenderVolatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
@@ -3098,7 +3133,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Transform":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3115,7 +3150,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attackerVolatileStatus.transform.enabled = true;
                     attackerVolatileStatus.transform.details = {
                         pokeId: attacker.pokeId,
-                        name: attacker.name,
+                        name: attacker.nickname || attacker.name,
                         currentMoves: attacker.currentMoves,
                         ivStats: {
                             atk: attacker.ivStats.atk,
@@ -3161,7 +3196,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                     break;
                 case "Acid Armor":
-                    inputChannel.send(`${attacker.name}'s defense was raised.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was raised.`);
                     attackerStatStage.def = Math.min(6, attackerStatStage.def + 2);
                     break;
                 case "Rest":
@@ -3171,11 +3206,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
                     if (attackerVolatileStatus.bound.length > 0 && attackerVolatileStatus.bound.name === "Uproar")
                         attacker.status = "sleeping";
-                    inputChannel.send(`${attacker.name} fell asleep.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} fell asleep.`);
                     attacker.damageTaken = 0;
                     break;
                 case "Conversion":
-                    inputChannel.send(`${attacker.name}'s type is converted.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s type is converted.`);
                     attackerVolatileStatus.conversion = true;
                     break;
                 case "Spider Web":
@@ -3184,22 +3219,22 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
                     defenderVolatileStatus.escapePrevention.enabled = true;
-                    inputChannel.send(`${defender.name} is prevented from escaping.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is prevented from escaping.`);
                     break;
                 case "Mind Reader":
                     attackerVolatileStatus.takingAim = 2;
-                    inputChannel.send(`${attacker.name} won't miss on it's next turn.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} won't miss on it's next turn.`);
                     break;
                 case "Curse":
                     if (await isType(attacker, "ghost", attackerVolatileStatus)) {
                         attacker.damageTaken += Math.round(totalAttackerHp / 2);
                         attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
-                        inputChannel.send(`${defender.name} is cursed and ${attacker.name} lost half of it's maximum hp.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is cursed and ${attacker.nickname || attacker.name} lost half of it's maximum hp.`);
 
 
                         defenderVolatileStatus.cursed = true;
                     } else {
-                        inputChannel.send(`${attacker.name}'s attack and defense was raised.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name}'s attack and defense was raised.`);
 
                         attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 1);
                         attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
@@ -3209,7 +3244,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Cotton Spore":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3223,13 +3258,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s speed was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`);
                     defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 2);
                     break;
 
                 case "Spite":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3247,7 +3282,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     })
                     spiteMove[0].currentPP = Math.max(0, spiteMove[0].currentPP - 2);
 
-                    inputChannel.send(`${defender.name}'s ${spiteMove[0].name} pp was decreased by 2.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s ${spiteMove[0].name} pp was decreased by 2.`);
                     break;
                 case "Protect":
                     let protectChance = Math.floor(Math.random() * 100);
@@ -3263,7 +3298,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let protectionRate = ((1 / attackerVolatileStatus.protection.length) * 100);
 
                     if (protectChance < protectionRate) {
-                        inputChannel.send(`${defender.name} protected themselves.`);
+                        inputChannel.send(`${defender.nickname || defender.name} protected themselves.`);
                         attackerVolatileStatus.protection.enabled = true;
                     } else {
                         inputChannel.send(`${move.name} failed.`);
@@ -3271,7 +3306,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Scary Face":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3285,12 +3320,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                         return;
                     }
 
-                    inputChannel.send(`${defender.name}'s speed was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`);
                     defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 2)
                     break;
                 case "Sweet Kiss":
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3300,7 +3335,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     }
 
                     if (defenderVolatileStatus.confusionLength === 0) {
-                        inputChannel.send(`${defender.name} is now confused.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is now confused.`);
                         defenderVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
                     } else {
                         inputChannel.send(`${move.name} failed.`);
@@ -3310,7 +3345,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     if (attacker.damageTaken >= Math.floor(totalAttackerHp / 2)) {
                         inputChannel.send(`${move.name} failed, HP is too low.`);
                     } else {
-                        inputChannel.send(`${attacker.name}'s attack was increased.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name}'s attack was increased.`);
                         attacker.damageTaken += Math.floor(totalAttackerHp / 2);
                         attackerStatStage.atk = 6;
                     }
@@ -3323,15 +3358,15 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     if (attackerVolatileStatus.destinyBond > 0) {
                         inputChannel.send(`${move.name} failed.`);
                     } else {
-                        inputChannel.send(`${attacker.name} bonded with ${defender.name}.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name} bonded with ${defender.nickname || defender.name}.`);
                         attackerVolatileStatus.destinyBond = battleDetails.userOneCurrentPokemon;
                     }
                     break;
                 case "Perish Song":
                     if (defenderVolatileStatus.perishSongLength > 0) {
-                        inputChannel.send(`${move.name} was used on this ${defender.name} already.`)
+                        inputChannel.send(`${move.name} was used on ${defender.nickname || defender.name} already.`)
                     }
-                    inputChannel.send(`${defender.name} has 4 turns remaining before it feints.`);
+                    inputChannel.send(`${defender.nickname || defender.name} has 4 turns remaining before it feints.`);
                     defenderVolatileStatus.perishSongLength = 4;
                     break;
                 case "Detect":
@@ -3348,7 +3383,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let detectRate = ((1 / attackerVolatileStatus.protection.length) * 100);
 
                     if (detectChance < detectRate) {
-                        inputChannel.send(`${defender.name} protected themselves.`);
+                        inputChannel.send(`${defender.nickname || defender.name} protected themselves.`);
                         attackerVolatileStatus.protection.enabled = true;
                     } else {
                         inputChannel.send(`${move.name} failed.`);
@@ -3356,7 +3391,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     break;
                 case "Lock-On":
                     attackerVolatileStatus.takingAim = 2;
-                    inputChannel.send(`${attacker.name} won't miss on it's next turn.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} won't miss on it's next turn.`);
                     break;
                 default:
                     inputChannel.send(`${move.name} is not programmed.`);
@@ -3367,7 +3402,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         switch (move.name) {
             case "Double Slap":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3399,7 +3434,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Comet Punch":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3431,7 +3466,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Pay Day":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3453,7 +3488,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Fire Punch":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3468,7 +3503,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let firePunchEffectChance = Math.floor(Math.random() * 100);
                 if (firePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was burned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                     defender.status = "burned";
                 }
 
@@ -3476,7 +3511,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Ice Punch":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3491,7 +3526,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let icePunchEffectChance = Math.floor(Math.random() * 100);
                 if (icePunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was frozen.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was frozen.`);
                     defender.status = "frozen";
                 }
 
@@ -3499,7 +3534,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Thunder Punch":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3514,7 +3549,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let thunderPunchEffectChance = Math.floor(Math.random() * 100);
                 if (thunderPunchEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -3522,7 +3557,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Guillotine":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3545,10 +3580,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (attackerVolatileStatus.chargingMove.chargingLength === 0) {
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Razor Wind";
-                    inputChannel.send(`${attacker.name} made a whirlwind.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} made a whirlwind.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3569,10 +3604,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Fly";
                     attackerVolatileStatus.semiInvulnerable = true;
-                    inputChannel.send(`${attacker.name} flew in the air.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} flew in the air.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -3590,7 +3625,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Bind":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3600,10 +3635,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 if (defenderVolatileStatus.bound.length === 0) {
                     if (Math.floor(Math.random() * 2) === 0) {
-                        inputChannel.send(`${defender.name} is bounded for 4 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 4 turns.`);
                         defenderVolatileStatus.bound.length = 4;
                     } else {
-                        inputChannel.send(`${defender.name} is bounded for 5 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 5 turns.`);
                         defenderVolatileStatus.bound.length = 5;
                     }
                     defenderVolatileStatus.bound.name = "Bind";
@@ -3619,7 +3654,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Stomp":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3637,12 +3672,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 if (stompEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
                 break;
             case "Double Kick":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3664,26 +3699,26 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (defenderVolatileStatus.protection.enabled) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${defender.name} was protected so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was protected so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${defender.name} was invulnerable so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was invulnerable so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${move.name} missed so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${move.name} missed so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
 
                 if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     defender.damageTaken += crashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${move.name} missed so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${move.name} missed so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
 
@@ -3695,7 +3730,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Rolling Kick":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3713,12 +3748,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 if (rollingKickEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
                 break;
             case "Headbutt":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3736,12 +3771,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let headbuttEffectChance = Math.floor(Math.random() * 100);
                 if (headbuttEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
                 break;
             case "Fury Attack":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3773,7 +3808,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Horn Drill":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3794,7 +3829,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Body Slam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3809,14 +3844,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let bodySlamEffectChance = Math.floor(Math.random() * 100);
                 if (bodySlamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "normal", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
                 inputChannel.send(`${move.name} did ${bodySlamDamage} damage.`);
                 break;
             case "Wrap":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3826,10 +3861,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 if (defenderVolatileStatus.bound.length === 0) {
                     if (Math.floor(Math.random() * 2) === 0) {
-                        inputChannel.send(`${defender.name} is bounded for 4 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 4 turns.`);
                         defenderVolatileStatus.bound.length = 4;
                     } else {
-                        inputChannel.send(`${defender.name} is bounded for 5 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 5 turns.`);
                         defenderVolatileStatus.bound.length = 5;
                     }
                     defenderVolatileStatus.bound.name = "Wrap";
@@ -3845,7 +3880,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Take Down":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3861,16 +3896,16 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 attacker.damageTaken += Math.round(takeDownDamage / 4);
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
 
-                inputChannel.send(`${attacker.name} got hit with recoil.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} got hit with recoil.`);
                 break;
             case "Thrash":
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     attackerVolatileStatus.thrashing.length = (Math.floor(Math.random() * 2) === 0) ? 3 : 4;
                     attackerVolatileStatus.thrashing.name = "Thrash";
-                    inputChannel.send(`${attacker.name} is thrashing about.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} is thrashing about.`);
                 }
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3886,13 +3921,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     if (attackerVolatileStatus.confusionLength === 0) {
                         attackerVolatileStatus.confusionLength = Math.floor(Math.random() * 4 + 1);
-                        inputChannel.send(`${attacker.name}'s thrashing ended.`);
+                        inputChannel.send(`${attacker.nickname || attacker.name}'s thrashing ended.`);
                     }
                 }
                 break;
             case "Double-Edge":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -3906,12 +3941,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 attacker.damageTaken += Math.round(doubleEdgeDamage / 3);
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
-                inputChannel.send(`${attacker.name} got hit with recoil.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} got hit with recoil.`);
 
                 break;
             case "Poison Sting":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3926,7 +3961,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let poisonStingEffectChance = Math.floor(Math.random() * 100);
                 if (poisonStingEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was poisoned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was poisoned.`);
                     defender.status = "poisoned";
                 }
 
@@ -3934,7 +3969,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Twineedle":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 for (let i = 0; i < 2; i++) {
@@ -3951,14 +3986,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                     let twineedleEffectChance = Math.floor(Math.random() * 100);
                     if (twineedleEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
-                        inputChannel.send(`${defender.name} was poisoned.`);
+                        inputChannel.send(`${defender.nickname || defender.name} was poisoned.`);
                         defender.status = "poisoned";
                     }
                 }
                 break;
             case "Pin Missile":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -3990,7 +4025,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Bite":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4008,12 +4043,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let biteEffectChance = Math.floor(Math.random() * 100);
                 if (biteEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
                 break;
             case "Sonic Boom":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4027,7 +4062,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Acid":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4043,12 +4078,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let acidChance = Math.floor(Math.random() * 100);
                 if (acidChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
                     defenderStatStage.spDef = Math.max(-6, defenderStatStage.spDef - 1)
-                    inputChannel.send(`${defender.name}'s special defense was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s special defense was decreased.`);
                 }
                 break;
             case "Ember":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4063,7 +4098,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let emberEffectChance = Math.floor(Math.random() * 100);
                 if (emberEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was burned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                     defender.status = "burned";
                 }
 
@@ -4071,7 +4106,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Flamethrower":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4086,7 +4121,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let flamethrowerEffectChance = Math.floor(Math.random() * 100);
                 if (flamethrowerEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was burned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                     defender.status = "burned";
                 }
 
@@ -4094,7 +4129,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Ice Beam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4109,7 +4144,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let iceBeamEffectChance = Math.floor(Math.random() * 100);
                 if (iceBeamEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was frozen.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was frozen.`);
                     defender.status = "frozen";
                 }
 
@@ -4117,7 +4152,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Blizzard":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4132,7 +4167,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let blizzardEffectChance = Math.floor(Math.random() * 100);
                 if (blizzardEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was frozen.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was frozen.`);
                     defender.status = "frozen";
                 }
 
@@ -4140,7 +4175,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Psybeam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4156,7 +4191,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let psybeamChance = Math.floor(Math.random() * 100);
                 if (psybeamChance < move.effect_chance) {
                     if (defenderVolatileStatus.confusionLength === 0) {
-                        inputChannel.send(`${defender.name} is now confused.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is now confused.`);
                         defenderVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
                     }
                 }
@@ -4165,7 +4200,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Bubble Beam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4180,7 +4215,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let bubbleBeamChance = Math.floor(Math.random() * 100);
                 if (bubbleBeamChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
-                    inputChannel.send(`${defender.name}'s speed was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`);
                     defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 1)
                 }
 
@@ -4188,7 +4223,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Aurora Beam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4203,7 +4238,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let auroraBeamChance = Math.floor(Math.random() * 100);
                 if (auroraBeamChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
-                    inputChannel.send(`${defender.name}'s attack was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s attack was decreased.`);
                     defenderStatStage.atk = Math.max(-6, defenderStatStage.atk - 1)
                 }
 
@@ -4211,7 +4246,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Hyper Beam":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4228,7 +4263,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Submission":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4242,11 +4277,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 attacker.damageTaken += Math.round(submissionDamage / 4);
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
-                inputChannel.send(`${attacker.name} got hit with recoil.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} got hit with recoil.`);
                 break;
             case "Low Kick":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4264,12 +4299,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let lowKickEffectChance = Math.floor(Math.random() * 100);
                 if (lowKickEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
                 break;
             case "Counter":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4287,7 +4322,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Seismic Toss":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4307,7 +4342,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Absorb":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4333,15 +4368,15 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let healAmount = Math.round(absorbDamage / 2);
                     attacker.damageTaken -= healAmount;
                     attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                    inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                 } else {
-                    inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                 }
                 inputChannel.send(`${move.name} did ${absorbDamage} damage.`);
                 break;
             case "Mega Drain":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4367,15 +4402,15 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let healAmount = Math.round(megaDrainDamage / 2);
                     attacker.damageTaken -= healAmount;
                     attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                    inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                 } else {
-                    inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                 }
                 inputChannel.send(`${move.name} did ${megaDrainDamage} damage.`);
                 break;
             case "Leech Seed":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4383,17 +4418,17 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
                 defenderVolatileStatus.leechSeed = true;
-                inputChannel.send(`${defender.name} was seeded.`);
+                inputChannel.send(`${defender.nickname || defender.name} was seeded.`);
 
                 break;
             case "Solar Beam":
                 if (attackerVolatileStatus.chargingMove.chargingLength === 0) {
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Solar Beam";
-                    inputChannel.send(`${attacker.name} starts charging.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} starts charging.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -4413,10 +4448,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     attackerVolatileStatus.thrashing.length = (Math.floor(Math.random() * 2) === 0) ? 3 : 4;
                     attackerVolatileStatus.thrashing.name = "Petal Dance";
-                    inputChannel.send(`${attacker.name} is thrashing about.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} is thrashing about.`);
                 }
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4431,12 +4466,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 attackerVolatileStatus.thrashing.length--;
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     attackerVolatileStatus.confusionLength = Math.floor(Math.random() * 4 + 1);
-                    inputChannel.send(`Thrashing has ended and left ${attacker.name} confused.`);
+                    inputChannel.send(`Thrashing has ended and left ${attacker.nickname || attacker.name} confused.`);
                 }
                 break;
             case "Dragon Rage":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4451,7 +4486,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Fire Spin":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4461,10 +4496,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 if (defenderVolatileStatus.bound.length === 0) {
                     if (Math.floor(Math.random() * 2) === 0) {
-                        inputChannel.send(`${defender.name} is bounded for 4 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 4 turns.`);
                         defenderVolatileStatus.bound.length = 4;
                     } else {
-                        inputChannel.send(`${defender.name} is bounded for 5 turns.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is bounded for 5 turns.`);
                         defenderVolatileStatus.bound.length = 5;
                     }
                     defenderVolatileStatus.bound.name = "Fire Spin";
@@ -4480,7 +4515,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Thunder Shock":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4496,7 +4531,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let thunderShockEffectChance = Math.floor(Math.random() * 100);
                 if (thunderShockEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -4504,7 +4539,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Thunderbolt":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4520,7 +4555,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let thunderboltEffectChance = Math.floor(Math.random() * 100);
                 if (thunderboltEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -4528,7 +4563,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Thunder":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4544,7 +4579,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let thunderEffectChance = Math.floor(Math.random() * 100);
                 if (thunderEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -4552,7 +4587,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Fissure":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4576,10 +4611,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Dig";
                     attackerVolatileStatus.semiInvulnerable = true;
-                    inputChannel.send(`${attacker.name} dug into the ground.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} dug into the ground.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -4597,7 +4632,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Confusion":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4614,7 +4649,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let confusionEffectChance = Math.floor(Math.random() * 100);
                 if (confusionEffectChance < move.effect_chance) {
                     if (defenderVolatileStatus.confusionLength === 0) {
-                        inputChannel.send(`${defender.name} is now confused.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is now confused.`);
                         defenderVolatileStatus.confusionLength = Math.floor(Math.random() * (4 - 1) + 1);
                     }
                 }
@@ -4623,7 +4658,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Psychic":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4638,7 +4673,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let psychicChance = Math.floor(Math.random() * 100);
                 if (psychicChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
-                    inputChannel.send(`${defender.name}'s special defense was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s special defense was decreased.`);
 
                     defenderStatStage.spDef = Math.max(-6, defenderStatStage.spDef - 1)
                 }
@@ -4647,7 +4682,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Night Shade":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4667,10 +4702,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
             case "Self-Destruct":
                 attacker.damageTaken += totalAttackerHp;
 
-                inputChannel.send(`${attacker.name} self-destructed.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} self-destructed.`);
 
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4685,7 +4720,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Lick":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4700,7 +4735,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let lickEffectChance = Math.floor(Math.random() * 100);
                 if (lickEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "ghost", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -4708,7 +4743,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Smog":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4722,7 +4757,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let smogEffectChance = Math.floor(Math.random() * 100);
                 if (smogEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was poisoned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was poisoned.`);
                     defender.status = "poisoned";
                 }
 
@@ -4730,7 +4765,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Sludge":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4744,7 +4779,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let sludgeEffectChance = Math.floor(Math.random() * 100);
                 if (sludgeEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "poison", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was poisoned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was poisoned.`);
                     defender.status = "poisoned";
                 }
 
@@ -4752,7 +4787,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Fire Blast":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4767,7 +4802,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let fireBlastEffectChance = Math.floor(Math.random() * 100);
                 if (fireBlastEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was burned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                     defender.status = "burned";
                 }
 
@@ -4775,7 +4810,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Waterfall":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4791,14 +4826,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let waterfallEffectChance = Math.floor(Math.random() * 100);
                 if (waterfallEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
 
                 inputChannel.send(`${move.name} did ${waterfallDamage} damage.`);
                 break;
             case "Swift":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4813,13 +4848,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Skull Bash";
 
-                    inputChannel.send(`${attacker.name} tucks it's head in getting ready to charge.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} tucks it's head in getting ready to charge.`);
                     attackerStatStage.def = Math.min(6, attackerStatStage.def + 1);
 
-                    inputChannel.send(`${attacker.name}'s defense was increased.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s defense was increased.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -4840,25 +4875,25 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (defenderVolatileStatus.protection.enabled) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${defender.name} was protected so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was protected so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${defender.name} was invulnerable so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was invulnerable so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${move.name} missed so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${move.name} missed so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
                 if (await isType(defender, "ghost", defenderVolatileStatus)) {
                     defender.damageTaken += highJumpKickCrashDamage;
                     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp);
-                    inputChannel.send(`${move.name} missed so ${attacker.name} took crash damage.`);
+                    inputChannel.send(`${move.name} missed so ${attacker.nickname || attacker.name} took crash damage.`);
                     return;
                 }
 
@@ -4870,7 +4905,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Dream Eater":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4896,16 +4931,16 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let healAmount = Math.round(dreamEaterDamage / 2);
                     attacker.damageTaken -= healAmount;
                     attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                    inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                 } else {
-                    inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                 }
 
                 inputChannel.send(`${move.name} did ${dreamEaterDamage} damage.`);
                 break;
             case "Leech Life":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -4927,9 +4962,9 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let healAmount = Math.round(leechLifeDamage / 2);
                     attacker.damageTaken -= healAmount;
                     attacker.damageTaken = Math.max(0, attacker.damageTaken);
-                    inputChannel.send(`${attacker.name} was healed for ${healAmount}.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} was healed for ${healAmount}.`);
                 } else {
-                    inputChannel.send(`${attacker.name}'s healing was blocked.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name}'s healing was blocked.`);
                 }
 
                 inputChannel.send(`${move.name} did ${leechLifeDamage} damage.`);
@@ -4939,10 +4974,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
                     attackerVolatileStatus.chargingMove.name = "Sky Attack";
 
-                    inputChannel.send(`${attacker.name} starts glowing.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} starts glowing.`);
                 } else {
                     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                        inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                         return;
                     }
 
@@ -4957,14 +4992,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let skyAttackEffectChance = Math.floor(Math.random() * 100);
                     if (skyAttackEffectChance < move.effect_chance) {
                         defenderVolatileStatus.flinch = true;
-                        inputChannel.send(`${defender.name} flinched.`);
+                        inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                     }
                     inputChannel.send(`${move.name} did ${skyAttackDamage} damage.`);
                 }
                 break;
             case "Bubble":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -4979,7 +5014,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let bubbleChance = Math.floor(Math.random() * 100);
                 if (bubbleChance < move.effect_chance && defenderVolatileStatus.mistLength === 0) {
-                    inputChannel.send(`${defender.name}'s speed was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`);
                     defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 1)
                 }
 
@@ -4990,10 +5025,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Explosion":
                 attacker.damageTaken += totalAttackerHp;
-                inputChannel.send(`${attacker.name} exploded.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} exploded.`);
 
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5009,7 +5044,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Fury Swipes":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5041,7 +5076,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Bonemerang":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5061,7 +5096,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Rock Slide":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5077,14 +5112,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let rockSlideEffectChance = Math.floor(Math.random() * 100);
                 if (rockSlideEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
 
                 inputChannel.send(`${move.name} did ${rockSlideDamage} damage.`);
                 break;
             case "Tri Attack":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5102,17 +5137,17 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     let randomStatus = Math.floor(Math.random() * 3);
                     if (randomStatus === 0) {
                         if (defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
-                            inputChannel.send(`${defender.name} was frozen.`);
+                            inputChannel.send(`${defender.nickname || defender.name} was frozen.`);
                             defender.status = "frozen";
                         }
                     } else if (randomStatus === 1) {
                         if (defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                            inputChannel.send(`${defender.name} was burned.`);
+                            inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                             defender.status = "burned";
                         }
                     } else {
                         if (defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus) && !await isType(defender, "normal", defenderVolatileStatus)) {
-                            inputChannel.send(`${defender.name} was paralyzed.`);
+                            inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                             defender.status = "paralyzed";
                         }
                     }
@@ -5122,7 +5157,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Super Fang":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5143,7 +5178,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Struggle":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5157,11 +5192,11 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 attacker.damageTaken += Math.round(struggleDamage / 2);
                 attacker.damageTaken = Math.min(attacker.damageTaken, totalAttackerHp);
-                inputChannel.send(`${attacker.name} got hit with recoil.`);
+                inputChannel.send(`${attacker.nickname || attacker.name} got hit with recoil.`);
                 break;
             case "Triple Kick":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5179,7 +5214,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Flame Wheel":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5194,7 +5229,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let flameWheelEffectChance = Math.floor(Math.random() * 100);
                 if (flameWheelEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "fire", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was burned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was burned.`);
                     defender.status = "burned";
                 }
 
@@ -5202,7 +5237,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Snore":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (!defenderVolatileStatus.minimized && Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5221,14 +5256,14 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 let snoreEffectChance = Math.floor(Math.random() * 100);
                 if (snoreEffectChance < move.effect_chance) {
                     defenderVolatileStatus.flinch = true;
-                    inputChannel.send(`${defender.name} flinched.`);
+                    inputChannel.send(`${defender.nickname || defender.name} flinched.`);
                 }
 
                 inputChannel.send(`${move.name} did ${snoreDamage} damage.`);
                 break;
             case "Powder Snow":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5243,7 +5278,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let powderSnowEffectChance = Math.floor(Math.random() * 100);
                 if (powderSnowEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "ice", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was frozen.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was frozen.`);
                     defender.status = "frozen";
                 }
 
@@ -5251,7 +5286,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Feint Attack":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5264,7 +5299,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Sludge Bomb":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5279,7 +5314,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let sludgeBombEffectChance = Math.floor(Math.random() * 100);
                 if (sludgeBombEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "steel", defenderVolatileStatus) && !await isType(defender, "poison", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was poisoned.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was poisoned.`);
                     defender.status = "poisoned";
                 }
 
@@ -5287,7 +5322,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Mud Slap":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5307,12 +5342,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                inputChannel.send(`${defender.name}'s accuracy was decreased.`);
+                inputChannel.send(`${defender.nickname || defender.name}'s accuracy was decreased.`);
                 defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
                 break;
             case "Octazooka":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5334,13 +5369,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let octazookaEffectChance = Math.floor(Math.random() * 100);
                 if (octazookaEffectChance < move.effect_chance) {
-                    inputChannel.send(`${defender.name}'s accuracy was decreased.`);
+                    inputChannel.send(`${defender.nickname || defender.name}'s accuracy was decreased.`);
                     defenderStatStage.accuracy = Math.max(-6, defenderStatStage.accuracy - 1);
                 }
                 break;
             case "Zap Cannon":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5355,7 +5390,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
                 let zapCannonEffectChance = Math.floor(Math.random() * 100);
                 if (zapCannonEffectChance < move.effect_chance && defender.status === "normal" && !await isType(defender, "electric", defenderVolatileStatus)) {
-                    inputChannel.send(`${defender.name} was paralyzed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} was paralyzed.`);
                     defender.status = "paralyzed";
                 }
 
@@ -5363,7 +5398,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 break;
             case "Icy Wind":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5383,13 +5418,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                     return;
                 }
 
-                inputChannel.send(`${defender.name}'s speed was decreased.`);
+                inputChannel.send(`${defender.nickname || defender.name}'s speed was decreased.`);
                 defenderStatStage.speed = Math.max(-6, defenderStatStage.speed - 1);
                 break;
 
             case "Bone Rush":
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -5423,10 +5458,10 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     attackerVolatileStatus.thrashing.length = (Math.floor(Math.random() * 2) === 0) ? 3 : 4;
                     attackerVolatileStatus.thrashing.name = "Outrage";
-                    inputChannel.send(`${attacker.name} is thrashing about.`);
+                    inputChannel.send(`${attacker.nickname || attacker.name} is thrashing about.`);
                 }
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
                 if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5441,12 +5476,12 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 attackerVolatileStatus.thrashing.length--;
                 if (attackerVolatileStatus.thrashing.length === 0) {
                     attackerVolatileStatus.confusionLength = Math.floor(Math.random() * 4 + 1);
-                    inputChannel.send(`Thrashing has ended and left ${attacker.name} confused.`);
+                    inputChannel.send(`Thrashing has ended and left ${attacker.nickname || attacker.name} confused.`);
                 }
                 break;
             // case "Move":
             //     if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-            //         inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+            //         inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
             //         return;
             //     }
             //     if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
@@ -5470,7 +5505,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 //Quick Attack, Flail, Aeroblast, Mach Punch
 
                 if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
                     return;
                 }
 
@@ -6260,17 +6295,17 @@ function getTypeCalculation(moveType, defenderTypes, typeChange, identified) {
 function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyVolatileStatus) {
 
     if (pokemon.status === "burned") {
-        inputChannel.send(`${pokemon.name} was hurt by burn.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was hurt by burn.`);
         pokemon.damageTaken += Math.round(totalHp / 16);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
     if (pokemon.status === "poisoned") {
-        inputChannel.send(`${pokemon.name} was hurt by poison.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was hurt by poison.`);
         pokemon.damageTaken += Math.round(totalHp / 8);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
     if (pokemon.status === "badly poisoned") {
-        inputChannel.send(`${pokemon.name} was badly hurt by poison.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was badly hurt by poison.`);
         pokemon.damageTaken += Math.round(totalHp * (volatileStatus.badlyPoisonTurn + 1) / 16);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
         volatileStatus.badlyPoisonTurn++;
@@ -6296,15 +6331,15 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
         let boundDmg = Math.round(totalHp / 8)
         pokemon.damageTaken += boundDmg;
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
-        inputChannel.send(`${volatileStatus.bound.name} did ${boundDmg} dmg to ${pokemon.name}.`);
+        inputChannel.send(`${volatileStatus.bound.name} did ${boundDmg} dmg to ${pokemon.nickname || pokemon.name}.`);
 
         if (volatileStatus.bound.length === 0) {
-            inputChannel.send(`${pokemon.name} was freed from being bound.`);
+            inputChannel.send(`${pokemon.nickname || pokemon.name} was freed from being bound.`);
         }
     }
 
     if (volatileStatus.cursed) {
-        inputChannel.send(`${pokemon.name} damaged by curse.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} damaged by curse.`);
         pokemon.damageTaken += Math.round(totalHp / 4);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     }
@@ -6313,7 +6348,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
         if (pokemon.status === "normal") {
             volatileStatus.sleepTurnLength = Math.floor(Math.random() * (4 - 1) + 1);
             pokemon.status = "sleeping";
-            inputChannel.send(`Due to it's drowsiness ${pokemon.name} fell asleep.`);
+            inputChannel.send(`Due to it's drowsiness ${pokemon.nickname || pokemon.name} fell asleep.`);
         }
     }
     if (volatileStatus.drowsy > 0) {
@@ -6354,14 +6389,14 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
             enemy.damageTaken -= newDmg;
             enemy.damageTaken = Math.max(enemy.damageTaken, 0);
 
-            inputChannel.send(`${pokemon.name}'s healing was blocked.`);
+            inputChannel.send(`${pokemon.nickname || pokemon.name}'s healing was blocked.`);
         }
 
-        inputChannel.send(`Leech seed did ${newDmg} to ${enemy.name} damage.`);
-        inputChannel.send(`${pokemon.name} was healed for ${newDmg}.`);
+        inputChannel.send(`Leech seed did ${newDmg} to ${enemy.nickname || enemy.name} damage.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was healed for ${newDmg}.`);
     }
     if (pokemon.status === "sleeping" && volatileStatus.nightmare) {
-        inputChannel.send(`${pokemon.name} had a nightmare.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} had a nightmare.`);
         pokemon.damageTaken += Math.round(totalHp / 4);
         pokemon.damageTaken = Math.min(totalHp, pokemon.damageTaken);
     } else {
@@ -6372,7 +6407,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
             pokemon.damageTaken = totalHp;
         }
         volatileStatus.perishSongLength--;
-        inputChannel.send(`${pokemon.name} perish song length is now ${volatileStatus.perishSongLength}.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} perish song length is now ${volatileStatus.perishSongLength}.`);
     }
     if (volatileStatus.tauntLength > 0) {
         volatileStatus.tauntLength--;
@@ -6406,13 +6441,13 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
     if (volatileStatus.healBlockLength === 0 && pokemon.damageTaken < totalHp && volatileStatus.rooting) {
         pokemon.damageTaken -= Math.round(totalHp / 16);
         pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
-        inputChannel.send(`${pokemon.name} was healed by rooting.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was healed by rooting.`);
     }
 
     if (volatileStatus.healBlockLength === 0 && pokemon.damageTaken < totalHp && volatileStatus.aquaRing) {
         pokemon.damageTaken -= Math.round(totalHp / 16);
         pokemon.damageTaken = Math.max(0, pokemon.damageTaken);
-        inputChannel.send(`${pokemon.name} was healed by aqua ring.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} was healed by aqua ring.`);
     }
 }
 
@@ -6455,7 +6490,7 @@ async function getNewLevelAndXp(pokemon, inputChannel) {
     while (pokemon.exp > xpNeededForNextLevel) {
         leveledUp = true;
         pokemon.level += 1;
-        inputChannel.send(`${pokemon.name} leveled up to ${pokemon.level}.`);
+        inputChannel.send(`${pokemon.nickname || pokemon.name} leveled up to ${pokemon.level}.`);
         pokemon.exp -= xpNeededForNextLevel;
         xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
     }

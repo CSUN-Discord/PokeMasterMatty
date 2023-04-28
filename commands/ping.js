@@ -2,12 +2,14 @@
 This command sends a simple message to check if the bot is active
 */
 
+const {PermissionsBitField} = require('discord.js');
+
 const {SlashCommandBuilder} = require("@discordjs/builders");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ping")
         .setDescription("Use to check if bot is active"),
-    permission: ["SEND_MESSAGES"],
+    permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
      *

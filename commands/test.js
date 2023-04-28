@@ -7,7 +7,6 @@ let fs = require("fs");
 const fetch = require('node-fetch');
 const Pokemon = require('pokemon.js');
 Pokemon.setLanguage('english');
-const pokemonName = require('pokemon');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions")
 const itemListFunctions = require("../db/functions/itemListFunctions")
 const mergeImages = require('merge-images');
@@ -19,15 +18,16 @@ const PythonShell = require('python-shell').PythonShell;
 // const fs = require("fs");
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const {MessageEmbed} = require("discord.js");
+// const {EmbedBuilder} = require("discord.js");
 const {updateMove} = require("../db/functions/moveListFunctions");
 const moveListFunction = require("../db/functions/moveListFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
+const {PermissionsBitField} = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test")
         .setDescription("Tests things"),
-    permission: ["ADMINISTRATOR"],
+    permission: [PermissionsBitField.Flags.Administrator],
 
     /**
      *
@@ -37,6 +37,12 @@ module.exports = {
     async execute(interaction) {
 
         interaction.reply({content: "checking stuff", ephemeral: true});
+
+        // await emojiListFunctions.addMoveCategory("physical", "<:physical:1101212523384033321>");
+        // await emojiListFunctions.addMoveCategory("status", "<:status:1101212527070810302>");
+        // await emojiListFunctions.addMoveCategory("special", "<:special:1101212525787357274>");
+
+        // await emojiListFunctions.addMoveType("special", "<:special:1101212525787357274>");
 
         // await emojiListFunctions.addBoxIcon(2, "<:2_:1099844263078015039>");
         // await emojiListFunctions.addBoxIcon(3, "<:3_:1099844297777500220>");
@@ -105,8 +111,8 @@ module.exports = {
 
 
         // const hp = 35;
-        // const testEmbed = new MessageEmbed()
-        //     .setColor('RANDOM')
+        // const testEmbed = new EmbedBuilder()
+        //     .setColor('Random')
         //     .setTitle(`test`)
         //     .addFields(
         //         {name: 'Regular field title', value: 'Some value here'},

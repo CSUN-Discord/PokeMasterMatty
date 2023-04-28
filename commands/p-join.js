@@ -5,7 +5,7 @@ This command adds a user to the game
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
-const {MessageActionRow, MessageButton} = require("discord.js");
+const {ActionRowBuilder, ButtonBuilder, PermissionsBitField} = require("discord.js");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 
@@ -13,7 +13,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-join")
         .setDescription("Adds a user to the join."),
-    permission: ["SEND_MESSAGES"],
+    permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
      *
@@ -23,10 +23,10 @@ module.exports = {
     async execute(interaction) {
 
 
-        if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id))) return interaction.reply({
-            content: "A game hasn't been started in this server.",
-            ephemeral: true
-        });
+        // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id))) return interaction.reply({
+        //     content: "A game hasn't been started in this server.",
+        //     ephemeral: true
+        // });
 
         const user = await trainerFunctions.getUser(interaction.user.id);
         if (user != null) return interaction.reply({
@@ -39,24 +39,24 @@ module.exports = {
             ephemeral: true
         });
 
-        const row = new MessageActionRow()
+        const row = new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${interaction.user.id}bulbasaur`)
                     .setLabel('bulbasaur')
-                    .setStyle('SUCCESS'),
+                    .setStyle('Success'),
             )
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${interaction.user.id}charmander`)
                     .setLabel('charmander')
-                    .setStyle('DANGER'),
+                    .setStyle('Danger'),
             )
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(`${interaction.user.id}squirtle`)
                     .setLabel('squirtle')
-                    .setStyle('PRIMARY'),
+                    .setStyle('Primary'),
             );
 
         interaction.reply({

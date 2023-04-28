@@ -124,10 +124,10 @@ module.exports = {
 
         if (player.team.length < 6) {
             // newPokemon.teamNumber = player.team.length + 1;
-            await addPokemonToTeam(user.id, newPokemon);
+            await module.exports.addPokemonToTeam(user.id, newPokemon);
         } else {
             // newPokemon.boxNumber = player.team.length + 1;
-            await addPokemonToBox(user.id, newPokemon);
+            await module.exports.addPokemonToBox(user.id, newPokemon);
         }
     },
 
@@ -137,12 +137,12 @@ module.exports = {
         if (player.team.length < 6) {
             // newPokemon.teamNumber = player.team.length + 1;
             newPokemon.status = "normal";
-            await addPokemonToTeam(userId, newPokemon);
+            await module.exports.addPokemonToTeam(userId, newPokemon);
         } else {
             // newPokemon.boxNumber = player.team.length + 1;
             newPokemon.status = "normal";
             newPokemon.damageTaken = 0;
-            await addPokemonToBox(userId, newPokemon);
+            await module.exports.addPokemonToBox(userId, newPokemon);
         }
     },
 
@@ -208,51 +208,51 @@ module.exports = {
             console.log(e);
         }
     },
-}
-
-async function addPokemonToTeam(userId, pokemon) {
-    try {
-        await trainerSchema
-            .findOneAndUpdate(
-                {
-                    userId: userId,
-                },
-                {
-                    $push: {
-                        team: pokemon
+    addPokemonToTeam: async function (userId, pokemon) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $push: {
+                            team: pokemon
+                        }
+                    },
+                    {
+                        upsert: false,
                     }
-                },
-                {
-                    upsert: false,
-                }
-            )
-            .exec();
-    } catch (e) {
-        console.log(e);
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
+    addPokemonToBox: async function (userId, pokemon) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $push: {
+                            pokebox: pokemon
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
     }
 }
 
-async function addPokemonToBox(userId, pokemon) {
-    try {
-        await trainerSchema
-            .findOneAndUpdate(
-                {
-                    userId: userId,
-                },
-                {
-                    $push: {
-                        pokebox: pokemon
-                    }
-                },
-                {
-                    upsert: false,
-                }
-            )
-            .exec();
-    } catch (e) {
-        console.log(e);
-    }
-}
 
 async function addUser(user) {
     try {

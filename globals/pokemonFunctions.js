@@ -13,7 +13,7 @@ module.exports = {
             "owner": null,
             "nickname": null,
             "exp": 0,
-            "traded": false,
+            // "traded": false,
             "ivStats": {
                 "hp": generalFunctions.randomIntFromInterval(0, 31),
                 "atk": generalFunctions.randomIntFromInterval(0, 31),
@@ -64,7 +64,7 @@ module.exports = {
             "owner": user,
             "nickname": null,
             "exp": 0,
-            "traded": false,
+            // "traded": false,
             "ivStats": {
                 "hp": generalFunctions.randomIntFromInterval(0, 31),
                 "atk": generalFunctions.randomIntFromInterval(0, 31),

@@ -8,11 +8,12 @@ const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 // const itemListFunctions = require("../db/functions/itemListFunctions");
 const generalFunctions = require("../globals/generalFunctions");
+const {PermissionsBitField} = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-present")
         .setDescription("Claims a present if you have one available."),
-    permission: ["SEND_MESSAGES"],
+    permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
      *
@@ -41,7 +42,7 @@ module.exports = {
                 ephemeral: true
             });
 
-        if (await battlingFunctions.getBattleFromUserId(interaction.user.id).length > 0)
+        if (user.battling)
             return interaction.editReply({
                 content: `You can't be in a battle to claim a present.`,
                 ephemeral: true

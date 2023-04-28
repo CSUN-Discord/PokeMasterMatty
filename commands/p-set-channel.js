@@ -5,6 +5,7 @@ This command starts a pokemon game in the server
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const {cancelJob} = require("../commands/p-start");
+const {PermissionsBitField} = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,7 +16,7 @@ module.exports = {
                 .setDescription('The channel id to set the game in.')
                 .setRequired(true)
         ),
-    permission: ["ADMINISTRATOR"],
+    permission: [PermissionsBitField.Flags.Administrator],
 
     /**
      *

@@ -6,7 +6,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const schedule = require('node-schedule');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
-const {MessageEmbed, MessageAttachment, MessageActionRow, MessageButton} = require("discord.js");
+const {EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, PermissionsBitField} = require("discord.js");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const battleFunctions = require("../globals/battleFunctions");
@@ -20,7 +20,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-start")
         .setDescription("Start a pokemon game in this server."),
-    permission: ["ADMINISTRATOR"],
+    permission: [PermissionsBitField.Flags.Administrator],
 
     /**
      *
@@ -108,18 +108,18 @@ module.exports = {
                             let quantity = pokemonFunctions.setQuantity(pokemon[0].spawnRate);
                             await pokemonGameFunctions.setSpawned(interaction.guild.id, pokemon[0]);
 
-                            const row = new MessageActionRow()
+                            const row = new ActionRowBuilder()
                                 .addComponents(
-                                    new MessageButton()
+                                    new ButtonBuilder()
                                         .setCustomId('spawnBattle')
                                         .setLabel('battle')
-                                        .setStyle('PRIMARY'),
+                                        .setStyle('Primary'),
                                 );
 
-                            const icon = new MessageAttachment(`./media/pokemon/normal-icons/${pokemon[0].pokeId}.png`);
-                            const gif = new MessageAttachment(`./media/pokemon/normal-gif/front/${pokemon[0].pokeId}.gif`);
-                            const spawnedPokemonEmbed = new MessageEmbed()
-                                .setColor('RANDOM')
+                            const icon = new AttachmentBuilder(`./media/pokemon/normal-icons/${pokemon[0].pokeId}.png`);
+                            const gif = new AttachmentBuilder(`./media/pokemon/normal-gif/front/${pokemon[0].pokeId}.gif`);
+                            const spawnedPokemonEmbed = new EmbedBuilder()
+                                .setColor('Random')
                                 .setTitle(`${pokemon[0].name} has appeared.`)
                                 .setDescription(`Quantity: ${quantity}`)
                                 .setThumbnail(`attachment://${pokemon[0].pokeId}.png`)
@@ -173,7 +173,7 @@ module.exports = {
                                             }).then((msg) => {
                                                 setTimeout(() => msg.delete(), 5000);
                                             });
-                                            
+
                                             await trainerFunctions.setBattling(i.user.id, true);
 
                                             quantity--;
@@ -193,7 +193,7 @@ module.exports = {
                                             });
                                             thread.members.add(i.user.id);
                                             // await thread.setLocked(true);
-                                            let row = await battleFunctions.setRowDefault(new MessageActionRow(), i)
+                                            let row = await battleFunctions.setRowDefault(new ActionRowBuilder(), i)
                                             thread.send({content: "You have 10 minutes for this battle."})
                                             thread.send(`🔴🔴🔴 TURN 1 🔴🔴🔴`);
 
@@ -263,7 +263,7 @@ module.exports = {
                                                     // console.log("ended_2")
                                                     try {
                                                         const receivedEmbed = message.embeds[0];
-                                                        const exampleEmbed = new MessageEmbed(receivedEmbed)
+                                                        const exampleEmbed = new EmbedBuilder(receivedEmbed)
                                                             .setTitle('The pokemon fled before you had a chance to capture or kill it!')
                                                         message.channel.send({embeds: [exampleEmbed], components: []});
 
@@ -288,8 +288,8 @@ module.exports = {
                                                 collector = null;
                                             } else {
                                                 if (collector != null) {
-                                                    const spawnedPokemonEmbed = new MessageEmbed()
-                                                        .setColor('RANDOM')
+                                                    const spawnedPokemonEmbed = new EmbedBuilder()
+                                                        .setColor('Random')
                                                         .setTitle(`${pokemon[0].name} has appeared.`)
                                                         .setDescription(`Quantity: ${quantity}`)
                                                         .setThumbnail(`attachment://${pokemon[0].pokeId}.png`)
@@ -312,7 +312,7 @@ module.exports = {
                             collector.on('end', collected => {
                                 try {
                                     const receivedEmbed = spawnedMessage.embeds[0];
-                                    const exampleEmbed = new MessageEmbed(receivedEmbed)
+                                    const exampleEmbed = new EmbedBuilder(receivedEmbed)
                                         .setTitle(`All the ${pokemon[0].name}s have fled, been killed, or caught.`)
                                     spawnedMessage.channel.send({embeds: [exampleEmbed], components: []});
 
