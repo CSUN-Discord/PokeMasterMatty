@@ -1,5 +1,8 @@
 const generalFunctions = require("./generalFunctions");
 const moveListFunctions = require("../db/functions/moveListFunctions");
+const {EmbedBuilder, AttachmentBuilder} = require("discord.js");
+const emojiListFunctions = require("../db/functions/emojiListFunctions");
+const itemListFunctions = require("../db/functions/itemListFunctions");
 
 module.exports = {
 
@@ -657,6 +660,127 @@ module.exports = {
         }
 
         return levelNeeded[pokemonName];
+    },
+
+    createPokemonDetailsEmbed: async function (pokemon, fullPokemonDetails, interaction, user) {
+
+        let result;
+        let pokeIcon;
+
+        if (pokemon.shiny) {
+            result = await emojiListFunctions.getShinyGif(pokemon.pokeId);
+            pokeIcon = new AttachmentBuilder(`./media/pokemon/shiny-icons/${pokemon.pokeId}.png`);
+        } else {
+            result = await emojiListFunctions.getNormalGif(pokemon.pokeId);
+            pokeIcon = new AttachmentBuilder(`./media/pokemon/normal-icons/${pokemon.pokeId}.png`);
+        }
+
+        let pokeBall = await itemListFunctions.getItem(pokemon.ball);
+        const ballIcon = new AttachmentBuilder(`./media/items/poke-balls/${pokeBall.sprite}`);
+
+        let pokemonEmbed = new EmbedBuilder()
+            .setColor('Random')
+            .setThumbnail(`attachment://${pokemon.pokeId}.png`)
+            .setAuthor({name: `${user.name}`, iconURL: `${interaction.user.avatarURL()}`})
+            .setDescription(`${fullPokemonDetails.description}`)
+            .setTimestamp(pokemon.receivedTimestamp)
+        let pokemonStringDetails = `\n**Height:** ${fullPokemonDetails.height} **Weight:** ${fullPokemonDetails.weight} \n**Held Item:** ${pokemon.item || "nothing"} \n**Friendship:** ${pokemon.friendship} \n**Type:** `;
+        for (let i = 0; i < fullPokemonDetails.types.length; i++) {
+            pokemonStringDetails += `• ${fullPokemonDetails.types[i]} `;
+        }
+        pokemonStringDetails += "\n**Abilities:** "
+        for (let i = 0; i < fullPokemonDetails.abilities.length; i++) {
+            pokemonStringDetails += `• ${fullPokemonDetails.abilities[i].name} `;
+        }
+        pokemonStringDetails += `\n**Nature:** ${pokemon.nature}`
+
+        pokemonEmbed.addFields([
+            {
+                name: '\u200b',
+                value: pokemonStringDetails,
+                inline: false
+            },
+            {
+                name: "Base Stats",
+                value: `**HP:** ${pokemon.base.hp} \n**ATK:** ${pokemon.base.attack} \n**DEF:** ${pokemon.base.defense} \n**SPATK:** ${pokemon.base['special-attack']} \n**SPDEF:** ${pokemon.base['special-defense']} \n**SPEED:** ${pokemon.base.speed}`,
+                inline: true
+            },
+            {
+                name: "IV Stats",
+                value: `**HP:** ${pokemon.ivStats.hp} \n**ATK:** ${pokemon.ivStats.atk} \n**DEF:** ${pokemon.ivStats.def} \n**SPATK:** ${pokemon.ivStats.spAtk} \n**SPDEF:** ${pokemon.ivStats.spDef} \n**SPEED:** ${pokemon.ivStats.speed}`,
+                inline: true
+            },
+            {
+                name: "EV Stats",
+                value: `**HP:** ${pokemon.evLevels.hp} \n**ATK:** ${pokemon.evLevels.atk} \n**DEF:** ${pokemon.evLevels.def} \n**SPATK:** ${pokemon.evLevels.spAtk} \n**SPDEF:** ${pokemon.evLevels.spDef} \n**SPEED:** ${pokemon.evLevels.speed}`,
+                inline: true
+            },
+        ])
+        const currentMoves = pokemon.currentMoves;
+
+        for (let i = 0; i < currentMoves.length; i++) {
+            pokemonEmbed.addFields([
+                {
+                    name: `${currentMoves[i].name}`,
+                    value: `${currentMoves[i].flavorText}`
+                },
+                {
+                    name: 'PP',
+                    value: `${currentMoves[i].currentPP}/${currentMoves[i].pp}`,
+                    inline: true
+                },
+            ])
+            if (currentMoves[i].pwr == null)
+                pokemonEmbed.addFields([{name: 'Power', value: `0`, inline: true}])
+            else
+                pokemonEmbed.addFields([{name: 'Power', value: `${currentMoves[i].pwr}`, inline: true}])
+
+            // let category = await emojiListFunctions.getMoveCategory(currentMoves[i].category);
+            pokemonEmbed.addFields([
+                {
+                    name: 'Type',
+                    value: `${currentMoves[i].type}`,
+                    inline: true
+                },
+                {
+                    name: 'Category',
+                    value: currentMoves[i].category,
+                    inline: true
+                }
+            ])
+        }
+
+        const pokemonHpMultiplier = Math.round(module.exports.multiplierCalculation(pokemon.evLevels.hp));
+        const pokemonElb = Math.round(module.exports.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+        const maxHP = Math.round(module.exports.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
+        let currentHP = maxHP - pokemon.damageTaken;
+
+        let levelingRate = fullPokemonDetails.levelingRate;
+        let xpNeededForNextLevel = module.exports.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - module.exports.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
+
+
+        if (pokemon.male) {
+            pokemonEmbed.setTitle(`♀️ No. ${pokemon.pokeId} ${pokemon.nickname || pokemon.name} ${result} LVL: ${pokemon.level} HP: ${currentHP}/${maxHP} EXP: ${pokemon.exp}/${xpNeededForNextLevel}`);
+        } else {
+            pokemonEmbed.setTitle(`♂️ No. ${pokemon.pokeId} ${pokemon.nickname || pokemon.name} ${result} LVL: ${pokemon.level} HP: ${currentHP}/${maxHP} EXP: ${pokemon.exp}/${xpNeededForNextLevel}`);
+        }
+
+        if (pokemon.receivedTimestamp === pokemon.caughtTimestamp) {
+            pokemonEmbed.setFooter({
+                iconURL: `attachment://${pokeBall.sprite}`,
+                text: 'Caught',
+            })
+        } else {
+            pokemonEmbed.setFooter({
+                iconURL: `attachment://${pokeBall.sprite}`,
+                text: 'Traded',
+            })
+        }
+
+        interaction.reply({
+            embeds: [pokemonEmbed],
+            files: [ballIcon, pokeIcon]
+        })
     }
 }
 

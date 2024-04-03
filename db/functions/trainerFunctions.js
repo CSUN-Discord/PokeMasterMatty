@@ -115,6 +115,28 @@ module.exports = {
         }
     },
 
+    setBox: async function (userId, box) {
+        try {
+            await trainerSchema
+                .findOneAndUpdate(
+                    {
+                        userId: userId,
+                    },
+                    {
+                        $set: {
+                            pokebox: box
+                        }
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
+    },
+
     addPokemonToUser: async function (user, newPokemon) {
         let player = await module.exports.getUser(user.id);
         if (player == null) {
@@ -124,9 +146,12 @@ module.exports = {
 
         if (player.team.length < 6) {
             // newPokemon.teamNumber = player.team.length + 1;
+            newPokemon.status = "normal";
             await module.exports.addPokemonToTeam(user.id, newPokemon);
         } else {
             // newPokemon.boxNumber = player.team.length + 1;
+            newPokemon.status = "normal";
+            newPokemon.damageTaken = 0;
             await module.exports.addPokemonToBox(user.id, newPokemon);
         }
     },

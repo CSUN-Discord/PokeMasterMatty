@@ -30,23 +30,9 @@ module.exports = {
         //     });
 
         const user = await trainerFunctions.getUser(interaction.user.id);
-        if (user == null)
-            return interaction.editReply({
-                content: "You need to join the game. (/p-join)",
-                ephemeral: true
-            });
-
-        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id))
-            return interaction.editReply({
-                content: "Incorrect game channel.",
-                ephemeral: true
-            });
-
-        if (user.battling)
-            return interaction.editReply({
-                content: `You can't be in a battle to claim a present.`,
-                ephemeral: true
-            });
+        if (!await generalFunctions.allowedToUseCommand(user, interaction)) {
+            return;
+        }
 
         if (!user.presentReady)
             return interaction.editReply({

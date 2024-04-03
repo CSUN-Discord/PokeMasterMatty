@@ -1266,6 +1266,7 @@ module.exports = {
                             let evolving = true;
 
                             try {
+                                //TODO: test using: evolvingMsg.createMessageComponentCollector({
                                 const collector = inputChannel.createMessageComponentCollector({
                                     time: 10000
                                 });

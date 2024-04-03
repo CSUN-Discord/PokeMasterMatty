@@ -5,15 +5,13 @@ This command allows users to swap, view, deposit their team pokemon
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {AttachmentBuilder, EmbedBuilder, PermissionsBitField} = require("discord.js");
 
-// const battlingFunctions = require("../db/functions/battlingFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
-const battlingFunctions = require("../db/functions/battlingFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
-const itemListFunctions = require("../db/functions/itemListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const Filter = require('bad-words');
+const generalFunctions = require("../globals/generalFunctions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -148,25 +146,9 @@ module.exports = {
      */
     async execute(interaction) {
         const user = await trainerFunctions.getUser(interaction.user.id);
-        if (user == null)
-            return interaction.reply({
-                content: "You need to join the game. (/p-join)",
-                ephemeral: true
-            });
-
-        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id))
-            return interaction.reply({
-                content: "Incorrect game channel.",
-                ephemeral: true
-            });
-
-        if (user.battling)
-            return interaction.reply({
-                content: `Finish your battle first.`,
-                ephemeral: true
-            });
-
-        // const selectedOption = interaction.options.get('menu').value;
+        if (!await generalFunctions.allowedToUseCommand(user, interaction)) {
+            return;
+        }
 
         const {options} = interaction;
         const sub = options.getSubcommand();
@@ -197,7 +179,6 @@ module.exports = {
                             inline: true
                         }
                     ])
-
                 }
 
                 interaction.reply({
@@ -205,7 +186,7 @@ module.exports = {
                 })
                 break;
             case "send_to_box":
-                const pokemonToReturn = interaction.options.getInteger('team_number');
+                const pokemonToReturn = options.getInteger('team_number');
 
                 if (user.team.length === 1)
                     return interaction.reply({
@@ -259,7 +240,7 @@ module.exports = {
 
                 break;
             case "display":
-                const team_number = interaction.options.getInteger('team_number');
+                const team_number = options.getInteger('team_number');
 
                 if (team_number > user.team.length)
                     return interaction.reply({
@@ -270,128 +251,11 @@ module.exports = {
                 let pokemon = user.team[team_number - 1];
                 let fullPokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
 
-                let result;
-                let pokeIcon;
-
-                if (pokemon.shiny) {
-                    result = await emojiListFunctions.getShinyGif(pokemon.pokeId);
-                    pokeIcon = new AttachmentBuilder(`./media/pokemon/shiny-icons/${pokemon.pokeId}.png`);
-                } else {
-                    result = await emojiListFunctions.getNormalGif(pokemon.pokeId);
-                    pokeIcon = new AttachmentBuilder(`./media/pokemon/normal-icons/${pokemon.pokeId}.png`);
-                }
-
-                let pokeBall = await itemListFunctions.getItem(pokemon.ball);
-                const ballIcon = new AttachmentBuilder(`./media/items/poke-balls/${pokeBall.sprite}`);
-
-                let pokemonEmbed = new EmbedBuilder()
-                    .setColor('Random')
-                    .setThumbnail(`attachment://${pokemon.pokeId}.png`)
-                    .setAuthor({name: `${user.name}`, iconURL: `${interaction.user.avatarURL()}`})
-                    .setDescription(`${fullPokemonDetails.description}`)
-                    .setTimestamp(pokemon.receivedTimestamp)
-                let pokemonStringDetails = `\n**Height:** ${fullPokemonDetails.height} **Weight:** ${fullPokemonDetails.weight} \n**Held Item:** ${pokemon.item || "nothing"} \n**Friendship:** ${pokemon.friendship} \n**Type:** `;
-                for (let i = 0; i < fullPokemonDetails.types.length; i++) {
-                    pokemonStringDetails += `• ${fullPokemonDetails.types[i]} `;
-                }
-                pokemonStringDetails += "\n**Abilities:** "
-                for (let i = 0; i < fullPokemonDetails.abilities.length; i++) {
-                    pokemonStringDetails += `• ${fullPokemonDetails.abilities[i].name} `;
-                }
-                pokemonStringDetails += `\n**Nature:** ${pokemon.nature}`
-
-                pokemonEmbed.addFields([
-                    {
-                        name: '\u200b',
-                        value: pokemonStringDetails,
-                        inline: false
-                    },
-                    {
-                        name: "Base Stats",
-                        value: `**HP:** ${pokemon.base.hp} \n**ATK:** ${pokemon.base.attack} \n**DEF:** ${pokemon.base.defense} \n**SPATK:** ${pokemon.base['special-attack']} \n**SPDEF:** ${pokemon.base['special-defense']} \n**SPEED:** ${pokemon.base.speed}`,
-                        inline: true
-                    },
-                    {
-                        name: "IV Stats",
-                        value: `**HP:** ${pokemon.ivStats.hp} \n**ATK:** ${pokemon.ivStats.atk} \n**DEF:** ${pokemon.ivStats.def} \n**SPATK:** ${pokemon.ivStats.spAtk} \n**SPDEF:** ${pokemon.ivStats.spDef} \n**SPEED:** ${pokemon.ivStats.speed}`,
-                        inline: true
-                    },
-                    {
-                        name: "EV Stats",
-                        value: `**HP:** ${pokemon.evLevels.hp} \n**ATK:** ${pokemon.evLevels.atk} \n**DEF:** ${pokemon.evLevels.def} \n**SPATK:** ${pokemon.evLevels.spAtk} \n**SPDEF:** ${pokemon.evLevels.spDef} \n**SPEED:** ${pokemon.evLevels.speed}`,
-                        inline: true
-                    },
-                ])
-                const currentMoves = pokemon.currentMoves;
-
-                for (let i = 0; i < currentMoves.length; i++) {
-                    pokemonEmbed.addFields([
-                        {
-                            name: `${currentMoves[i].name}`,
-                            value: `${currentMoves[i].flavorText}`
-                        },
-                        {
-                            name: 'PP',
-                            value: `${currentMoves[i].currentPP}/${currentMoves[i].pp}`,
-                            inline: true
-                        },
-                    ])
-                    if (currentMoves[i].pwr == null)
-                        pokemonEmbed.addFields([{name: 'Power', value: `0`, inline: true}])
-                    else
-                        pokemonEmbed.addFields([{name: 'Power', value: `${currentMoves[i].pwr}`, inline: true}])
-
-                    // let category = await emojiListFunctions.getMoveCategory(currentMoves[i].category);
-                    pokemonEmbed.addFields([
-                        {
-                            name: 'Type',
-                            value: `${currentMoves[i].type}`,
-                            inline: true
-                        },
-                        {
-                            name: 'Category',
-                            value: currentMoves[i].category,
-                            inline: true
-                        }
-                    ])
-                }
-
-                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
-                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
-                const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
-                let currentHP = maxHP - pokemon.damageTaken;
-
-                let levelingRate = fullPokemonDetails.levelingRate;
-                let xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
-
-
-                if (pokemon.male) {
-                    pokemonEmbed.setTitle(`♀️ No. ${pokemon.pokeId} ${pokemon.nickname || pokemon.name} ${result} LVL: ${pokemon.level} HP: ${currentHP}/${maxHP} EXP: ${pokemon.exp}/${xpNeededForNextLevel}`);
-                } else {
-                    pokemonEmbed.setTitle(`♂️ No. ${pokemon.pokeId} ${pokemon.nickname || pokemon.name} ${result} LVL: ${pokemon.level} HP: ${currentHP}/${maxHP} EXP: ${pokemon.exp}/${xpNeededForNextLevel}`);
-                }
-
-                if (pokemon.receivedTimestamp === pokemon.caughtTimestamp) {
-                    pokemonEmbed.setFooter({
-                        iconURL: `attachment://${pokeBall.sprite}`,
-                        text: 'Caught',
-                    })
-                } else {
-                    pokemonEmbed.setFooter({
-                        iconURL: `attachment://${pokeBall.sprite}`,
-                        text: 'Traded',
-                    })
-                }
-
-
-                interaction.reply({
-                    embeds: [pokemonEmbed],
-                    files: [ballIcon, pokeIcon]
-                })
+                await pokemonFunctions.createPokemonDetailsEmbed(pokemon, fullPokemonDetails, interaction, user);
                 break;
             case "set_nickname":
-                const setNickname = interaction.options.getInteger('team_number');
-                const nickname = interaction.options.getString('nickname');
+                const setNickname = options.getInteger('team_number');
+                const nickname = options.getString('nickname');
                 if (setNickname > user.team.length)
                     return interaction.reply({
                         content: `Incorrect team number.`,
@@ -413,7 +277,7 @@ module.exports = {
 
                 break
             case "remove_nickname":
-                const removeNickname = interaction.options.getInteger('team_number');
+                const removeNickname = options.getInteger('team_number');
                 if (removeNickname > user.team.length)
                     return interaction.reply({
                         content: `Incorrect team number.`,
