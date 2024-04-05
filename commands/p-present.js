@@ -21,7 +21,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async execute(interaction) {
-        await interaction.deferReply();
+        await interaction.deferReply({ephemeral: true});
 
         // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id)))
         //     return interaction.editReply({
@@ -37,7 +37,7 @@ module.exports = {
         if (!user.presentReady)
             return interaction.editReply({
                 content: `You're present isn't ready yet. You should get notified when it is.`,
-                ephemeral: true
+                // ephemeral: true
             });
 
         // const pokeBall = itemListFunctions.getItem("Poke Ball");
@@ -75,7 +75,7 @@ module.exports = {
 
         await interaction.editReply({
             content: itemString.trim() + ".",
-            ephemeral: true
+            // ephemeral: true
         });
 
         await trainerFunctions.addPresentToBag(user.userId, user.bag);

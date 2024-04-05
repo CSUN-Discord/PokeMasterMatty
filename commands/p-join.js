@@ -61,7 +61,8 @@ module.exports = {
 
         interaction.reply({
             content: "Choose your starter.",
-            components: [row]
+            components: [row],
+            ephemeral: true
         })
 
         const filter = i => i.user.id === interaction.user.id;
@@ -75,14 +76,20 @@ module.exports = {
 
                 await trainerFunctions.addPokemonToUser(i.user, userBulbasaur);
 
-                await i.update({content: 'You have been added to the game.', components: []});
+                await i.update({
+                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
+                    components: []
+                });
             } else if (i.customId === `${i.user.id}charmander`) {
                 const charmander = await pokemonListFunctions.getPokemonFromId(4);
                 const userCharmander = await pokemonFunctions.createStarterPokemonDetails(10, charmander, i.user);
 
                 await trainerFunctions.addPokemonToUser(i.user, userCharmander);
 
-                await i.update({content: 'You have been added to the game.', components: []});
+                await i.update({
+                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
+                    components: []
+                });
             } else if (i.customId === `${i.user.id}squirtle`) {
 
                 const squirtle = await pokemonListFunctions.getPokemonFromId(7);
@@ -90,8 +97,14 @@ module.exports = {
 
                 await trainerFunctions.addPokemonToUser(i.user, userSquirtle);
 
-                await i.update({content: 'You have been added to the game.', components: []});
+                await i.update({
+                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
+                    components: []
+                });
             }
         });
+        starterCollector.on('end', async i => {
+            await interaction.editReply({content: 'You took too long to respond.', components: []});
+        })
     },
 };

@@ -182,7 +182,8 @@ module.exports = {
                 }
 
                 interaction.reply({
-                    embeds: [pokemonTeam]
+                    embeds: [pokemonTeam],
+                    ephemeral: true
                 })
                 break;
             case "send_to_box":

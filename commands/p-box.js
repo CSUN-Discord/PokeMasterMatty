@@ -176,14 +176,28 @@ module.exports = {
                 const collectorFilter = i => i.user.id === interaction.user.id;
                 const collector = response.createMessageComponentCollector({
                     filter: collectorFilter,
-                    time: 300000//3_600_000
+                    time: 300//000//3_600_000
                 });
 
                 collector.on('collect', async i => {
                     if (i.customId === `itemsLeft`) {
                         boxMin = Math.max(0, boxMin - 20);
                     } else if (i.customId === `itemsRight`) {
-                        boxMin = Math.min(currentBox.length - 20, boxMin + 20);
+                        if (boxMin + 20 < currentBox.length) {
+                            boxMin = Math.min(currentBox.length - 20, boxMin + 20);
+                        }
+                    } else if (i.customId === `items100Left`) {
+                        boxMin = Math.max(0, boxMin - 100);
+                    } else if (i.customId === `items100Right`) {
+                        if (boxMin + 100 < currentBox.length) {
+                            boxMin = Math.min(currentBox.length - 20, boxMin + 100);
+                        } else {
+                            boxMin = Math.max(0, currentBox.length - 20);
+                        }
+                    } else if (i.customId === `itemsFirst`) {
+                        boxMin = 0;
+                    } else if (i.customId === `itemsLast`) {
+                        boxMin = Math.max(0, currentBox.length - 20);
                     }
 
                     const embed = await createBoxEmbed();
@@ -195,6 +209,16 @@ module.exports = {
                     });
                     await i.deferUpdate()
                 });
+
+                //TODO: add an end event to remove all buttons when interactions ends to clean things up
+                collector.on('end', async i => {
+                    await interaction.editReply({components: []});
+                })
+                // collector.on('end', async () => {
+                //     await response.edit({
+                //         components: [],
+                //     });
+                // });
 
                 break;
             default:

@@ -1259,7 +1259,8 @@ module.exports = {
 
                         inputChannel.send({
                             content: `${battlingDetails.userOneTeam[pokemonNum - 1].nickname || battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving!`,
-                            components: [row]
+                            components: [row],
+                            ephemeral: true
                         }).then(async (msg) => {
                             evolvingMsg = msg;
 
