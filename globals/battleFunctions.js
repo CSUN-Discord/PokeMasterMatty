@@ -111,7 +111,7 @@ module.exports = {
                     components: row
                 };
             },
-            battleBagButtons: function () {
+            battleBagButtons: async function () {
                 if (inp.isStringSelectMenu()) {
                     const selectedOption = inp.values[0];
 
@@ -153,7 +153,7 @@ module.exports = {
                 row = setRowBattleItem(battlingDetails, inp)
                 return {
                     content: "_ _",
-                    embedDetails: createEmbedAfterBagPVM(battlingDetails),
+                    embedDetails: await createEmbedAfterBagPVM(battlingDetails),
                     components: row
                 };
             },
@@ -539,11 +539,11 @@ module.exports = {
                     };
                 }
             },
-            battleBackToItemsButton: function () {
+            battleBackToItemsButton: async function () {
                 row = setRowBattleItem(battlingDetails, inp)
                 return {
                     content: "_ _",
-                    embedDetails: createEmbedAfterBagPVM(battlingDetails),
+                    embedDetails: await createEmbedAfterBagPVM(battlingDetails),
                     components: row
                 };
             },
@@ -1816,7 +1816,7 @@ function createEmbedDefault(battlingDetails) {
     ]
 }
 
-function createEmbedAfterBagPVM(battlingDetails) {
+async function createEmbedAfterBagPVM(battlingDetails) {
 
     let attackBagEmbed = new EmbedBuilder()
         .setColor('Random')
@@ -1839,11 +1839,12 @@ function createEmbedAfterBagPVM(battlingDetails) {
 
     let max = Math.min(bagArray.length, currentBagMin + 10);
 
-    //TODO: add description of item
     for (let i = currentBagMin; i < max; i++) {
+        let fullItemDetails = await itemListFunctions.getItem(bagArray[i]);
+
         attackBagEmbed.addFields([{
             name: `${i + 1}) ${bagArray[i]}`,
-            value: `${battlingDetails.userOneBag.get(currentBagCategory)[bagArray[i]]}`,
+            value: `${fullItemDetails.description}\n${battlingDetails.userOneBag.get(currentBagCategory)[bagArray[i]]}`,
             inline: false
         }]);
     }
