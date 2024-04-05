@@ -3,8 +3,8 @@ This command sends a simple message to check if the bot is active
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const battlingFunctions = require("../db/functions/battlingFunctions");
-const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+// const battlingFunctions = require("../db/functions/battlingFunctions");
+// const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 // const itemListFunctions = require("../db/functions/itemListFunctions");
 const generalFunctions = require("../globals/generalFunctions");

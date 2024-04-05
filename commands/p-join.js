@@ -103,7 +103,7 @@ module.exports = {
                 });
             }
         });
-        starterCollector.on('end', async i => {
+        starterCollector.on('end', async () => {
             await interaction.editReply({content: 'You took too long to respond.', components: []});
         })
     },

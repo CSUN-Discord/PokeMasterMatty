@@ -6,7 +6,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const {AttachmentBuilder, EmbedBuilder, PermissionsBitField} = require("discord.js");
 
 const trainerFunctions = require("../db/functions/trainerFunctions");
-const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+// const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");

@@ -14,7 +14,6 @@ const emojiListFunctions = require("../db/functions/emojiListFunctions");
 
 let boxMin = 0;
 let currentBox = [];
-//TODO: use ephemeral: true for commands on the main channel
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-box")
@@ -210,15 +209,9 @@ module.exports = {
                     await i.deferUpdate()
                 });
 
-                //TODO: add an end event to remove all buttons when interactions ends to clean things up
-                collector.on('end', async i => {
+                collector.on('end', async () => {
                     await interaction.editReply({components: []});
                 })
-                // collector.on('end', async () => {
-                //     await response.edit({
-                //         components: [],
-                //     });
-                // });
 
                 break;
             default:
