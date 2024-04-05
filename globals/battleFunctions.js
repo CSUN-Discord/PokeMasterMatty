@@ -1258,7 +1258,7 @@ module.exports = {
                         let evolvingMsg;
 
                         inputChannel.send({
-                            content: `${battlingDetails.userOneTeam[pokemonNum - 1].nickname || battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving!`,
+                            content: `${battlingDetails.userOneTeam[pokemonNum - 1].nickname || battlingDetails.userOneTeam[pokemonNum - 1].name} is evolving! You have 10 seconds to respond.`,
                             components: [row],
                             ephemeral: true
                         }).then(async (msg) => {
@@ -1267,8 +1267,7 @@ module.exports = {
                             let evolving = true;
 
                             try {
-                                //TODO: test using: evolvingMsg.createMessageComponentCollector({
-                                const collector = inputChannel.createMessageComponentCollector({
+                                const collector = evolvingMsg.createMessageComponentCollector({
                                     time: 10000
                                 });
 
