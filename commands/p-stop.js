@@ -1,5 +1,5 @@
 /*
-This command sends a simple message to check if the bot is active
+This command stops the current game in the server
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");

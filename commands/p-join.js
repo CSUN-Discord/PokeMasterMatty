@@ -12,7 +12,7 @@ const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-join")
-        .setDescription("Adds a user to the join."),
+        .setDescription("Adds a user to the game."),
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
