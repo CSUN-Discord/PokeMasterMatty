@@ -34,7 +34,7 @@ module.exports = {
 
         await pokemonGameFunctions.setGameChannel(interaction.guild.id, channelId);
         interaction.reply({
-            content: "A game channel has been set. Start the game with: \n```p-start```",
+            content: "A game channel has been set. Start the game with: \n```/p-start```",
             ephemeral: true
         });
     },

@@ -209,7 +209,7 @@ module.exports = {
 
             return document.playing;
         } catch (e) {
-            console.log(e);
+            console.log("Game not started");
         }
     },
 
