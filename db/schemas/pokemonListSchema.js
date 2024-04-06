@@ -24,6 +24,7 @@ const pokemonListSchema = new Schema({
     evolution: Number,
     spawnRate: String,
     evolutionType: String,
+    //TODO: make the moves a map and refactor all the code this will make it o(1) when moves are checked on each level up
     moves: Schema.Types.Mixed,
     genderPercentage: {
         male: Number,

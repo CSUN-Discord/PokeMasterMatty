@@ -21,8 +21,6 @@ let inputChannel;
 let currentBagCategory = "poke-ball"
 let currentBagMin = 0;
 
-//TODO: Add turn counter and separate each msg into turns, can add pokeballs (timer ball) with this update
-
 module.exports = {
 
     createEmbedPVM: function (battlingDetails) {
@@ -1121,7 +1119,7 @@ module.exports = {
             [`${inp.user.id}X Speed`]: actions.usedBattleEffect,
             [`${inp.user.id}X Defense`]: actions.usedBattleEffect,
         };
-        //TODO: add functions for items
+        //TODO: add functions for items, can add pokeballs (timer ball)
         if (battleFunctions.hasOwnProperty(inp.customId)) {
             return battleFunctions[inp.customId](inp.customId);
         } else if (inp.customId.includes(`${inp.user.id}itemUsed`)) {
@@ -6493,6 +6491,15 @@ async function getNewLevelAndXp(pokemon, inputChannel) {
         leveledUp = true;
         pokemon.level += 1;
         inputChannel.send(`${pokemon.nickname || pokemon.name} leveled up to ${pokemon.level}.`);
+
+        for (let i = 0; i < pokemonDetails.moves.length; i++) {
+            if (pokemonDetails.moves[i].level > pokemon.level) {
+                break;
+            } else if (pokemonDetails.moves[i].level === pokemon.level) {
+                inputChannel.send(`${pokemon.nickname || pokemon.name} can learn ${pokemonDetails.moves[i].name} please see a move tutor to learn this move.`);
+            }
+
+        }
         pokemon.exp -= xpNeededForNextLevel;
         xpNeededForNextLevel = pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - pokemonFunctions.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
     }

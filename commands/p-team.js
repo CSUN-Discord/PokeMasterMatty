@@ -202,7 +202,8 @@ module.exports = {
                     });
 
                 const sendToBox = user.team.splice(pokemonToReturn - 1, 1);
-
+                sendToBox[0].damageTaken = 0;
+                // console.log(sendToBox[0])
                 // console.log(user.team)
 
                 await trainerFunctions.addPokemonToBox(user.userId, sendToBox[0]);

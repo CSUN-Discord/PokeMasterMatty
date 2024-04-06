@@ -175,7 +175,7 @@ module.exports = {
                 const collectorFilter = i => i.user.id === interaction.user.id;
                 const collector = response.createMessageComponentCollector({
                     filter: collectorFilter,
-                    time: 300//000//3_600_000
+                    time: 600000//3_600_000
                 });
 
                 collector.on('collect', async i => {

@@ -779,7 +779,8 @@ module.exports = {
 
         interaction.reply({
             embeds: [pokemonEmbed],
-            files: [ballIcon, pokeIcon]
+            files: [ballIcon, pokeIcon],
+            ephemeral: true
         })
     }
 }
