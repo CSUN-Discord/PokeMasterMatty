@@ -275,9 +275,23 @@ module.exports = {
         } catch (e) {
             console.log(e);
         }
+    },
+
+    removeUser: async function (userId) {
+        try {
+            await trainerSchema
+                .findOneAndRemove(
+                    {
+                        userId: userId,
+                    },
+                    {}
+                )
+                .exec();
+        } catch (e) {
+            console.log(e);
+        }
     }
 }
-
 
 async function addUser(user) {
     try {
