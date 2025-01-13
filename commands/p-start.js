@@ -4,7 +4,7 @@ This command starts a pokemon game in the server
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
-const schedule = require('node-schedule');
+// const schedule = require('node-schedule');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const {
     MessageFlags,
