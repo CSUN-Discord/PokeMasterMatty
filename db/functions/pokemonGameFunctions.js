@@ -23,7 +23,7 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error setting game channel:", e);
         }
     },
 
@@ -45,7 +45,7 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error setting playing status:", e);
         }
     },
 
@@ -59,35 +59,34 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error fetching Pokemon document:", e);
         }
     },
 
     resetTimer: async function (guildId, timer = null) {
         try {
             const document = await module.exports.getPokemonDocument(guildId);
-            try {
-                await pokemonGameSchema
-                    .findOneAndUpdate(
-                        {
-                            guildId: guildId,
-                        },
-                        {
-                            $set: {
-                                spawnTime: document.guildDefaultTimer
-                            },
-                        },
-                        {
-                            upsert: false,
-                        }
-                    )
-                    .exec();
-            } catch (e) {
-                console.log(e);
+            if (!document) {
+                throw new Error("Guild document not found.");
             }
+            await pokemonGameSchema
+                .findOneAndUpdate(
+                    {
+                        guildId: guildId,
+                    },
+                    {
+                        $set: {
+                            spawnTime: document.guildDefaultTimer
+                        },
+                    },
+                    {
+                        upsert: false,
+                    }
+                )
+                .exec();
 
         } catch (e) {
-            console.log(e);
+            console.error("Error resetting timer:", e);
         }
     },
 
@@ -110,7 +109,7 @@ module.exports = {
                 .exec();
 
         } catch (e) {
-            console.log(e);
+            console.error("Error resetting messages:", e);
         }
     },
 
@@ -132,7 +131,7 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error setting timer:", e);
         }
     },
 
@@ -147,11 +146,11 @@ module.exports = {
                             spawnTime: 0,
                         }
                     }, (err, res) => {
-                        if (err) console.log(err);
+                        if (err) console.error("Error resetting all games:", err);
                         else console.log(`Reset ${res.modifiedCount} games.`)
                     });
         } catch (e) {
-            console.log(e);
+            console.error("Error resetting all games:", e);
         }
     },
 
@@ -173,7 +172,7 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error incrementing message counter:", e);
         }
     },
 
@@ -196,27 +195,27 @@ module.exports = {
                 .exec();
 
         } catch (e) {
-            console.log(e);
+            console.error("Error setting spawned Pokemon:", e);
         }
     },
 
     getPlaying: async function (guildId) {
         try {
-            const document = await pokemonGameSchema
-                .findOne(
-                    {
-                        guildId: guildId,
-                    })
-
-            return document.playing;
+            const document = await this.getPokemonDocument(guildId);
+            return document ? document.playing : false;
         } catch (e) {
-            console.log("Game not started");
+            console.error("Error getting playing status:", e);
+            return false;
         }
     },
 
     correctChannel: async function (guildId, channelId) {
-        const document = await module.exports.getPokemonDocument(guildId)
-
-        return document.gameChannel === channelId;
-    }
+        try {
+            const document = await this.getPokemonDocument(guildId);
+            return document ? document.gameChannel === channelId : false;
+        } catch (e) {
+            console.error("Error checking correct channel:", e);
+            return false;
+        }
+    },
 }
