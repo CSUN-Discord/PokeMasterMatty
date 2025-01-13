@@ -9,6 +9,13 @@ const {ActionRowBuilder, ButtonBuilder, PermissionsBitField, MessageFlags} = req
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 
+// Constants for Pokémon IDs and their names
+const STARTER_POKEMONS = {
+    bulbasaur: 1,
+    charmander: 4,
+    squirtle: 7,
+};
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-join")
@@ -16,50 +23,30 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
-     *
-     * @param interaction
-     * @returns {Promise<void>}
+     * Command execution to add a user to the game.
+     * @param {import("discord.js").Interaction} interaction - The interaction object.
+     * @returns {Promise<Message>}
      */
     async execute(interaction) {
 
-
-        // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id))) return interaction.reply({
-        //     content: "A game hasn't been started in this server.",
-        //     flags: MessageFlags.Ephemeral
-        // });
-
         const user = await trainerFunctions.getUser(interaction.user.id);
-        if (user != null) return interaction.reply({
-            content: "You are already in the game.",
-            flags: MessageFlags.Ephemeral
-        });
+        if (user != null) {
+            return interaction.reply({
+                content: "You are already in the game.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
 
-        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) return interaction.reply({
-            content: "Incorrect game channel.",
-            flags: MessageFlags.Ephemeral
-        });
+        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) {
+            return interaction.reply({
+                content: "Incorrect game channel.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
 
-        const row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`${interaction.user.id}bulbasaur`)
-                    .setLabel('bulbasaur')
-                    .setStyle('Success'),
-            )
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`${interaction.user.id}charmander`)
-                    .setLabel('charmander')
-                    .setStyle('Danger'),
-            )
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`${interaction.user.id}squirtle`)
-                    .setLabel('squirtle')
-                    .setStyle('Primary'),
-            );
+        const row = createStarterButtonRow(interaction.user.id);
 
-        interaction.reply({
+        await interaction.reply({
             content: "Choose your starter.",
             components: [row],
             flags: MessageFlags.Ephemeral
@@ -68,43 +55,76 @@ module.exports = {
         const filter = i => i.user.id === interaction.user.id;
         const starterCollector = interaction.channel.createMessageComponentCollector({filter, time: 60000});
 
-        starterCollector.on('collect', async i => {
-            if (i.customId === `${i.user.id}bulbasaur`) {
+        starterCollector.on("collect", async (i) => {
+            const selectedPokemonId = getSelectedPokemonId(i.customId);
 
-                const bulbasaur = await pokemonListFunctions.getPokemonFromId(1);
-                const userBulbasaur = await pokemonFunctions.createStarterPokemonDetails(10, bulbasaur, i.user);
-
-                await trainerFunctions.addPokemonToUser(i.user, userBulbasaur);
-
-                await i.update({
-                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
-                    components: []
-                });
-            } else if (i.customId === `${i.user.id}charmander`) {
-                const charmander = await pokemonListFunctions.getPokemonFromId(4);
-                const userCharmander = await pokemonFunctions.createStarterPokemonDetails(10, charmander, i.user);
-
-                await trainerFunctions.addPokemonToUser(i.user, userCharmander);
-
-                await i.update({
-                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
-                    components: []
-                });
-            } else if (i.customId === `${i.user.id}squirtle`) {
-
-                const squirtle = await pokemonListFunctions.getPokemonFromId(7);
-                const userSquirtle = await pokemonFunctions.createStarterPokemonDetails(10, squirtle, i.user);
-
-                await trainerFunctions.addPokemonToUser(i.user, userSquirtle);
-
-                await i.update({
-                    content: 'You have been added to the game. Use /p-present for a goodie bag.',
-                    components: []
-                });
+            if (selectedPokemonId) {
+                await handlePokemonSelection(i, selectedPokemonId);
             }
         });
-        starterCollector.on('end', async () => {
-            await interaction.editReply({content: 'You took too long to respond.', components: []});
-        })
+
+        starterCollector.on("end", async () => {
+            await interaction.editReply({content: "You took too long to respond.", components: []});
+        });
     },
 };
+
+/**
+ * Creates the row with starter Pokémon buttons.
+ * @param {string} userId - The ID of the user.
+ * @returns {ActionRowBuilder} - The row containing the buttons.
+ */
+function createStarterButtonRow(userId) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`${userId}bulbasaur`)
+            .setLabel("Bulbasaur")
+            .setStyle("Success"),
+        new ButtonBuilder()
+            .setCustomId(`${userId}charmander`)
+            .setLabel("Charmander")
+            .setStyle("Danger"),
+        new ButtonBuilder()
+            .setCustomId(`${userId}squirtle`)
+            .setLabel("Squirtle")
+            .setStyle("Primary")
+    );
+}
+
+/**
+ * Extracts the Pokémon ID based on the button custom ID.
+ * @param {string} customId - The custom ID from the button click.
+ * @returns {number|null} - The Pokémon ID or null if invalid.
+ */
+function getSelectedPokemonId(customId) {
+    const match = Object.keys(STARTER_POKEMONS).find(pokemon => customId.includes(pokemon));
+    return match ? STARTER_POKEMONS[match] : null;
+}
+
+/**
+ * Handles the Pokémon selection and updates the user in the game.
+ * @param {import("discord.js").Interaction} i - The interaction object from button click.
+ * @param {number} pokemonId - The selected Pokémon's ID.
+ * @returns {Promise<void>}
+ */
+async function handlePokemonSelection(i, pokemonId) {
+    try {
+        const selectedPokemon = await pokemonListFunctions.getPokemonFromId(pokemonId);
+        const userPokemon = await pokemonFunctions.createStarterPokemonDetails(10, selectedPokemon, i.user);
+
+        // Add the selected Pokémon to the user's collection
+        await trainerFunctions.addPokemonToUser(i.user, userPokemon);
+
+        // Update the user after selection
+        await i.update({
+            content: "You have been added to the game. Use /p-present for a goodie bag.",
+            components: [],
+        });
+    } catch (error) {
+        console.error("Error handling Pokémon selection:", error);
+        await i.update({
+            content: "There was an error while processing your selection. Please try again.",
+            components: [],
+        });
+    }
+}
