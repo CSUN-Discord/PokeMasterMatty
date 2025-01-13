@@ -1,5 +1,5 @@
 /*
-This command sends a simple message to check if the bot is active
+This command allows users to heal their Pokémon
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
@@ -38,13 +38,16 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
-     *
-     * @param interaction
+     * Executes the Pokecenter command for healing Pokémon.
+     * @param {import("discord.js").Interaction} interaction - The interaction object.
      * @returns {Promise<void>}
      */
     async execute(interaction) {
-        await interaction.deferReply({flags: MessageFlags.Ephemeral});
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
 
+        // If the user is not allowed to use this command, return early
         const user = await trainerFunctions.getUser(interaction.user.id);
         if (!await generalFunctions.allowedToUseCommand(user, interaction)) {
             return;
@@ -87,8 +90,13 @@ module.exports = {
     },
 };
 
+/**
+ * Heals a single Pokémon.
+ * @param {Object} user - The user whose Pokémon is to be healed.
+ * @param {number} teamIndex - The index of the Pokémon in the team.
+ * @returns {Promise<void>}
+ */
 async function heal(user, teamIndex) {
-
     const toHeal = user.team[teamIndex];
 
     //TODO: Calculate the base cost as a percentage of the player's current money.
