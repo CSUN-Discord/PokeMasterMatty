@@ -24,10 +24,11 @@ module.exports = {
             dbObjects.mongoo = mongoose;
         });
 
+        await trainerFunctions.resetBattling();
         trainerFunctions.resetAllPresents()
         pokemonGameFunctions.resetAllGames()
         battlingFunctions.deleteAllBattles()
-
+        
         console.log(`Ready! Logged in as ${client.user.tag}`);
     },
 };
