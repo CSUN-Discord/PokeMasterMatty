@@ -2,26 +2,26 @@
 This command sends a simple message to check if the bot is active
 */
 
-let request = require("request");
-let fs = require("fs");
+// let request = require("request");
+// let fs = require("fs");
 const fetch = require('node-fetch');
 const Pokemon = require('pokemon.js');
 Pokemon.setLanguage('english');
-const pokemonListFunctions = require("../db/functions/pokemonListFunctions")
-const itemListFunctions = require("../db/functions/itemListFunctions")
-const mergeImages = require('merge-images');
+// const pokemonListFunctions = require("../db/functions/pokemonListFunctions")
+// const itemListFunctions = require("../db/functions/itemListFunctions")
+// const mergeImages = require('merge-images');
 // const {Canvas, Image} = require('canvas');
-const base64Img = require('base64-img');
-const PythonShell = require('python-shell').PythonShell;
+// const base64Img = require('base64-img');
+// const PythonShell = require('python-shell').PythonShell;
 
 
 // const fs = require("fs");
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 // const {EmbedBuilder} = require("discord.js");
-const {updateMove} = require("../db/functions/moveListFunctions");
+// const {updateMove} = require("../db/functions/moveListFunctions");
 const moveListFunction = require("../db/functions/moveListFunctions");
-const emojiListFunctions = require("../db/functions/emojiListFunctions");
+// const emojiListFunctions = require("../db/functions/emojiListFunctions");
 const {MessageFlags, PermissionsBitField} = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
@@ -378,28 +378,28 @@ module.exports = {
 //         })
 // }
 
-function updateAllTypes(url, id) {
-    fetch(url)
-        .then(response => response.json())
-        .then((moves) => {
-            moves.results.forEach((move) => {
-                try {
-                    let url = move.url
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(async function (moveData) {
-                            try {
-                                let doc = await moveListFunction.updateMove(moveData.id, moveData.type.name);
-                                console.log(doc)
-
-                                // console.log(JSON.stringify(move) + ",")
-                            } catch (e) {
-                                console.log(e + " " + id + " " + moveData.name)
-                            }
-                        })
-                } catch (e) {
-                    console.log(e)
-                }
-            })
-        })
-}
+// function updateAllTypes(url, id) {
+//     fetch(url)
+//         .then(response => response.json())
+//         .then((moves) => {
+//             moves.results.forEach((move) => {
+//                 try {
+//                     let url = move.url
+//                     fetch(url)
+//                         .then(response => response.json())
+//                         .then(async function (moveData) {
+//                             try {
+//                                 let doc = await moveListFunction.updateMove(moveData.id, moveData.type.name);
+//                                 console.log(doc)
+//
+//                                 // console.log(JSON.stringify(move) + ",")
+//                             } catch (e) {
+//                                 console.log(e + " " + id + " " + moveData.name)
+//                             }
+//                         })
+//                 } catch (e) {
+//                     console.log(e)
+//                 }
+//             })
+//         })
+// }
