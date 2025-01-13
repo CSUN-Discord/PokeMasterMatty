@@ -13,7 +13,8 @@ module.exports = {
                             gameChannel: gameChannelId,
                             guildDefaultTimer: 60000,
                             messageCounter: 0,
-                            playing: false
+                            playing: false,
+                            spawnTime: 0,
                         },
                     },
                     {
@@ -62,10 +63,9 @@ module.exports = {
         }
     },
 
-    resetTimer: async function (guildId) {
+    resetTimer: async function (guildId, timer = null) {
         try {
-            const document = await module.exports.getPokemonDocument(guildId)
-
+            const document = await module.exports.getPokemonDocument(guildId);
             try {
                 await pokemonGameSchema
                     .findOneAndUpdate(
@@ -143,7 +143,8 @@ module.exports = {
                     {}, {
                         $set: {
                             playing: false,
-                            messageCounter: 0
+                            messageCounter: 0,
+                            spawnTime: 0,
                         }
                     }, (err, res) => {
                         if (err) console.log(err);

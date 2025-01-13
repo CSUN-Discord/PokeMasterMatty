@@ -711,7 +711,8 @@ module.exports = {
             ])
         }
 
-        let currentHP = this.calculatePokemonHP(pokemon) - pokemon.damageTaken;
+        let maxHP = this.calculatePokemonHP(pokemon);
+        let currentHP = maxHP - pokemon.damageTaken;
 
         let levelingRate = fullPokemonDetails.levelingRate;
         let xpNeededForNextLevel = module.exports.getCurrentTotalXpAtLevel(levelingRate, pokemon.level + 1) - module.exports.getCurrentTotalXpAtLevel(levelingRate, pokemon.level);
