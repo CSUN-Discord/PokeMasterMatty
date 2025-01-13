@@ -4,7 +4,7 @@ This command stops the current game in the server
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {cancelJob} = require("../commands/p-start");
-const {PermissionsBitField} = require("discord.js");
+const {MessageFlags, PermissionsBitField} = require("discord.js");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +23,7 @@ module.exports = {
 
         interaction.reply({
             content: "Game has ended.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     },
 };

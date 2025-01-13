@@ -3,12 +3,9 @@ This command sends a simple message to check if the bot is active
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-// const battlingFunctions = require("../db/functions/battlingFunctions");
-// const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
-// const itemListFunctions = require("../db/functions/itemListFunctions");
 const generalFunctions = require("../globals/generalFunctions");
-const {PermissionsBitField} = require("discord.js");
+const {MessageFlags, PermissionsBitField} = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-present")
@@ -21,12 +18,12 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async execute(interaction) {
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id)))
         //     return interaction.editReply({
         //         content: "A game hasn't been started in this server.",
-        //         ephemeral: true
+        //         flags: MessageFlags.Ephemeral
         //     });
 
         const user = await trainerFunctions.getUser(interaction.user.id);
@@ -37,7 +34,7 @@ module.exports = {
         if (!user.presentReady)
             return interaction.editReply({
                 content: `You're present isn't ready yet. You should get notified when it is.`,
-                // ephemeral: true
+                // flags: MessageFlags.Ephemeral
             });
 
         // const pokeBall = itemListFunctions.getItem("Poke Ball");
@@ -75,7 +72,7 @@ module.exports = {
 
         await interaction.editReply({
             content: itemString.trim() + ".",
-            // ephemeral: true
+            // flags: MessageFlags.Ephemeral
         });
 
         await trainerFunctions.addPresentToBag(user.userId, user.bag);

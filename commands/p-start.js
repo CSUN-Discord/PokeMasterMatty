@@ -6,7 +6,14 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const schedule = require('node-schedule');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
-const {EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, PermissionsBitField} = require("discord.js");
+const {
+    MessageFlags,
+    EmbedBuilder,
+    AttachmentBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    PermissionsBitField
+} = require("discord.js");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const battleFunctions = require("../globals/battleFunctions");
@@ -31,16 +38,19 @@ module.exports = {
 
         if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) return interaction.reply({
             content: "Incorrect game channel.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
 
         const document = await pokemonGameFunctions.getPokemonDocument(interaction.guild.id);
-        if (document == null) return interaction.reply({content: "A game channel needs to be set.", ephemeral: true});
+        if (document == null) return interaction.reply({
+            content: "A game channel needs to be set.",
+            flags: MessageFlags.Ephemeral
+        });
 
         else if (await pokemonGameFunctions.getPlaying(interaction.guild.id)) return interaction.reply({
             content: "A game is already in progress.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
         else {
             try {
@@ -50,7 +60,10 @@ module.exports = {
                         await pokemonGameFunctions.resetMessages(interaction.guild.id);
                         await trainerFunctions.resetBattling();
 
-                        interaction.reply({content: `A game has started in ${channel.name}.`, ephemeral: true});
+                        interaction.reply({
+                            content: `A game has started in ${channel.name}.`,
+                            flags: MessageFlags.Ephemeral
+                        });
 
                         // spawnJob = schedule.scheduleJob('* * * * *', async function () {
                         const gameDocument = await pokemonGameFunctions.getPokemonDocument(interaction.guild.id);
@@ -164,9 +177,7 @@ module.exports = {
 
                                             //check if user has a usable pokemon
                                             const currentPokemon = user.team[0];
-                                            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
-                                            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
-                                            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+                                            const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
                                             let currentHP = maxHP - currentPokemon.damageTaken;
                                             if (currentHP < 1) return i.channel.send({
                                                 content: "Current starting pokemon is too weak to battle.",
@@ -336,7 +347,10 @@ module.exports = {
             } catch
                 (e) {
                 console.log(e)
-                await interaction.editReply({content: "There was an error with the game.", ephemeral: true});
+                await interaction.editReply({
+                    content: "There was an error with the game.",
+                    flags: MessageFlags.Ephemeral
+                });
             }
         }
     },

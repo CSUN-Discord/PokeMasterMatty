@@ -3,7 +3,7 @@ This command allows users to swap, view, deposit their team pokemon
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const {AttachmentBuilder, EmbedBuilder, PermissionsBitField} = require("discord.js");
+const {MessageFlags, EmbedBuilder, PermissionsBitField} = require("discord.js");
 
 const trainerFunctions = require("../db/functions/trainerFunctions");
 // const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
@@ -162,9 +162,7 @@ module.exports = {
 
                 for (let i = 0; i < user.team.length; i++) {
                     const currentPokemon = user.team[i];
-                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
-                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
-                    const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+                    const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
                     let currentHP = maxHP - currentPokemon.damageTaken;
 
                     let result;
@@ -183,7 +181,7 @@ module.exports = {
 
                 interaction.reply({
                     embeds: [pokemonTeam],
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 })
                 break;
             case "send_to_box":
@@ -192,17 +190,17 @@ module.exports = {
                 if (user.team.length === 1)
                     return interaction.reply({
                         content: `You only have one pokemon left!`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
 
                 if (pokemonToReturn > user.team.length)
                     return interaction.reply({
                         content: `Couldn't find the pokemon to send to your pokebox.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
 
                 const sendToBox = user.team.splice(pokemonToReturn - 1, 1);
-                sendToBox[0].damageTaken = 0;
+                // sendToBox[0].damageTaken = 0;
                 // console.log(sendToBox[0])
                 // console.log(user.team)
 
@@ -211,7 +209,7 @@ module.exports = {
 
                 interaction.reply({
                     content: `${sendToBox[0].nickname || sendToBox[0].name} was sent to your pokebox.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
 
                 break;
@@ -222,13 +220,13 @@ module.exports = {
                 if (user.team.length === 1)
                     return interaction.reply({
                         content: `You only have one pokemon!`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
 
                 if (swapPosOne > user.team.length || swapPosTwo > user.team.length)
                     return interaction.reply({
                         content: `Couldn't find the pokemon to swap.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
 
                 [user.team[swapPosOne - 1], user.team[swapPosTwo - 1]] = [user.team[swapPosTwo - 1], user.team[swapPosOne - 1]];
@@ -237,7 +235,7 @@ module.exports = {
 
                 interaction.reply({
                     content: `${user.team[swapPosOne - 1].nickname || user.team[swapPosOne - 1].name} and ${user.team[swapPosTwo - 1].nickname || user.team[swapPosTwo - 1].name} were swapped.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
 
                 break;
@@ -247,7 +245,7 @@ module.exports = {
                 if (team_number > user.team.length)
                     return interaction.reply({
                         content: `Couldn't find the pokemon to view.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
 
                 let pokemon = user.team[team_number - 1];
@@ -261,20 +259,20 @@ module.exports = {
                 if (setNickname > user.team.length)
                     return interaction.reply({
                         content: `Incorrect team number.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 let filter = new Filter();
                 if (filter.isProfane(nickname))
                     return interaction.reply({
                         content: `Incorrect nickname value.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 user.team[setNickname - 1].nickname = nickname;
                 await trainerFunctions.setTeam(user.userId, user.team);
 
                 interaction.reply({
                     content: `${user.team[setNickname - 1].name}'s nickname was set to ${user.team[setNickname - 1].nickname}.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
 
                 break
@@ -283,20 +281,20 @@ module.exports = {
                 if (removeNickname > user.team.length)
                     return interaction.reply({
                         content: `Incorrect team number.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 user.team[removeNickname - 1].nickname = null;
                 await trainerFunctions.setTeam(user.userId, user.team);
 
                 interaction.reply({
                     content: `${user.team[removeNickname - 1].name}'s nickname was removed.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 break;
             default:
                 interaction.reply({
                     content: "Couldn't process command.",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 break;
         }

@@ -1,4 +1,5 @@
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+const {MessageFlags} = require("discord.js");
 module.exports = {
 
     randomIntFromInterval: function (min, max) { // min and max included
@@ -6,27 +7,50 @@ module.exports = {
     },
 
     allowedToUseCommand: async function (user, interaction) {
+        const response = {
+            content: "",
+            flags: MessageFlags.Ephemeral
+        };
+
         if (user == null) {
-            interaction.reply({
-                content: "You need to join the game. (/p-join)",
-                ephemeral: true
-            });
+            response.content = "You need to join the game. (/p-join)";
+            try {
+                if (interaction.deferred) {
+                    await interaction.editReply(response);
+                } else {
+                    await interaction.reply(response);
+                }
+            } catch (e) {
+                console.error("Error saying you need ot join the game:", e);
+            }
             return false;
         }
 
         if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) {
-            interaction.reply({
-                content: "Incorrect game channel.",
-                ephemeral: true
-            });
+            response.content = "Incorrect game channel.";
+            try {
+                if (interaction.deferred) {
+                    await interaction.editReply(response);
+                } else {
+                    await interaction.reply(response);
+                }
+            } catch (e) {
+                console.error("Error saying you need ot join the game:", e);
+            }
             return false;
         }
 
         if (user.battling) {
-            interaction.reply({
-                content: `Finish your battle first.`,
-                ephemeral: true
-            });
+            response.content = "Finish your battle first.";
+            try {
+                if (interaction.deferred) {
+                    await interaction.editReply(response);
+                } else {
+                    await interaction.reply(response);
+                }
+            } catch (e) {
+                console.error("Error saying you need ot join the game:", e);
+            }
             return false;
         }
 

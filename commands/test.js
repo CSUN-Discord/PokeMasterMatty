@@ -10,7 +10,7 @@ Pokemon.setLanguage('english');
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions")
 const itemListFunctions = require("../db/functions/itemListFunctions")
 const mergeImages = require('merge-images');
-const {Canvas, Image} = require('canvas');
+// const {Canvas, Image} = require('canvas');
 const base64Img = require('base64-img');
 const PythonShell = require('python-shell').PythonShell;
 
@@ -22,7 +22,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const {updateMove} = require("../db/functions/moveListFunctions");
 const moveListFunction = require("../db/functions/moveListFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
-const {PermissionsBitField} = require("discord.js");
+const {MessageFlags, PermissionsBitField} = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test")
@@ -36,7 +36,7 @@ module.exports = {
      */
     async execute(interaction) {
 
-        interaction.reply({content: "checking stuff", ephemeral: true});
+        interaction.reply({content: "checking stuff", flags: MessageFlags.Ephemeral});
 
         // await emojiListFunctions.addMoveCategory("physical", "<:physical:1101212523384033321>");
         // await emojiListFunctions.addMoveCategory("status", "<:status:1101212527070810302>");

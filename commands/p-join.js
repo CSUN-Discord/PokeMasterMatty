@@ -5,7 +5,7 @@ This command adds a user to the game
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
-const {ActionRowBuilder, ButtonBuilder, PermissionsBitField} = require("discord.js");
+const {ActionRowBuilder, ButtonBuilder, PermissionsBitField, MessageFlags} = require("discord.js");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 
@@ -25,18 +25,18 @@ module.exports = {
 
         // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id))) return interaction.reply({
         //     content: "A game hasn't been started in this server.",
-        //     ephemeral: true
+        //     flags: MessageFlags.Ephemeral
         // });
 
         const user = await trainerFunctions.getUser(interaction.user.id);
         if (user != null) return interaction.reply({
             content: "You are already in the game.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) return interaction.reply({
             content: "Incorrect game channel.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
 
         const row = new ActionRowBuilder()
@@ -62,7 +62,7 @@ module.exports = {
         interaction.reply({
             content: "Choose your starter.",
             components: [row],
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         })
 
         const filter = i => i.user.id === interaction.user.id;

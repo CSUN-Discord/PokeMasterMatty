@@ -20,7 +20,7 @@ module.exports = {
 
             if (!interaction.member.permissions.has(command.permission || [])) return interaction.reply({
                 content: "You don't have permission for this command.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
 
             try {
@@ -29,7 +29,7 @@ module.exports = {
                 console.error(e);
                 await interaction.reply({
                     content: "There was an error while executing this command!",
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 });
             }
         }
