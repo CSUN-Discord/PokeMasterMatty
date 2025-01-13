@@ -1,195 +1,51 @@
 const emojiListSchema = require("../schemas/emojiListSchema");
 
+// const updateField = async (fieldPath, key, value) => {
+//     try {
+//         await emojiListSchema.findOneAndUpdate(
+//             {},
+//             {
+//                 $set: {
+//                     [`${fieldPath}.${key}`]: value
+//                 }
+//             },
+//             {
+//                 upsert: true
+//             }
+//         ).exec();
+//     } catch (e) {
+//         console.error("Error updating field:", e);
+//     }
+// };
+
+const getField = async (fieldPath, key) => {
+    try {
+        const emojiList = await emojiListSchema.findOne({}).exec();
+        return emojiList?.[fieldPath]?.get(key) || null;
+    } catch (e) {
+        console.error("Error fetching field:", e);
+        return null;
+    }
+};
+
 module.exports = {
-    addBoxIcon: async function (pokemon, emoji) {
-        try {
-            await emojiListSchema
-                .findOneAndUpdate(
-                    {},
-                    {
-                        $set: {
-                            [`boxIcon.${pokemon}`]: emoji
-                        }
-                    },
-                    {
-                        upsert: true,
-                    }
-                )
-                .exec();
-        } catch (e) {
-            console.log(e);
-        }
-    },
-    addNormalGif: async function (pokemon, emoji) {
-        try {
-            await emojiListSchema
-                .findOneAndUpdate(
-                    {},
-                    {
-                        $set: {
-                            [`normalGif.${pokemon}`]: emoji
-                        }
-                    },
-                    {
-                        upsert: true,
-                    }
-                )
-                .exec();
-        } catch (e) {
-            console.log(e);
-        }
-    },
-    addShinyGif: async function (pokemon, emoji) {
-        try {
-            await emojiListSchema
-                .findOneAndUpdate(
-                    {},
-                    {
-                        $set: {
-                            [`shinyGif.${pokemon}`]: emoji
-                        }
-                    },
-                    {
-                        upsert: true,
-                    }
-                )
-                .exec();
-        } catch (e) {
-            console.log(e);
-        }
-    },
-    addMoveType: async function (type, emoji) {
-        try {
-            await emojiListSchema
-                .findOneAndUpdate(
-                    {},
-                    {
-                        $set: {
-                            [`moveType.${type}`]: emoji
-                        }
-                    },
-                    {
-                        upsert: true,
-                    }
-                )
-                .exec();
-        } catch (e) {
-            console.log(e);
-        }
-    },
-    addMoveCategory: async function (category, emoji) {
-        try {
-            await emojiListSchema
-                .findOneAndUpdate(
-                    {},
-                    {
-                        $set: {
-                            [`moveCategory.${category}`]: emoji
-                        }
-                    },
-                    {
-                        upsert: true,
-                    }
-                )
-                .exec();
-        } catch (e) {
-            console.log(e);
-        }
-    },
+    // addBoxIcon: (pokemon, emoji) => updateField("boxIcon", pokemon, emoji),
+    //
+    // addNormalGif: (pokemon, emoji) => updateField("normalGif", pokemon, emoji),
+    //
+    // addShinyGif: (pokemon, emoji) => updateField("shinyGif", pokemon, emoji),
+    //
+    // addMoveType: (type, emoji) => updateField("moveType", type, emoji),
+    //
+    // addMoveCategory: (category, emoji) => updateField("moveCategory", category, emoji),
+    //
+    // getBoxIcon: (pokeId) => getField("boxIcon", pokeId.toString()),
 
-    getBoxIcon: function (pokeId) {
-        return new Promise((resolve, reject) => {
-            try {
-                emojiListSchema
-                    .findOne({}, (err, emojiList) => {
-                        if (err) {
-                            // console.log(err);
-                            reject(err);
-                        } else {
-                            const boxIconValue = emojiList.boxIcon.get(pokeId.toString());
-                            // console.log(pokeId, emojiList.boxIcon.get(pokeId.toString()));
-                            resolve(boxIconValue);
-                        }
-                    })
-            } catch (e) {
-                reject(e);
-            }
-        });
-    },
+    getNormalGif: (pokeId) => getField("normalGif", pokeId.toString()),
 
-    getNormalGif: async function (pokeId) {
-        return new Promise((resolve, reject) => {
-            try {
-                emojiListSchema
-                    .findOne({}, (err, emojiList) => {
-                        if (err) {
-                            // console.log(err);
-                            reject(err);
-                        } else {
-                            const boxIconValue = emojiList.normalGif.get(pokeId.toString());
-                            // console.log(pokeId, emojiList.normalGif.get(pokeId.toString()));
-                            resolve(boxIconValue);
-                        }
-                    })
-            } catch (e) {
-                reject(e);
-            }
-        });
-    },
+    getShinyGif: (pokeId) => getField("shinyGif", pokeId.toString()),
 
-    getShinyGif: async function (pokeId) {
-        return new Promise((resolve, reject) => {
-            try {
-                emojiListSchema
-                    .findOne({}, (err, emojiList) => {
-                        if (err) {
-                            // console.log(err);
-                            reject(err);
-                        } else {
-                            const boxIconValue = emojiList.shinyGif.get(pokeId.toString());
-                            // console.log(pokeId, emojiList.shinyGif.get(pokeId.toString()));
-                            resolve(boxIconValue);
-                        }
-                    })
-            } catch (e) {
-                reject(e);
-            }
-        });
-    },
-    getMoveCategory: async function (category) {
-        return new Promise((resolve, reject) => {
-            try {
-                emojiListSchema
-                    .findOne({}, (err, emojiList) => {
-                        if (err) {
-                            // console.log(err);
-                            reject(err);
-                        } else {
-                            const moveCategory = emojiList.moveCategory.get(category);
-                            resolve(moveCategory);
-                        }
-                    })
-            } catch (e) {
-                reject(e);
-            }
-        });
-    },
-    getMoveType: async function (type) {
-        return new Promise((resolve, reject) => {
-            try {
-                emojiListSchema
-                    .findOne({}, (err, emojiList) => {
-                        if (err) {
-                            // console.log(err);
-                            reject(err);
-                        } else {
-                            const moveType = emojiList.moveType.get(type);
-                            resolve(moveType);
-                        }
-                    })
-            } catch (e) {
-                reject(e);
-            }
-        });
-    },
-}
+    // getMoveCategory: (category) => getField("moveCategory", category),
+    //
+    // getMoveType: (type) => getField("moveType", type),
+};
