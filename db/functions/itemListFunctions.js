@@ -28,19 +28,19 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error in addItem:", e);
         }
     },
 
-    getItem: async function (item) {
+    getItem: async function (name) {
         try {
             return await itemsListSchema
                 .findOne(
-                    {
-                        name: item,
-                    })
+                    {name},
+                    {name: 1, sprite: 1, description: 1, uses: 1, category: 1} // Projection
+                ).exec();
         } catch (e) {
-            console.log(e);
+            console.error("Error in getItemByName:", e);
         }
     },
 }
