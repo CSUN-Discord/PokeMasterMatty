@@ -7,8 +7,9 @@ module.exports = {
             pokemonListSchema
                 .find(
                     {}, (err, docs) => {
-                        if (err) console.log(err)
-                        else {
+                        if (err) {
+                            console.error("Error getting pokemon list: ", err);
+                        } else {
                             docs.forEach((pokemon) => {
                                 console.log("checking ", pokemon.name);
                                 pokemon.moves.forEach((move) => {
@@ -30,7 +31,7 @@ module.exports = {
                         pokeId: id
                     });
         } catch (e) {
-            console.log(e);
+            console.error("Error getting pokemon from ID: ", e);
         }
     },
 
@@ -42,7 +43,7 @@ module.exports = {
                         spawnRate: spawnRate
                     });
         } catch (e) {
-            console.log(e);
+            console.error("Error getting pokemon from rarity: ", e);
         }
     },
 }

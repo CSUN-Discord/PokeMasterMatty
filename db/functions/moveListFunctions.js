@@ -11,7 +11,7 @@ module.exports = {
                 )
                 .exec();
         } catch (e) {
-            console.log("error getting move: " + e);
+            console.error("Error getting move: " + e);
         }
     },
 
@@ -27,9 +27,7 @@ module.exports = {
                     }
                 )
         } catch (e) {
-            console.log(`${id}: ${e}`);
+            console.error(`Error updating move: ${id}` + e);
         }
     },
-
-
 }
