@@ -12,9 +12,10 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
+     * Responds to the /ping command to check bot activity and measure latency.
      *
-     * @param interaction
-     * @returns {Promise<void>}
+     * @param {import("discord.js").Interaction} interaction - The interaction object representing the user's command.
+     * @returns {Promise<void>} - Resolves when the command execution is complete.
      */
     async execute(interaction) {
         const sent = await interaction.reply({
