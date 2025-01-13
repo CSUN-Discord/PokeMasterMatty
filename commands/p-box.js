@@ -3,17 +3,23 @@ This command allows users to swap, view, deposit their team pokemon
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const {AttachmentBuilder, EmbedBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder} = require("discord.js");
-
+const {
+    // AttachmentBuilder,
+    EmbedBuilder,
+    PermissionsBitField,
+    ActionRowBuilder,
+    ButtonBuilder,
+    MessageFlags
+} = require("discord.js");
 const trainerFunctions = require("../db/functions/trainerFunctions");
-const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+// const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const generalFunctions = require("../globals/generalFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
 
-let boxMin = 0;
-let currentBox = [];
+// let boxMin = 0;
+// let currentBox = [];
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-box")
@@ -106,224 +112,192 @@ module.exports = {
 
         const {options} = interaction;
         const sub = options.getSubcommand();
+        let boxMin = 0;
+        let currentBox = user.pokebox;
 
         switch (sub) {
             case "display":
                 const box_number = options.getInteger('box_number');
 
-                if (box_number > user.pokebox.length)
+                if (box_number > user.pokebox.length) {
                     return interaction.reply({
                         content: `Couldn't find the pokemon to view.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
+                }
 
-                let pokemon = user.pokebox[box_number - 1];
-                let fullPokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+                const pokemon = user.pokebox[box_number - 1];
+                const fullPokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
 
                 await pokemonFunctions.createPokemonDetailsEmbed(pokemon, fullPokemonDetails, interaction, user);
-
                 break;
+
             case "send_to_team":
                 const pokemonToSend = options.getInteger("box_number");
 
-                if (pokemonToSend > user.pokebox.length)
+                if (pokemonToSend > user.pokebox.length) {
                     return interaction.reply({
                         content: `Couldn't find the pokemon to send to your team.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
+                }
 
                 if (user.team.length > 5) {
                     return interaction.reply({
                         content: `Team is full.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
                 const sendToTeam = user.pokebox.splice(pokemonToSend - 1, 1);
-                // console.log(sendToTeam)
-
                 await trainerFunctions.addPokemonToTeam(user.userId, sendToTeam[0]);
                 await trainerFunctions.setBox(user.userId, user.pokebox);
 
                 interaction.reply({
                     content: `${sendToTeam[0].nickname || sendToTeam[0].name} was added to your team.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 break;
+
             case "view":
+                //TODO: when showing filtered box results also show the total box number
+                // need the pokemon to have a unique id
+
                 const filter_id = options.getInteger('filter_id');
                 const filter_name = options.getString('filter_name');
                 const filter_rarity = options.getString('filter_rarity');
                 const sort_by = options.getString('sort_by');
 
-                boxMin = 0;
-                currentBox = user.pokebox;
+                const filters = {filter_id, filter_name, filter_rarity, sort_by};
+                currentBox = await createBox(user.pokebox, filters);
 
-                await createBox(filter_id, filter_name, filter_rarity, sort_by)
-                const embed = await createBoxEmbed();
+                const embed = await createBoxEmbed(currentBox, boxMin);
                 const rows = createBoxRows();
-                // currentBox.forEach(pokemon => {
-                //     console.log(pokemon.name, pokemon.level)
-                // })
-
                 const response = await interaction.reply({
                     embeds: [embed],
                     components: rows,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
 
-                const collectorFilter = i => i.user.id === interaction.user.id;
                 const collector = response.createMessageComponentCollector({
-                    filter: collectorFilter,
-                    time: 600000//3_600_000
+                    filter: i => i.user.id === interaction.user.id,
+                    time: 600000
                 });
 
                 collector.on('collect', async i => {
-                    if (i.customId === `itemsLeft`) {
-                        boxMin = Math.max(0, boxMin - 20);
-                    } else if (i.customId === `itemsRight`) {
-                        if (boxMin + 20 < currentBox.length) {
-                            boxMin = Math.min(currentBox.length - 20, boxMin + 20);
-                        }
-                    } else if (i.customId === `items100Left`) {
-                        boxMin = Math.max(0, boxMin - 100);
-                    } else if (i.customId === `items100Right`) {
-                        if (boxMin + 100 < currentBox.length) {
-                            boxMin = Math.min(currentBox.length - 20, boxMin + 100);
-                        } else {
-                            boxMin = Math.max(0, currentBox.length - 20);
-                        }
-                    } else if (i.customId === `itemsFirst`) {
-                        boxMin = 0;
-                    } else if (i.customId === `itemsLast`) {
-                        boxMin = Math.max(0, currentBox.length - 20);
-                    }
-
-                    const embed = await createBoxEmbed();
-                    const rows = createBoxRows();
-                    await response.edit({
-                        embeds: [embed],
-                        components: rows,
-                        ephemeral: true
-                    });
-                    await i.deferUpdate()
+                    boxMin = updateBoxMin(i.customId, boxMin, currentBox.length);
+                    const updatedEmbed = await createBoxEmbed(currentBox, boxMin);
+                    await response.edit({embeds: [updatedEmbed], components: rows});
+                    await i.deferUpdate();
                 });
 
                 collector.on('end', async () => {
                     await interaction.editReply({components: []});
-                })
+                });
 
                 break;
+
             default:
                 interaction.reply({
                     content: "Couldn't process command.",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 break;
         }
     },
 };
 
-async function createBox(filter_id = null, filter_name = null, filter_rarity = null, sort_by = null) {
-    if (filter_id != null) {
-        currentBox = currentBox.filter(pokemon => {
-            return pokemon.pokeId === filter_id;
-        });
-    } else if (filter_name != null) {
-        currentBox = currentBox.filter(pokemon => {
-            return pokemon.name === filter_name;
-        });
-    } else if (filter_rarity != null) {
-        let tempBox = [];
-        for (let i = 0; i < currentBox.length; i++) {
-            const pokemon = currentBox[i];
-            let fullPokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+async function createBox(pokebox, filters = {}) {
+    const {filter_id, filter_name, filter_rarity, sort_by} = filters;
 
-            // console.log(fullPokemonDetails.spawnRate, filter_rarity)
-            if (fullPokemonDetails.spawnRate === filter_rarity) {
-                tempBox.push(pokemon);
-            }
+    try {
+        let filteredBox = pokebox.filter(pokemon => {
+            return !((filter_id && pokemon.pokeId !== filter_id) || (filter_name && pokemon.name !== filter_name));
+        });
+
+        if (filter_rarity) {
+            filteredBox = await Promise.all(
+                filteredBox.map(async pokemon => {
+                    const fullDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+                    return fullDetails.spawnRate === filter_rarity ? pokemon : null;
+                })
+            ).then(results => results.filter(pokemon => pokemon !== null));
         }
-        currentBox = tempBox;
-    }
-    if (sort_by != null && sort_by === "reverse") {
-        currentBox.reverse();
+
+        if (sort_by === "reverse") {
+            filteredBox.reverse();
+        }
+
+        return filteredBox;
+    } catch (err) {
+        console.error("Error filtering Pokémon box:", err);
+        return [];
     }
 }
 
-async function createBoxEmbed() {
-    let pokemonBoxEmbed = new EmbedBuilder()
+async function createBoxEmbed(currentBox, boxMin) {
+    const embed = new EmbedBuilder()
         .setColor('Random')
-        .setTitle(`Pokemon Box:`)
-        .setTimestamp()
+        .setTitle('Pokemon Box:')
+        .setTimestamp();
 
-    for (let i = boxMin; i < Math.min(boxMin + 20, currentBox.length); i++) {
-        const currentPokemon = currentBox[i];
-        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
-        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
-        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
-        let currentHP = maxHP - currentPokemon.damageTaken;
+    const fields = await Promise.all(
+        currentBox.slice(boxMin, boxMin + 20).map(async (pokemon, index) => {
+            const maxHP = pokemonFunctions.calculatePokemonHP(pokemon);
+            const currentHP = maxHP - pokemon.damageTaken;
 
-        let result;
-        if (currentPokemon.shiny)
-            result = await emojiListFunctions.getShinyGif(currentPokemon.pokeId);
-        else
-            result = await emojiListFunctions.getNormalGif(currentPokemon.pokeId);
-        pokemonBoxEmbed.addFields([
-            {
-                name: `${i + 1}) ${result} ${currentPokemon.nickname || currentPokemon.name}`,
-                value: `Level: ${currentPokemon.level}\n Health: ${currentHP}/${maxHP}`,
-                inline: true
-            }
-        ])
-    }
-    return pokemonBoxEmbed;
+            const sprite = pokemon.shiny
+                ? await emojiListFunctions.getShinyGif(pokemon.pokeId)
+                : await emojiListFunctions.getNormalGif(pokemon.pokeId);
+
+            return {
+                name: `${boxMin + index + 1}) ${sprite} ${pokemon.nickname || pokemon.name}`,
+                value: `Level: ${pokemon.level}\nHealth: ${currentHP}/${maxHP}`,
+                inline: true,
+            };
+        })
+    );
+
+    embed.addFields(fields);
+    return embed;
 }
 
 function createBoxRows() {
-    let rows = [];
-    const arrowOneRow = new ActionRowBuilder();
-    arrowOneRow.addComponents(
-        new ButtonBuilder()
-            .setCustomId(`itemsLeft`)
-            .setLabel(`◀`)
-            .setStyle('Secondary'),
-        new ButtonBuilder()
-            .setCustomId(`itemsRight`)
-            .setLabel(`▶`)
-            .setStyle('Secondary'),
-        // new ButtonBuilder()
-        //     .setCustomId(`${inp.user.id}back`)
-        //     .setLabel(`back`)
-        //     .setStyle('Danger'),
-    )
-    rows.push(arrowOneRow);
+    const buttons = [
+        {id: 'itemsLeft', label: '◀', style: 'Secondary'},
+        {id: 'itemsRight', label: '▶', style: 'Secondary'},
+        {id: 'items100Left', label: '⏪', style: 'Secondary'},
+        {id: 'items100Right', label: '⏩', style: 'Secondary'},
+        {id: 'itemsFirst', label: '⏮', style: 'Secondary'},
+        {id: 'itemsLast', label: '⏭', style: 'Secondary'},
+    ];
 
-    const arrowTenRow = new ActionRowBuilder();
-    arrowTenRow.addComponents(
-        new ButtonBuilder()
-            .setCustomId(`items100Left`)
-            .setLabel(`⏪`)
-            .setStyle('Secondary'),
-        new ButtonBuilder()
-            .setCustomId(`items100Right`)
-            .setLabel(`⏩`)
-            .setStyle('Secondary'),
-    )
-    rows.push(arrowTenRow);
+    return buttons.reduce((rows, button, index) => {
+        const rowIndex = Math.floor(index / 2); // Two buttons per row
+        if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+        rows[rowIndex].addComponents(new ButtonBuilder()
+            .setCustomId(button.id)
+            .setLabel(button.label)
+            .setStyle(button.style));
+        return rows;
+    }, []);
+}
 
-    const arrowEndsRow = new ActionRowBuilder();
-    arrowEndsRow.addComponents(
-        new ButtonBuilder()
-            .setCustomId(`itemsFirst`)
-            .setLabel(`⏮`)
-            .setStyle('Secondary'),
-        new ButtonBuilder()
-            .setCustomId(`itemsLast`)
-            .setLabel(`⏭`)
-            .setStyle('Secondary'),
-    )
-    rows.push(arrowEndsRow);
-
-    return rows;
+function updateBoxMin(customId, boxMin, total) {
+    switch (customId) {
+        case 'itemsLeft':
+            return Math.max(0, boxMin - 20);
+        case 'itemsRight':
+            return Math.min(total - 20, boxMin + 20);
+        case 'items100Left':
+            return Math.max(0, boxMin - 100);
+        case 'items100Right':
+            return Math.min(total - 20, boxMin + 100);
+        case 'itemsFirst':
+            return 0;
+        case 'itemsLast':
+            return Math.max(0, total - 20);
+        default:
+            return boxMin;
+    }
 }
