@@ -4,7 +4,7 @@ This command sends a simple message to check if the bot is active
 
 // let request = require("request");
 // let fs = require("fs");
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 const Pokemon = require('pokemon.js');
 Pokemon.setLanguage('english');
 // const pokemonListFunctions = require("../db/functions/pokemonListFunctions")
@@ -20,7 +20,7 @@ Pokemon.setLanguage('english');
 const {SlashCommandBuilder} = require("@discordjs/builders");
 // const {EmbedBuilder} = require("discord.js");
 // const {updateMove} = require("../db/functions/moveListFunctions");
-const moveListFunction = require("../db/functions/moveListFunctions");
+// const moveListFunction = require("../db/functions/moveListFunctions");
 // const emojiListFunctions = require("../db/functions/emojiListFunctions");
 const {MessageFlags, PermissionsBitField} = require("discord.js");
 module.exports = {
