@@ -140,9 +140,10 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
+     * Executes the Pokémon team management commands based on the user's interaction.
      *
-     * @param interaction
-     * @returns {Promise<void>}
+     * @param {import("discord.js").Interaction} interaction The interaction object representing the user's command.
+     * @returns {Promise<void>} - Resolves when the command execution is complete.
      */
     async execute(interaction) {
         const user = await trainerFunctions.getUser(interaction.user.id);
@@ -165,14 +166,13 @@ module.exports = {
                     const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
                     let currentHP = maxHP - currentPokemon.damageTaken;
 
-                    let result;
-                    if (currentPokemon.shiny)
-                        result = await emojiListFunctions.getShinyGif(currentPokemon.pokeId);
-                    else
-                        result = await emojiListFunctions.getNormalGif(currentPokemon.pokeId);
+                    const sprite = currentPokemon.shiny
+                        ? await emojiListFunctions.getShinyGif(currentPokemon.pokeId)
+                        : await emojiListFunctions.getNormalGif(currentPokemon.pokeId);
+
                     pokemonTeam.addFields([
                         {
-                            name: `${i + 1}) ${result} ${currentPokemon.nickname || currentPokemon.name}`,
+                            name: `${i + 1}) ${sprite} ${currentPokemon.nickname || currentPokemon.name}`,
                             value: `Level: ${currentPokemon.level}\n Health: ${currentHP}/${maxHP}`,
                             inline: true
                         }
@@ -217,17 +217,12 @@ module.exports = {
                 const swapPosOne = interaction.options.getInteger('pokemon_one');
                 const swapPosTwo = interaction.options.getInteger('pokemon_two');
 
-                if (user.team.length === 1)
+                if (user.team.length < 2 || swapPosOne < 1 || swapPosTwo < 1 || swapPosOne > user.team.length || swapPosTwo > user.team.length) {
                     return interaction.reply({
-                        content: `You only have one pokemon!`,
+                        content: `Couldn't swap the pokemon positions.`,
                         flags: MessageFlags.Ephemeral
                     });
-
-                if (swapPosOne > user.team.length || swapPosTwo > user.team.length)
-                    return interaction.reply({
-                        content: `Couldn't find the pokemon to swap.`,
-                        flags: MessageFlags.Ephemeral
-                    });
+                }
 
                 [user.team[swapPosOne - 1], user.team[swapPosTwo - 1]] = [user.team[swapPosTwo - 1], user.team[swapPosOne - 1]];
 
@@ -242,11 +237,12 @@ module.exports = {
             case "display":
                 const team_number = options.getInteger('team_number');
 
-                if (team_number > user.team.length)
+                if (team_number < 1 || team_number > user.team.length) {
                     return interaction.reply({
-                        content: `Couldn't find the pokemon to view.`,
+                        content: `Invalid team number.`,
                         flags: MessageFlags.Ephemeral
                     });
+                }
 
                 let pokemon = user.team[team_number - 1];
                 let fullPokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
@@ -254,35 +250,41 @@ module.exports = {
                 await pokemonFunctions.createPokemonDetailsEmbed(pokemon, fullPokemonDetails, interaction, user);
                 break;
             case "set_nickname":
-                const setNickname = options.getInteger('team_number');
+                const teamNumber = options.getInteger('team_number');
                 const nickname = options.getString('nickname');
-                if (setNickname > user.team.length)
+
+                if (teamNumber < 1 || teamNumber > user.team.length) {
                     return interaction.reply({
                         content: `Incorrect team number.`,
                         flags: MessageFlags.Ephemeral
                     });
+                }
+
                 let filter = new Filter();
-                if (filter.isProfane(nickname))
+                if (filter.isProfane(nickname)) {
                     return interaction.reply({
                         content: `Incorrect nickname value.`,
                         flags: MessageFlags.Ephemeral
                     });
-                user.team[setNickname - 1].nickname = nickname;
+                }
+
+                user.team[teamNumber - 1].nickname = nickname;
                 await trainerFunctions.setTeam(user.userId, user.team);
 
                 interaction.reply({
-                    content: `${user.team[setNickname - 1].name}'s nickname was set to ${user.team[setNickname - 1].nickname}.`,
+                    content: `${user.team[teamNumber - 1].name}'s nickname was set to ${nickname}.`,
                     flags: MessageFlags.Ephemeral
                 });
 
-                break
+                break;
             case "remove_nickname":
                 const removeNickname = options.getInteger('team_number');
-                if (removeNickname > user.team.length)
+                if (removeNickname > user.team.length) {
                     return interaction.reply({
                         content: `Incorrect team number.`,
                         flags: MessageFlags.Ephemeral
                     });
+                }
                 user.team[removeNickname - 1].nickname = null;
                 await trainerFunctions.setTeam(user.userId, user.team);
 
