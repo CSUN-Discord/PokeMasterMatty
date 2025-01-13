@@ -103,11 +103,11 @@ function getSelectedPokemonId(customId) {
 
 /**
  * Handles the Pokémon selection and updates the user in the game.
- * @param {import("discord.js").Interaction} i - The interaction object from button click.
+ * @param {import("discord.js").Interaction} interaction - The interaction object from button click.
  * @param {number} pokemonId - The selected Pokémon's ID.
  * @returns {Promise<void>}
  */
-async function handlePokemonSelection(i, pokemonId) {
+async function handlePokemonSelection(interaction, pokemonId) {
     try {
         const selectedPokemon = await pokemonListFunctions.getPokemonFromId(pokemonId);
         const userPokemon = await pokemonFunctions.createStarterPokemonDetails(10, selectedPokemon, i.user);
@@ -116,13 +116,13 @@ async function handlePokemonSelection(i, pokemonId) {
         await trainerFunctions.addPokemonToUser(i.user, userPokemon);
 
         // Update the user after selection
-        await i.update({
+        await interaction.update({
             content: "You have been added to the game. Use /p-present for a goodie bag.",
             components: [],
         });
     } catch (error) {
         console.error("Error handling Pokémon selection:", error);
-        await i.update({
+        await interaction.update({
             content: "There was an error while processing your selection. Please try again.",
             components: [],
         });
