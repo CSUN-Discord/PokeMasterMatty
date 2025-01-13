@@ -53,7 +53,6 @@ module.exports = {
         const {options} = interaction;
         const sub = options.getSubcommand();
 
-        //TODO: restore hp, pp, status affects
         switch (sub) {
             case "heal_all":
 
