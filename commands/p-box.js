@@ -4,7 +4,6 @@ This command allows users to swap, view, deposit their team pokemon
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {
-    // AttachmentBuilder,
     EmbedBuilder,
     PermissionsBitField,
     ActionRowBuilder,
@@ -18,8 +17,6 @@ const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const generalFunctions = require("../globals/generalFunctions");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
 
-// let boxMin = 0;
-// let currentBox = [];
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-box")
@@ -99,11 +96,10 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
-     *
-     * @param interaction
+     * Executes the p-box command based on subcommand.
+     * @param {import("discord.js").Interaction} interaction - The interaction object.
      * @returns {Promise<void>}
      */
-
     async execute(interaction) {
         const user = await trainerFunctions.getUser(interaction.user.id);
         if (!await generalFunctions.allowedToUseCommand(user, interaction)) {
@@ -207,6 +203,12 @@ module.exports = {
     },
 };
 
+/**
+ * Filters the Pokémon box based on given filters and sorting preferences.
+ * @param {Array} pokebox - The Pokémon box array to filter.
+ * @param {Object} filters - An object containing the filtering criteria.
+ * @returns {Promise<Array>} - The filtered Pokémon box.
+ */
 async function createBox(pokebox, filters = {}) {
     const {filter_id, filter_name, filter_rarity, sort_by} = filters;
 
@@ -235,6 +237,12 @@ async function createBox(pokebox, filters = {}) {
     }
 }
 
+/**
+ * Creates an embed displaying the Pokémon in the box.
+ * @param {Array} currentBox - The filtered or full Pokémon box.
+ * @param {number} boxMin - The starting index for the Pokémon to be displayed.
+ * @returns {Promise<EmbedBuilder>} - The embed object with Pokémon details.
+ */
 async function createBoxEmbed(currentBox, boxMin) {
     const embed = new EmbedBuilder()
         .setColor('Random')
@@ -262,6 +270,10 @@ async function createBoxEmbed(currentBox, boxMin) {
     return embed;
 }
 
+/**
+ * Creates the rows of buttons for interacting with the Pokémon box.
+ * @returns {ActionRowBuilder[]} - Array of action rows containing buttons.
+ */
 function createBoxRows() {
     const buttons = [
         {id: 'itemsLeft', label: '◀', style: 'Secondary'},
@@ -283,6 +295,13 @@ function createBoxRows() {
     }, []);
 }
 
+/**
+ * Updates the index for pagination when navigating through the Pokémon box.
+ * @param {string} customId - The ID of the button pressed.
+ * @param {number} boxMin - The current starting index for pagination.
+ * @param {number} total - The total number of Pokémon in the box.
+ * @returns {number} - The updated index for pagination.
+ */
 function updateBoxMin(customId, boxMin, total) {
     switch (customId) {
         case 'itemsLeft':
