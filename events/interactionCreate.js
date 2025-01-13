@@ -2,6 +2,10 @@
 event that listens for commands and runs the command
  */
 
+const {
+    MessageFlags
+} = require("discord.js");
+
 module.exports = {
     name: "interactionCreate",
 
