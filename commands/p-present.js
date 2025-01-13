@@ -1,11 +1,14 @@
 /*
-This command sends a simple message to check if the bot is active
+This command allows users to claim a present if they have one available.
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const generalFunctions = require("../globals/generalFunctions");
 const {MessageFlags, PermissionsBitField} = require("discord.js");
+
+const SIX_HOURS = 21600000;  // Constant for 6 hours in milliseconds
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("p-present")
@@ -13,12 +16,14 @@ module.exports = {
     permission: [PermissionsBitField.Flags.SendMessages],
 
     /**
-     *
-     * @param interaction
+     * Executes the /p-present command to allow users to claim a present.
+     * @param {import("discord.js").Interaction} interaction - The interaction object.
      * @returns {Promise<void>}
      */
     async execute(interaction) {
-        await interaction.deferReply({flags: MessageFlags.Ephemeral});
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
 
         // if (!(await pokemonGameFunctions.getPlaying(interaction.guild.id)))
         //     return interaction.editReply({
@@ -34,56 +39,53 @@ module.exports = {
         if (!user.presentReady)
             return interaction.editReply({
                 content: `You're present isn't ready yet. You should get notified when it is.`,
-                // flags: MessageFlags.Ephemeral
             });
 
-        // const pokeBall = itemListFunctions.getItem("Poke Ball");
-        // const greatBall = itemListFunctions.getItem("Great Ball");
-        // const ultraBall = itemListFunctions.getItem("Ultra Ball");
-        // const revive = itemListFunctions.getItem("Revive");
-        // const potion = itemListFunctions.getItem("Potion");
-        // const superPotion = itemListFunctions.getItem("Super Potion");
-        // const hyperPotion = itemListFunctions.getItem("Hyper Potion");
+        // Create and count the items in the user's bag
+        let pokeBallCount = createItem(10, 50, user.bag, "Poke Ball", "poke-ball");
+        let greatBallCount = createItem(5, 25, user.bag, "Great Ball", "poke-ball");
+        let ultraBallCount = createItem(3, 10, user.bag, "Ultra Ball", "poke-ball");
+        let reviveCount = createItem(1, 10, user.bag, "Revive", "recovery");
+        let potionCount = createItem(5, 35, user.bag, "Potion", "recovery");
+        let superPotionCount = createItem(3, 25, user.bag, "Super Potion", "recovery");
+        let hyperPotionCount = createItem(1, 10, user.bag, "Hyper Potion", "recovery");
 
-        let pokeBallCount = 0;
-        let greatBallCount = 0;
-        let ultraBallCount = 0;
-        let reviveCount = 0;
-        let potionCount = 0;
-        let superPotionCount = 0;
-        let hyperPotionCount = 0;
+        // Build the string of items the user has received
+        let itemString = "You received:";
+        itemString = appendItemString("Poke Ball", pokeBallCount, itemString);
+        itemString = appendItemString("Great Ball", greatBallCount, itemString);
+        itemString = appendItemString("Ultra Ball", ultraBallCount, itemString);
+        itemString = appendItemString("Revive", reviveCount, itemString);
+        itemString = appendItemString("Potion", potionCount, itemString);
+        itemString = appendItemString("Super Potion", superPotionCount, itemString);
+        itemString = appendItemString("Hyper Potion", hyperPotionCount, itemString);
 
-        pokeBallCount = createItem(10, 50, pokeBallCount, user.bag, "Poke Ball", "poke-ball");
-        greatBallCount = createItem(5, 25, greatBallCount, user.bag, "Great Ball", "poke-ball");
-        ultraBallCount = createItem(3, 10, ultraBallCount, user.bag, "Ultra Ball", "poke-ball");
-        reviveCount = createItem(1, 10, reviveCount, user.bag, "Revive", "recovery");
-        potionCount = createItem(5, 35, potionCount, user.bag, "Potion", "recovery");
-        superPotionCount = createItem(3, 25, superPotionCount, user.bag, "Super Potion", "recovery");
-        hyperPotionCount = createItem(1, 10, hyperPotionCount, user.bag, "Hyper Potion", "recovery");
-
-        let itemString = "You received: nothing."
-        itemString = getItemString("Poke Ball", pokeBallCount, itemString);
-        itemString = getItemString("Great Ball", greatBallCount, itemString);
-        itemString = getItemString("Ultra Ball", ultraBallCount, itemString);
-        itemString = getItemString("Revive", reviveCount, itemString);
-        itemString = getItemString("Potion", potionCount, itemString);
-        itemString = getItemString("Super Potion", superPotionCount, itemString);
-        itemString = getItemString("Hyper Potion", hyperPotionCount, itemString);
-
+        // Respond to the user with the items they've received
         await interaction.editReply({
             content: itemString.trim() + ".",
-            // flags: MessageFlags.Ephemeral
         });
 
+        // Add the present to the user's bag and notify them when it is ready to claim again
         await trainerFunctions.addPresentToBag(user.userId, user.bag);
+
         setTimeout(() => {
             trainerFunctions.setPresent(user.userId, true);
             interaction.channel.send(`<@${user.userId}>, your present is ready to claim, just use /p-present.`);
-        }, 21600000);
+        }, SIX_HOURS);
     },
 };
 
-function createItem(itemMax, percentage, itemCount, bag, name, category) {
+/**
+ * Creates an item and adds it to the user's bag if it meets the percentage chance.
+ * @param {number} itemMax - The maximum number of times the item can be added.
+ * @param {number} percentage - The percentage chance of adding the item.
+ * @param {Object} bag - The user's bag where items will be stored.
+ * @param {string} name - The name of the item.
+ * @param {string} category - The category in the bag where the item will be added.
+ * @returns {number} - The number of items created.
+ */
+function createItem(itemMax, percentage, bag, name, category) {
+    let itemCount = 0;
 
     for (let i = 0; i < itemMax; i++) {
         if (generalFunctions.randomIntFromInterval(0, 100) < percentage) {
@@ -98,10 +100,16 @@ function createItem(itemMax, percentage, itemCount, bag, name, category) {
     return itemCount;
 }
 
-function getItemString(itemName, quantity, itemString) {
+/**
+ * Appends a formatted string for an item if its quantity is greater than 0.
+ * @param {string} itemName - The name of the item.
+ * @param {number} quantity - The quantity of the item.
+ * @param {string} itemString - The existing string that will be updated.
+ * @returns {string} - The updated string with the item's information.
+ */
+function appendItemString(itemName, quantity, itemString) {
     if (quantity > 0) {
-        let tempString = itemString.replace("nothing.", "")
-        return (tempString + `${itemName}: ${quantity} `)
+        return `${itemString}\n• ${itemName}: ${quantity}`;
     }
     return itemString;
 }
