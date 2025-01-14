@@ -9,7 +9,6 @@ const {
 const pokemonFunctions = require("./pokemonFunctions");
 const generalFunctions = require("./generalFunctions");
 const {PythonShell} = require("python-shell");
-// const battlingFunctions = require("../db/functions/battlingFunctions");
 const moveListFunctions = require("../db/functions/moveListFunctions");
 const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
@@ -25,10 +24,20 @@ let currentBagMin = 0;
 module.exports = {
 
     createEmbedPVM: function (battlingDetails) {
+        // console.log()
         //player, playerCurrentPokemonNumber, playerTeam, pokemonCurrentPokemonNumber, pokemonTeam
 
-        const userTwoTotalHp = pokemonFunctions.calculatePokemonHP(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
-        const userOneTotalHp = pokemonFunctions.calculatePokemonHP(battlingDetails.userOneTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+        const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
+
+        const userTwoElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoHpMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
+
+        const userTwoTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoElb));
+
+        const userOneHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.hp));
+
+        const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
+
+        const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
         let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
         let enemy_pokemon_gender = true;
@@ -147,14 +156,18 @@ module.exports = {
                 };
             },
             battleRunButton: async function () {
-                const userOneTotalSpeed = pokemonFunctions.calculatePokemonSpeed(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1], getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature));
-                let userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed);
+                const userOneSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.speed));
+                const userOneSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, userOneSpeedMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
+                const userOneTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].nature), userOneSpeedElb));
+                let userOneEffectiveSpeed = getEffectiveSpeed(userOneTotalSpeed, battlingDetails.userOneStatStage.speed)
                 if (battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].status === "paralyzed") {
                     userOneEffectiveSpeed = Math.round(userOneEffectiveSpeed / 2);
                 }
 
-                const userTwoTotalSpeed = pokemonFunctions.calculatePokemonSpeed(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature));
-                let userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed);
+                const userTwoSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.speed));
+                const userTwoSpeedElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, userTwoSpeedMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
+                const userTwoTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.speed, getNatureValue("speed", battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nature), userTwoSpeedElb));
+                let userTwoEffectiveSpeed = getEffectiveSpeed(userTwoTotalSpeed, battlingDetails.userTwoStatStage.speed)
                 if (battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].status === "paralyzed") {
                     userTwoEffectiveSpeed = Math.round(userTwoEffectiveSpeed / 2);
                 }
@@ -324,7 +337,9 @@ module.exports = {
 
                 const ballUsed = inp.customId.replace(inp.user.id, "");
 
-                const maxHP = pokemonFunctions.calculatePokemonHP(wildPokemon);
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(wildPokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(wildPokemon.base.hp, pokemonHpMultiplier, wildPokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(wildPokemon.level, wildPokemon.base.hp, pokemonElb));
 
                 let currentHP = maxHP - wildPokemon.damageTaken;
                 let ballBonus = 1;
@@ -1204,8 +1219,9 @@ module.exports = {
             let battledAndAlive = [];
             for (let i = 0; i < battlingDetails.userOneBattledPokemon.length; i++) {
                 const currentPokemon = battlingDetails.userOneTeam[battlingDetails.userOneBattledPokemon[i] - 1];
-
-                const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
                 let currentHP = maxHP - currentPokemon.damageTaken;
 
                 if (currentHP > 0) {
@@ -1335,7 +1351,7 @@ module.exports = {
             await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
 
             //add pokemon to user
-            await trainerFunctions.addPokemonToUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+            await trainerFunctions.addPokemonToCreatedUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
 
             //update battling to false
             await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
@@ -1575,7 +1591,9 @@ function setRowItemUsed(battlingDetails, inp, item, itemType) {
 
     for (let i = 0; i < unfilteredPokemon.length; i++) {
         const currentPokemon = unfilteredPokemon[i];
-        const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
 
@@ -1658,7 +1676,9 @@ function setRowSwapPokemon(battlingDetails, inp, voluntarily = false) {
         }
 
         const currentPokemon = unfilteredPokemon[i];
-        const maxHP = pokemonFunctions(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
         if (currentHP > 0) {
@@ -1845,8 +1865,9 @@ function createEmbedAfterItemUsed(battlingDetails, itemType) {
 
     for (let i = 0; i < unfilteredPokemon.length; i++) {
         const currentPokemon = unfilteredPokemon[i];
-
-        const maxHP = pokemonFunctions(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
         switch (itemType) {
@@ -1866,7 +1887,9 @@ function createEmbedAfterItemUsed(battlingDetails, itemType) {
 
     for (let i = 0; i < pokemonArray.length; i++) {
         const currentPokemon = pokemonArray[i];
-        const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
         let moves = "";
@@ -1911,7 +1934,9 @@ function createSwapEmbed(battlingDetails) {
         }
 
         const currentPokemon = unfilteredPokemon[i];
-        const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
         if (currentHP > 0)
@@ -1920,7 +1945,9 @@ function createSwapEmbed(battlingDetails) {
 
     for (let i = 0; i < pokemonArray.length; i++) {
         const currentPokemon = pokemonArray[i];
-        const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
         let currentHP = maxHP - currentPokemon.damageTaken;
 
         // let result;
@@ -1935,10 +1962,17 @@ function createSwapEmbed(battlingDetails) {
             inline: false
         }]);
     }
+    const userTwoHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].evLevels.hp));
 
-    const userTwoTotalHp = pokemonFunctions.calculatePokemonHP(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+    const userTwoElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoHpMultiplier, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level));
 
-    const userOneTotalHp = pokemonFunctions.calculatePokemonHP(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1]);
+    const userTwoTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].level, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].base.hp, userTwoElb));
+
+    const userOneHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].evLevels.hp));
+
+    const userOneElb = Math.round(pokemonFunctions.elbCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneHpMultiplier, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level));
+
+    const userOneTotalHp = Math.round(pokemonFunctions.hpCalculation(battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].level, battlingDetails.userOneTeam[battlingDetails.userOneCurrentPokemon - 1].base.hp, userOneElb));
 
     let enemy_pokemon_name = battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].nickname || battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1].name;
     let enemy_pokemon_gender = true;
@@ -2060,8 +2094,13 @@ function getNatureValue(stat, nature) {
 
 async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleDetails) {
 
-    const pokemonTotalHp = pokemonFunctions.calculatePokemonHP(randomPokemon);
-    const userTotalHp = pokemonFunctions.calculatePokemonHP(user);
+    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(randomPokemon.evLevels.hp));
+    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(randomPokemon.base.hp, pokemonHpMultiplier, randomPokemon.level));
+    const pokemonTotalHp = Math.round(pokemonFunctions.hpCalculation(randomPokemon.level, randomPokemon.base.hp, pokemonElb));
+
+    const userHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.hp));
+    const userElb = Math.round(pokemonFunctions.elbCalculation(user.base.hp, userHpMultiplier, user.level));
+    const userTotalHp = Math.round(pokemonFunctions.hpCalculation(user.level, user.base.hp, userElb));
 
     if (userMove == null) {
         if (battleDetails.userTwoVolatileStatus.recharging.enabled) {
@@ -2132,14 +2171,18 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
     }
     //check pokemon base speed
     else {
-        const userTotalSpeed = pokemonFunctions.calculatePokemonSpeed(user, getNatureValue("speed", user.nature))
+        const userSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(user.evLevels.speed));
+        const userSpeedElb = Math.round(pokemonFunctions.elbCalculation(user.base.speed, userSpeedMultiplier, user.level));
+        const userTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(user.level, user.base.speed, getNatureValue("speed", user.nature), userSpeedElb));
         let userEffectiveSpeed = getEffectiveSpeed(userTotalSpeed, battleDetails.userOneStatStage.speed);
         if (user.status === "paralyzed") {
             userEffectiveSpeed = Math.round(userEffectiveSpeed / 2);
         }
 
-        const pokemonTotalSpeed = pokemonFunctions.calculatePokemonSpeed(randomPokemon, getNatureValue("speed", randomPokemon.nature))
-        let pokemonEffectiveSpeed = getEffectiveSpeed(userTotalSpeed, battleDetails.userOneStatStage.speed);
+        const pokemonSpeedMultiplier = Math.round(pokemonFunctions.multiplierCalculation(randomPokemon.evLevels.speed));
+        const pokemonSpeedElb = Math.round(pokemonFunctions.elbCalculation(randomPokemon.base.speed, pokemonSpeedMultiplier, randomPokemon.level));
+        const pokemonTotalSpeed = Math.round(pokemonFunctions.otherStatCalculation(randomPokemon.level, randomPokemon.base.speed, getNatureValue("speed", randomPokemon.nature), pokemonSpeedElb));
+        let pokemonEffectiveSpeed = getEffectiveSpeed(pokemonTotalSpeed, battleDetails.userTwoStatStage.speed);
         if (randomPokemon.status === "paralyzed") {
             pokemonEffectiveSpeed = Math.round(pokemonEffectiveSpeed / 2);
         }
@@ -2276,7 +2319,9 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
             let usablePokemon = [];
             for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
                 const pokemon = battleDetails.userOneTeam[i];
-                const maxHP = pokemonFunctions.calculatePokemonHP(pokemon);
+                const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
 
                 if (maxHP > pokemon.damageTaken) {
                     usablePokemon.push(i);
@@ -2306,7 +2351,9 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 let usablePokemon = [];
                 for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
                     const pokemon = battleDetails.userOneTeam[i];
-                    const maxHP = pokemonFunctions.calculatePokemonHP(pokemon);
+                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                    const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
 
                     if (maxHP > pokemon.damageTaken) {
                         usablePokemon.push(i);
@@ -2345,7 +2392,9 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
                 let usablePokemon = [];
                 for (let i = 0; i < battleDetails.userOneTeam.length; i++) {
                     const pokemon = battleDetails.userOneTeam[i];
-                    const maxHP = pokemonFunctions.calculatePokemonHP(pokemon);
+                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+                    const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
 
                     if (maxHP > pokemon.damageTaken) {
                         usablePokemon.push(i);
@@ -2486,11 +2535,20 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 //update critical stage "criticalStage[0]"
                 let critical = (Math.floor(Math.random() * (criticalStage[0] - 0)) === 0) ? 2 : 1;
 
-                const atk = pokemonFunctions.calculatePokemonAttack(attacker, getNatureValue("atk", attacker.nature));
-                let effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
+                let effectiveAtk;
+                let effectiveDef;
+                let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
 
-                const def = pokemonFunctions.calculatePokemonDefense(attacker, getNatureValue("def", attacker.nature));
-                let effectiveDef = getEffectiveAtk(def, attackerStatStage.def, critical);
+                let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+                let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
+
+                effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
+
+                let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.def));
+                let defElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.defense, defMultiplier, attacker.level));
+                let def = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.defense, getNatureValue("def", attacker.nature), defElb));
+
+                effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
 
                 let damage = Math.round(((((((2 * attacker.level) / 5) + 2) * 40 * effectiveAtk / effectiveDef) / 50) + 2) * critical * (Math.floor(Math.random() * (101 - 85) + 85) / 100) * burn * 1.001);
 
@@ -2523,6 +2581,13 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         return;
     }
 
+    /*
+    TODO: self moves are saying its being used on enemy
+     also moves are bugged out ex
+     Mr. Mime used Protect on testnic.
+     Poké Master Matty: testnic protected themselves.
+     Poké Master Matty: Mr. Mime is protected.
+     */
     inputChannel.send(`${attacker.nickname || attacker.name} used ${move.name} on ${defender.nickname || defender.name}.`);
 
     if (move.type === "fire" && defender.status === "frozen") {
@@ -2541,6 +2606,19 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
 
         } else {
             switch (move.name) {
+                case "Leech Seed":
+                    if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
+                        inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
+                        return;
+                    }
+                    if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
+                        inputChannel.send(`${move.name} missed.`);
+                        return;
+                    }
+                    defenderVolatileStatus.leechSeed = true;
+                    inputChannel.send(`${defender.nickname || defender.name} was seeded.`);
+
+                    break;
                 case "Swords Dance":
                     attackerStatStage.atk = Math.min(6, attackerStatStage.atk + 2);
                     inputChannel.send(`${attacker.nickname || attacker.name}'s attack was raised.`);
@@ -4350,19 +4428,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 }
                 inputChannel.send(`${move.name} did ${megaDrainDamage} damage.`);
                 break;
-            case "Leech Seed":
-                if (doesInvulnerableMatter(attackerVolatileStatus, defenderVolatileStatus, move)) {
-                    inputChannel.send(`${defender.nickname || defender.name} is invulnerable for this turn so ${move.name} missed.`);
-                    return;
-                }
-                if (Math.floor(Math.random() * 101) > getEffectiveAcc(move, attackerStatStage.accuracy, defenderStatStage.evasion, defenderVolatileStatus, attackerVolatileStatus)) {
-                    inputChannel.send(`${move.name} missed.`);
-                    return;
-                }
-                defenderVolatileStatus.leechSeed = true;
-                inputChannel.send(`${defender.nickname || defender.name} was seeded.`);
-
-                break;
             case "Solar Beam":
                 if (attackerVolatileStatus.chargingMove.chargingLength === 0) {
                     attackerVolatileStatus.chargingMove.chargingLength = 2;
@@ -5512,7 +5577,9 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     }
 
     if (move.name === "Flail" || move.name === "Reversal") {
-        const pokemonTotalHp = pokemonFunctions.calculatePokemonHP(attaacker);
+        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.hp));
+        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.hp, pokemonHpMultiplier, attacker.level));
+        const pokemonTotalHp = Math.round(pokemonFunctions.hpCalculation(attacker.level, attacker.base.hp, pokemonElb));
 
         let hpPercentage = Math.round(pokemonTotalHp / attacker.damageTaken);
 
@@ -5535,18 +5602,28 @@ async function getDmg(attacker, defender, move, attackerStatStage, defenderStatS
     let effectiveDef;
 
     if (move.category === "physical") {
+        let atkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.atk));
+        let atkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base.attack, atkMultiplier, attacker.level));
+        let atk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base.attack, getNatureValue("atk", attacker.nature), atkElb));
 
-        const atk = pokemonFunctions.calculatePokemonAttack(attacker, getNatureValue("atk", attacker.nature))
         effectiveAtk = getEffectiveAtk(atk, attackerStatStage.atk, critical);
 
-        const def = pokemonFunctions.calculatePokemonDefense(defender, getNatureValue("def", defender.nature));
+        let defMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.def));
+        let defElb = Math.round(pokemonFunctions.elbCalculation(defender.base.defense, defMultiplier, defender.level));
+        let def = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base.defense, getNatureValue("def", defender.nature), defElb));
+
         effectiveDef = getEffectiveDef(def, defenderStatStage.def, critical);
     } else {
+        let spAtkMultiplier = Math.round(pokemonFunctions.multiplierCalculation(attacker.evLevels.spAtk));
+        let spAtkElb = Math.round(pokemonFunctions.elbCalculation(attacker.base['special-attack'], spAtkMultiplier, attacker.level));
+        let spAtk = Math.round(pokemonFunctions.otherStatCalculation(attacker.level, attacker.base['special-attack'], getNatureValue("spAtk", attacker.nature), spAtkElb));
 
-        const spAtk = pokemonFunctions.calculatePokemonSpAttack(attacker, getNatureValue("spAtk", attacker.nature))
         effectiveAtk = getEffectiveAtk(spAtk, attackerStatStage.spAtk, critical);
 
-        const spDef = pokemonFunctions.calculatePokemonSpDefense(defender, getNatureValue("spDef", defender.nature));
+        let spDefMultiplier = Math.round(pokemonFunctions.multiplierCalculation(defender.evLevels.spDef));
+        let spDefElb = Math.round(pokemonFunctions.elbCalculation(defender.base['special-defense'], spDefMultiplier, defender.level));
+        let spDef = Math.round(pokemonFunctions.otherStatCalculation(defender.level, defender.base['special-defense'], getNatureValue("spDef", defender.nature), spDefElb));
+
         effectiveDef = getEffectiveDef(spDef, defenderStatStage.spDef, critical);
     }
 
