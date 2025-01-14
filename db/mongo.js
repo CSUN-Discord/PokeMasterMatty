@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
 
-const { mongoURL } = require("../config.json");
+const {mongoURL} = require("../config.json");
 
 module.exports = async () => {
-  await mongoose.connect(mongoURL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  return mongoose;
+    mongoose.set('strictQuery', false);
+
+    await mongoose.connect(mongoURL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+    return mongoose;
 };
