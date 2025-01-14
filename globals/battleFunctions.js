@@ -1335,7 +1335,7 @@ module.exports = {
             await trainerFunctions.setTeam(battlingDetails.userOne.userId, battlingDetails.userOneTeam);
 
             //add pokemon to user
-            await trainerFunctions.addPokemonToCreatedUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
+            await trainerFunctions.addPokemonToUser(battlingDetails.userOne.userId, battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
 
             //update battling to false
             await trainerFunctions.setBattling(battlingDetails.userOne.userId, false);
