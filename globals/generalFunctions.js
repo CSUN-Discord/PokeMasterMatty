@@ -2,6 +2,8 @@ const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
 const {MessageFlags} = require("discord.js");
 module.exports = {
 
+    //TODO: create a function that replies to an interaction with .reply or .editReply, then have all replies come from this function
+
     randomIntFromInterval: function (min, max) { // min and max included
         return Math.floor(Math.random() * (max - min + 1) + min)
     },
@@ -21,7 +23,7 @@ module.exports = {
                     await interaction.reply(response);
                 }
             } catch (e) {
-                console.error("Error saying you need ot join the game:", e);
+                console.error("Error saying you need to join the game:", e);
             }
             return false;
         }
@@ -35,7 +37,7 @@ module.exports = {
                     await interaction.reply(response);
                 }
             } catch (e) {
-                console.error("Error saying you need ot join the game:", e);
+                console.error("Error saying you need to use the correct game channel:", e);
             }
             return false;
         }
@@ -49,7 +51,7 @@ module.exports = {
                     await interaction.reply(response);
                 }
             } catch (e) {
-                console.error("Error saying you need ot join the game:", e);
+                console.error("Error saying you need to finish your battle first:", e);
             }
             return false;
         }
