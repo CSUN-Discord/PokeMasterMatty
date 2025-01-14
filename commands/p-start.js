@@ -3,9 +3,7 @@ This command starts a pokemon game in the server
 */
 
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
-// const schedule = require('node-schedule');
-const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
+const schedule = require("node-schedule");
 const {
     MessageFlags,
     EmbedBuilder,
@@ -14,10 +12,14 @@ const {
     ButtonBuilder,
     PermissionsBitField
 } = require("discord.js");
+
+const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
+const pokemonListFunctions = require("../db/functions/pokemonListFunctions");
 const trainerFunctions = require("../db/functions/trainerFunctions");
 const pokemonFunctions = require("../globals/pokemonFunctions");
 const battleFunctions = require("../globals/battleFunctions");
 const battlingFunctions = require("../db/functions/battlingFunctions");
+
 let spawnJob;
 let spawnedMessage;
 let collector;
@@ -35,16 +37,14 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async execute(interaction) {
-
-        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) return interaction.reply({
-            content: "Incorrect game channel.",
-            flags: MessageFlags.Ephemeral
-        });
-
-
         const document = await pokemonGameFunctions.getPokemonDocument(interaction.guild.id);
         if (document == null) return interaction.reply({
             content: "A game channel needs to be set.",
+            flags: MessageFlags.Ephemeral
+        });
+
+        if (!await pokemonGameFunctions.correctChannel(interaction.guild.id, interaction.channel.id)) return interaction.reply({
+            content: "Incorrect game channel.",
             flags: MessageFlags.Ephemeral
         });
 
@@ -56,7 +56,6 @@ module.exports = {
             try {
                 await interaction.client.channels.fetch(document.gameChannel).then(async channel => {
                         await pokemonGameFunctions.setPlaying(interaction.guild.id, true);
-                        await pokemonGameFunctions.resetTimer(interaction.guild.id);
                         await pokemonGameFunctions.resetMessages(interaction.guild.id);
                         await trainerFunctions.resetBattling();
 
@@ -69,7 +68,9 @@ module.exports = {
                         const gameDocument = await pokemonGameFunctions.getPokemonDocument(interaction.guild.id);
 
                         // console.log(gameDocument.spawnTime, gameDocument.messageCounter * 10, (gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60))
+
                         if ((gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60) <= 0) {
+                            // console.log("PRINT POKEMON")
                             await pokemonGameFunctions.resetTimer(interaction.guild.id);
                             await pokemonGameFunctions.resetMessages(interaction.guild.id);
 
@@ -177,7 +178,10 @@ module.exports = {
 
                                             //check if user has a usable pokemon
                                             const currentPokemon = user.team[0];
-                                            const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+                                            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                                            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                                            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+
                                             let currentHP = maxHP - currentPokemon.damageTaken;
                                             if (currentHP < 1) return i.channel.send({
                                                 content: "Current starting pokemon is too weak to battle.",
@@ -337,6 +341,7 @@ module.exports = {
 
                             console.log(shuffleBag.length)
                         } else {
+                            // console.log("DONT PRINT")
                             const newTimer = gameDocument.spawnTime - (gameDocument.messageCounter * 10) - 60;
                             await pokemonGameFunctions.setTimer(interaction.guild.id, newTimer)
                             await pokemonGameFunctions.resetMessages(interaction.guild.id);
@@ -357,7 +362,9 @@ module.exports = {
 
     cancelJob: function () {
         try {
-            spawnJob.cancel();
+            if (spawnJob != null) {
+                spawnJob.cancel();
+            }
         } catch (e) {
             console.log(`Problem while cancelling job. ${e}`)
         }

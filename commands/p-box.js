@@ -254,8 +254,10 @@ async function createBoxEmbed(currentBox, boxMin) {
 
     const fields = await Promise.all(
         currentBox.slice(boxMin, boxMin + 20).map(async (pokemon, index) => {
-            const maxHP = pokemonFunctions.calculatePokemonHP(pokemon);
-            const currentHP = maxHP - pokemon.damageTaken;
+            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+            let currentHP = maxHP - currentPokemon.damageTaken;
 
             const sprite = pokemon.shiny
                 ? await emojiListFunctions.getShinyGif(pokemon.pokeId)

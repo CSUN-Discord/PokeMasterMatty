@@ -163,7 +163,10 @@ module.exports = {
 
                 for (let i = 0; i < user.team.length; i++) {
                     const currentPokemon = user.team[i];
-                    const maxHP = pokemonFunctions.calculatePokemonHP(currentPokemon);
+                    const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                    const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                    const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+
                     let currentHP = maxHP - currentPokemon.damageTaken;
 
                     const sprite = currentPokemon.shiny
@@ -179,7 +182,7 @@ module.exports = {
                     ])
                 }
 
-                interaction.reply({
+                await interaction.reply({
                     embeds: [pokemonTeam],
                     flags: MessageFlags.Ephemeral
                 })
