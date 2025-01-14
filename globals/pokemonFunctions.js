@@ -109,6 +109,45 @@ module.exports = {
         return fullDetailsPokemon;
     },
 
+    hpCalculation: function (level, base, elb) {
+        return (((level / 100 + 1) * base + level) + elb)
+    },
+
+    otherStatCalculation: function (level, base, nature, elb) {
+        return (((((level / 50 + 1) * base) / 1.5) * nature) + elb)
+    },
+
+    elbCalculation: function (base, multiplier, level) {
+        return ((Math.sqrt(base) * multiplier + level) / 2.5)
+    },
+
+    multiplierCalculation: function (effortLevel) {
+        switch (effortLevel) {
+            case 0:
+                return 0;
+            case 1:
+                return 2;
+            case 2:
+                return 3;
+            case 3:
+                return 4;
+            case 4:
+                return 7;
+            case 5:
+                return 8;
+            case 6:
+                return 9;
+            case 7:
+                return 14;
+            case 8:
+                return 15;
+            case 9:
+                return 16;
+            case 10:
+                return 25;
+        }
+    },
+
     setQuantity: function (spawnRate) {
         switch (spawnRate) {
             case "common":
@@ -711,7 +750,9 @@ module.exports = {
             ])
         }
 
-        let maxHP = this.calculatePokemonHP(pokemon);
+        const pokemonHpMultiplier = Math.round(module.exports.multiplierCalculation(pokemon.evLevels.hp));
+        const pokemonElb = Math.round(module.exports.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+        const maxHP = Math.round(module.exports.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
         let currentHP = maxHP - pokemon.damageTaken;
 
         let levelingRate = fullPokemonDetails.levelingRate;
@@ -741,81 +782,6 @@ module.exports = {
             files: [ballIcon, pokeIcon],
             flags: MessageFlags.Ephemeral
         })
-    },
-
-    calculatePokemonHP: function (pokemon) {
-        const hpMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.hp));
-        const elb = Math.round(elbCalculation(pokemon.base.hp, hpMultiplier, pokemon.level));
-        return Math.round(hpCalculation(pokemon.level, pokemon.base.hp, elb));
-    },
-
-    calculatePokemonSpeed: function (pokemon, natureValue) {
-        const speedMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.speed));
-        const elb = Math.round(elbCalculation(pokemon.base.speed, speedMultiplier, pokemon.level));
-        return Math.round(otherStatCalculation(pokemon.level, pokemon.base.speed, natureValue, elb));
-    },
-
-    calculatePokemonAttack: function (pokemon, natureValue) {
-        const atkMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.atk));
-        const elb = Math.round(elbCalculation(pokemon.base.attack, atkMultiplier, pokemon.level));
-        return Math.round(otherStatCalculation(pokemon.level, pokemon.base.attack, natureValue, elb));
-    },
-
-    calculatePokemonDefense: function (pokemon, natureValue) {
-        const defMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.def));
-        const elb = Math.round(elbCalculation(pokemon.base.defense, defMultiplier, pokemon.level));
-        return Math.round(otherStatCalculation(pokemon.level, pokemon.base.defense, natureValue, elb));
-    },
-
-    calculatePokemonSpAttack: function (pokemon, natureValue) {
-        const spAtkMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.spAtk));
-        const elb = Math.round(elbCalculation(pokemon.base['special-attack'], spAtkMultiplier, pokemon.level));
-        return Math.round(otherStatCalculation(pokemon.level, pokemon.base['special-attack'], natureValue, elb));
-    },
-
-    calculatePokemonSpDefense: function (pokemon, natureValue) {
-        const spDefMultiplier = Math.round(multiplierCalculation(pokemon.evLevels.spDef));
-        const elb = Math.round(elbCalculation(pokemon.base['special-defense'], spDefMultiplier, pokemon.level));
-        return Math.round(otherStatCalculation(pokemon.level, pokemon.base['special-defense'], natureValue, elb));
-    }
-}
-
-function hpCalculation(level, base, elb) {
-    return (((level / 100 + 1) * base + level) + elb)
-}
-
-function otherStatCalculation(level, base, nature, elb) {
-    return (((((level / 50 + 1) * base) / 1.5) * nature) + elb)
-}
-
-function elbCalculation(base, multiplier, level) {
-    return ((Math.sqrt(base) * multiplier + level) / 2.5)
-}
-
-function multiplierCalculation(effortLevel) {
-    switch (effortLevel) {
-        case 0:
-            return 0;
-        case 1:
-            return 2;
-        case 2:
-            return 3;
-        case 3:
-            return 4;
-        case 4:
-            return 7;
-        case 5:
-            return 8;
-        case 6:
-            return 9;
-        case 7:
-            return 14;
-        case 8:
-            return 15;
-        case 9:
-            return 16;
-        case 10:
-            return 25;
     }
 }
 
@@ -1054,6 +1020,7 @@ async function setMoves(currentLevel, defaultPokemon) {
 
     // console.log(moves)
 
+    //TODO: got error: Can't find move: mud slap, check if solution fixes issue
     for (let i = 0; i < moves.length; i++) {
         await moveListFunctions.getMove(moves[i].name).then((doc) => {
             if (doc == null) {
