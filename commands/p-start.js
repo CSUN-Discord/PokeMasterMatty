@@ -326,8 +326,8 @@ module.exports = {
 
                             collector.on('end', collected => {
                                 try {
-                                    const receivedEmbed = spawnedMessage.embeds[0];
-                                    const exampleEmbed = new EmbedBuilder(receivedEmbed)
+                                    // const receivedEmbed = spawnedMessage.embeds[0];
+                                    const exampleEmbed = new EmbedBuilder()
                                         .setTitle(`All the ${pokemon[0].name}s have fled, been killed, or caught.`)
                                     spawnedMessage.channel.send({embeds: [exampleEmbed], components: []});
 

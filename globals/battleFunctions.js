@@ -204,7 +204,7 @@ module.exports = {
                 }
 
                 if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
-                    //make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
+                    //TODO: make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
                     inputChannel.send("Escaped the battle.")
                     const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
 
@@ -278,7 +278,7 @@ module.exports = {
                 //user used a move
 
                 //reset flee count
-                battlingFunctions.setFleeCount(battlingDetails._id, 0)
+                battlingFunctions.setFleeCount(battlingDetails._id, 0);
 
                 let enemyMove = await getRandomPokemonMove(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1]);
                 enemyMove = (enemyMove !== "recharge") ? await moveListFunctions.getMove(enemyMove) : enemyMove;
@@ -1417,11 +1417,11 @@ function setRowAttacks(row, battlingDetails, inp) {
         });
     }
 
-    //check encore
+    //TODO: check encore
 
-    //check torment
+    //TODO: check torment
 
-    //check disable
+    //TODO: check disable
     if (battlingDetails.userOneVolatileStatus.disable.length > 0) {
         currentMoves = currentMoves.filter(move => {
             return move.name !== battlingDetails.userOneVolatileStatus.disable.name;
@@ -2300,7 +2300,7 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         }
     }
 
-    //account for destiny bond, if user dies against bonded pokemon, the bonded pokemon dies too
+    //TODO: account for destiny bond, if user dies against bonded pokemon, the bonded pokemon dies too
     if (user.damageTaken >= userTotalHp && battleDetails.userOneVolatileStatus.destinyBond === battleDetails.userOneCurrentPokemon) {
         inputChannel.send("Due to destiny bond both pokemon have feinted.")
         randomPokemon.damageTaken = pokemonTotalHp;
@@ -2496,9 +2496,9 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         }
     }
 
-    //make user pokemon awake if the battle ends
     if (attacker.status === "sleeping") {
-        if (attackerVolatileStatus.sleepTurnLength === 1) {
+        // console.log("sleep length", attackerVolatileStatus.sleepTurnLength)
+        if (attackerVolatileStatus.sleepTurnLength <= 1) {
             inputChannel.send(`${attacker.nickname || attacker.name} woke up.`)
             attacker.status = "normal";
         } else {
@@ -2516,7 +2516,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     if (attackerVolatileStatus.infatuation && infatuation === 0) {
         inputChannel.send(`${attacker.nickname || attacker.name} is in love.`)
         return;
-        // if any pokemon switches out infatuation is removed
+        // TODO: if any pokemon switches out infatuation is removed
     }
 
     if (attackerVolatileStatus.confusionLength) {
@@ -2581,13 +2581,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
         return;
     }
 
-    /*
-    TODO: self moves are saying its being used on enemy
-     also moves are bugged out ex
-     Mr. Mime used Protect on testnic.
-     Poké Master Matty: testnic protected themselves.
-     Poké Master Matty: Mr. Mime is protected.
-     */
     inputChannel.send(`${attacker.nickname || attacker.name} used ${move.name} on ${defender.nickname || defender.name}.`);
 
     if (move.type === "fire" && defender.status === "frozen") {
@@ -5528,7 +5521,7 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
                 inputChannel.send(`${move.name} did ${damage} damage.`);
                 break;
         }
-        //endure isnt programmed yet
+        //TODO: endure isnt programmed yet
         // if (defenderVolatileStatus.bracing && (totalDefenderHp - defender.damageTaken + dmg) > 1) {
         //     console.log("lived with 1 hp due to brace")
         //     defender.damageTaken = Math.min(defender.damageTaken, totalDefenderHp - 1)
@@ -6319,6 +6312,7 @@ function runThroughStatusEffects(pokemon, volatileStatus, totalHp, enemy, enemyV
     }
     if (volatileStatus.sleepTurnLength > 0) {
         volatileStatus.sleepTurnLength--;
+
     }
 
     if (volatileStatus.lightScreenLength > 0) {
