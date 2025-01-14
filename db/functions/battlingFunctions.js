@@ -155,7 +155,7 @@ module.exports = {
             battlingSchema
                 .deleteMany({},
                     (err, res) => {
-                        if (err) console.log(err);
+                        if (err) console.error('Error deleting battles:', e);
                         else console.log(`Reset ${res.modifiedCount || 0} battles.`)
                     });
         } catch (e) {
@@ -170,7 +170,7 @@ module.exports = {
                         _id: battleID
                     },
                     (err, res) => {
-                        if (err) console.log(err);
+                        if (err) console.error('Error deleting PVM battle:', e);
                     });
         } catch (e) {
             console.error('Error deleting PVM battle:', e);
@@ -189,7 +189,7 @@ module.exports = {
                         }
                     },
                     (err, res) => {
-                        if (err) console.log(err);
+                        if (err) console.error('Error setting flee count:', e);
                     });
         } catch (e) {
             console.error('Error setting flee count:', e);
@@ -208,7 +208,7 @@ module.exports = {
                         }
                     },
                     (err, res) => {
-                        if (err) console.log(err);
+                        if (err) console.error('Error setting turn count:', e);
                     });
         } catch (e) {
             console.error('Error setting turn count:', e);
@@ -240,7 +240,7 @@ module.exports = {
                     },
                     (err, res) => {
                         if (err) console.log(err);
-                        else console.log(`Updated ${res.modifiedCount || 0} battles.`)
+                        // else console.log(`Updated ${res.modifiedCount || 0} battles.`)
                     });
         } catch (e) {
             console.error('Error updating battle:', e);
