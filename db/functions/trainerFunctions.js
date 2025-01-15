@@ -136,24 +136,39 @@ module.exports = {
     },
 
     addPokemonToUser: async function (user, newPokemon) {
-        try {
-            let player = await this.getUser(user.id);
+        let player = await module.exports.getUser(user.id);
+        if (player == null) {
+            await addUser(user);
+            player = await module.exports.getUser(user.id);
+        }
 
-            if (player == null) {
-                await addUser(user);
-                player = this.getUser(user.id);
-            }
-
+        if (player.team.length < 6) {
+            // newPokemon.teamNumber = player.team.length + 1;
             newPokemon.status = "normal";
-            if (player.team.length < 6) {
-                await this.addPokemonToTeam(user.id, newPokemon);
-            } else {
-                newPokemon.damageTaken = 0;
-                await this.addPokemonToBox(user.id, newPokemon);
-            }
+            await module.exports.addPokemonToTeam(user.id, newPokemon);
+        } else {
+            // newPokemon.boxNumber = player.team.length + 1;
+            newPokemon.status = "normal";
+            newPokemon.damageTaken = 0;
+            await module.exports.addPokemonToBox(user.id, newPokemon);
+        }
+    },
 
-        } catch (e) {
-            console.error(`Error adding Pokemon to user ${user.id}:`, e);
+    addPokemonToCreatedUser: async function (userId, newPokemon) {
+        let player = await module.exports.getUser(userId);
+        if (player == null) {
+            console.error("Error getting user to add pokemon.")
+        }
+
+        if (player.team.length < 6) {
+            // newPokemon.teamNumber = player.team.length + 1;
+            newPokemon.status = "normal";
+            await module.exports.addPokemonToTeam(userId, newPokemon);
+        } else {
+            // newPokemon.boxNumber = player.team.length + 1;
+            newPokemon.status = "normal";
+            newPokemon.damageTaken = 0;
+            await module.exports.addPokemonToBox(userId, newPokemon);
         }
     },
 

@@ -3,6 +3,7 @@ const moveListFunctions = require("../db/functions/moveListFunctions");
 const {EmbedBuilder, AttachmentBuilder, MessageFlags} = require("discord.js");
 const emojiListFunctions = require("../db/functions/emojiListFunctions");
 const itemListFunctions = require("../db/functions/itemListFunctions");
+const {v4: uuidv4} = require("uuid");
 
 module.exports = {
 
@@ -10,6 +11,7 @@ module.exports = {
     //check magnemites gender should be n/a
     createPokemonDetails: async function (level, defaultPokemon) {
         let fullDetailsPokemon = {
+            "uniqueId": generatePokemonId(),
             "pokeId": defaultPokemon.pokeId,
             "name": defaultPokemon.name,
             "level": level,
@@ -61,6 +63,7 @@ module.exports = {
     createStarterPokemonDetails: async function (level, defaultPokemon, user) {
         const currentTime = Date.now();
         let fullDetailsPokemon = {
+            "uniqueId": generatePokemonId(),
             "pokeId": defaultPokemon.pokeId,
             "name": defaultPokemon.name,
             "level": level,
@@ -785,6 +788,12 @@ module.exports = {
     }
 }
 
+function generatePokemonId() {
+    const timestamp = Date.now(); // Current timestamp
+    const uniquePart = uuidv4(); // Generate a unique part
+    return `${timestamp}-${uniquePart}`;
+}
+
 function getEvLevel(ivLevel) {
     if (ivLevel === 31) {
         return 3;
@@ -809,6 +818,8 @@ async function setMoves(currentLevel, defaultPokemon) {
     // // = not programmed, but it not in sw/sh
 
     let allProgrammedMoves = new Set([
+        //GEN ONE
+
         "Pound",
         // "Karate Chop",
         // "Double Slap",
@@ -973,6 +984,9 @@ async function setMoves(currentLevel, defaultPokemon) {
         "Slash",
         // // // "Substitute",
         "Struggle",
+
+        //GEN TWO
+
         // // // "Sketch",
         "Triple Kick",
         // // // "Thief",
@@ -1020,7 +1034,6 @@ async function setMoves(currentLevel, defaultPokemon) {
 
     // console.log(moves)
 
-    //TODO: got error: Can't find move: mud slap, check if solution fixes issue
     for (let i = 0; i < moves.length; i++) {
         await moveListFunctions.getMove(moves[i].name).then((doc) => {
             if (doc == null) {

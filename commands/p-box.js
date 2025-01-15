@@ -156,8 +156,6 @@ module.exports = {
                 break;
 
             case "view":
-                //TODO: when showing filtered box results also show the total box number
-                // need the pokemon to have a unique id
 
                 const filter_id = options.getInteger('filter_id');
                 const filter_name = options.getString('filter_name');
@@ -213,6 +211,7 @@ module.exports = {
  * @returns {Promise<Array>} - The filtered Pokémon box.
  */
 async function createBox(pokebox, filters = {}) {
+    //TODO: when showing filtered box results also show the total box number
     const {filter_id, filter_name, filter_rarity, sort_by} = filters;
 
     try {
@@ -254,10 +253,10 @@ async function createBoxEmbed(currentBox, boxMin) {
 
     const fields = await Promise.all(
         currentBox.slice(boxMin, boxMin + 20).map(async (pokemon, index) => {
-            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
-            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
-            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
-            let currentHP = maxHP - currentPokemon.damageTaken;
+            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(pokemon.evLevels.hp));
+            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(pokemon.base.hp, pokemonHpMultiplier, pokemon.level));
+            const maxHP = Math.round(pokemonFunctions.hpCalculation(pokemon.level, pokemon.base.hp, pokemonElb));
+            let currentHP = maxHP - pokemon.damageTaken;
 
             const sprite = pokemon.shiny
                 ? await emojiListFunctions.getShinyGif(pokemon.pokeId)

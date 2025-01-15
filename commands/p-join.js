@@ -110,10 +110,10 @@ function getSelectedPokemonId(customId) {
 async function handlePokemonSelection(interaction, pokemonId) {
     try {
         const selectedPokemon = await pokemonListFunctions.getPokemonFromId(pokemonId);
-        const userPokemon = await pokemonFunctions.createStarterPokemonDetails(10, selectedPokemon, i.user);
+        const userPokemon = await pokemonFunctions.createStarterPokemonDetails(10, selectedPokemon, interaction.user);
 
         // Add the selected Pokémon to the user's collection
-        await trainerFunctions.addPokemonToUser(i.user, userPokemon);
+        await trainerFunctions.addPokemonToUser(interaction.user, userPokemon);
 
         // Update the user after selection
         await interaction.update({
