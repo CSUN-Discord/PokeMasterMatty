@@ -18,7 +18,6 @@ module.exports = {
             "owner": null,
             "nickname": null,
             "exp": 0,
-            // "traded": false,
             "ivStats": {
                 "hp": generalFunctions.randomIntFromInterval(0, 31),
                 "atk": generalFunctions.randomIntFromInterval(0, 31),
@@ -31,9 +30,6 @@ module.exports = {
             "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
-            //is team number needed?
-            // "teamNumber": null,
-            // "boxNumber": null,
             "item": null,
             "shiny": false,
             "ball": null,
@@ -70,7 +66,6 @@ module.exports = {
             "owner": user,
             "nickname": null,
             "exp": 0,
-            // "traded": false,
             "ivStats": {
                 "hp": generalFunctions.randomIntFromInterval(0, 31),
                 "atk": generalFunctions.randomIntFromInterval(0, 31),
@@ -83,8 +78,6 @@ module.exports = {
             "base": defaultPokemon.baseStats,
             "damageTaken": 0,
             "status": "normal",
-            // "teamNumber": null,
-            // "boxNumber": null,
             "item": null,
             "shiny": false,
             "ball": "Poke Ball",
@@ -684,7 +677,7 @@ module.exports = {
         let pokemonEmbed = new EmbedBuilder()
             .setColor('Random')
             .setThumbnail(`attachment://${pokemon.pokeId}.png`)
-            .setAuthor({name: `${user.name}`, iconURL: `${interaction.user.avatarURL()}`})
+            .setAuthor({name: `${user.name}`, iconURL: `${interaction.user.displayAvatarURL()}`})
             .setDescription(`${fullPokemonDetails.description}`)
             .setTimestamp(pokemon.receivedTimestamp)
         let pokemonStringDetails = `\n**Height:** ${fullPokemonDetails.height} **Weight:** ${fullPokemonDetails.weight} \n**Held Item:** ${pokemon.item || "nothing"} \n**Friendship:** ${pokemon.friendship} \n**Type:** `;

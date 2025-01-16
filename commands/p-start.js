@@ -162,6 +162,7 @@ module.exports = {
                                         await i.deferUpdate()
 
                                         const user = await trainerFunctions.getUser(i.user.id);
+                                        // console.log(user.name)
 
                                         if (user == null) {
                                             return i.followUp({
@@ -185,10 +186,9 @@ module.exports = {
                                         const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
 
                                         let currentHP = maxHP - currentPokemon.damageTaken;
-                                        if (currentHP < 1) return i.channel.send({
+                                        if (currentHP < 1) return i.followUp({
                                             content: "Current starting pokemon is too weak to battle.",
-                                        }).then((msg) => {
-                                            setTimeout(() => msg.delete(), 5000);
+                                            ephemeral: true
                                         });
 
                                         await trainerFunctions.setBattling(i.user.id, true);
@@ -220,7 +220,7 @@ module.exports = {
                                         battlingDetails = battlingDetails[0];
                                         const embedDetails = battleFunctions.createEmbedPVM(battlingDetails);
 
-                                        await sleep(1500);
+                                        await sleep(1000);
 
                                         thread.send({
                                             embeds: [embedDetails[0]],
@@ -255,7 +255,7 @@ module.exports = {
 
                                             const messageValues = await battleFunctions.battlingOptions(inp, battlingDetails);
                                             if (messageValues.embedDetails[2])
-                                                await sleep(1500)
+                                                await sleep(1000);
                                             thread.send({
                                                 content: messageValues.content,
                                                 embeds: [messageValues.embedDetails[0]],
