@@ -52,10 +52,17 @@ module.exports = {
             flags: MessageFlags.Ephemeral
         })
 
-        const filter = i => i.user.id === interaction.user.id;
-        const starterCollector = interaction.channel.createMessageComponentCollector({filter, time: 60000});
+        const buttonIds = new Set([
+            `${interaction.user.id}bulbasaur`,
+            `${interaction.user.id}charmander`,
+            `${interaction.user.id}squirtle`
+        ]);
+        const collector = interaction.channel.createMessageComponentCollector({
+            filter: i => i.user.id === interaction.user.id && buttonIds.has(i.customId),
+            time: 600000
+        });
 
-        starterCollector.on("collect", async (i) => {
+        collector.on("collect", async (i) => {
             const selectedPokemonId = getSelectedPokemonId(i.customId);
 
             if (selectedPokemonId) {
@@ -63,8 +70,8 @@ module.exports = {
             }
         });
 
-        starterCollector.on("end", async () => {
-            await interaction.editReply({content: "You took too long to respond.", components: []});
+        collector.on("end", () => {
+            interaction.editReply({components: []});
         });
     },
 };

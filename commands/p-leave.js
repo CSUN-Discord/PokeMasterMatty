@@ -48,25 +48,20 @@ module.exports = {
         });
 
         // Create a collector for button interactions
-        const filter = (i) => i.user.id === interaction.user.id;
-        const collector = interaction.channel.createMessageComponentCollector({filter, time: 30000});
+        const buttonIds = new Set(["confirm_yes", "confirm_no"]);
+        const collector = interaction.channel.createMessageComponentCollector({
+            filter: i => i.user.id === interaction.user.id && buttonIds.has(i.customId),
+            time: 30000
+        });
 
         collector.on('collect', async (i) => {
             if (i.customId === "confirm_yes") {
-                try {
-                    // Remove the user from the database
-                    await trainerFunctions.removeUser(interaction.user.id);
-                    await i.update({
-                        content: "Your account has been successfully removed.",
-                        components: []
-                    });
-                } catch (error) {
-                    console.error("Error removing user:", error);
-                    await i.update({
-                        content: "There was an error while removing your account. Please try again.",
-                        components: []
-                    });
-                }
+                // Remove the user from the database
+                await trainerFunctions.removeUser(interaction.user.id);
+                await i.update({
+                    content: "Your account has been successfully removed.",
+                    components: []
+                });
             } else {
                 await i.update({
                     content: "Account deletion was canceled.",
@@ -75,9 +70,8 @@ module.exports = {
             }
         });
 
-        collector.on('end', async () => {
-            await interaction.editReply({
-                    content: "Time limit exceeded.",
+        collector.on('end', () => {
+            interaction.editReply({
                     components: []
                 }
             );

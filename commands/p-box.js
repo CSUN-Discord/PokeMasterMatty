@@ -109,7 +109,6 @@ module.exports = {
         const {options} = interaction;
         const sub = options.getSubcommand();
         let boxMin = 0;
-        let currentBox = user.pokebox;
 
         switch (sub) {
             case "display":
@@ -149,23 +148,22 @@ module.exports = {
                 await trainerFunctions.addPokemonToTeam(user.userId, sendToTeam[0]);
                 await trainerFunctions.setBox(user.userId, user.pokebox);
 
-                interaction.reply({
+                await interaction.reply({
                     content: `${sendToTeam[0].nickname || sendToTeam[0].name} was added to your team.`,
                     flags: MessageFlags.Ephemeral
                 });
                 break;
 
             case "view":
-
                 const filter_id = options.getInteger('filter_id');
                 const filter_name = options.getString('filter_name');
                 const filter_rarity = options.getString('filter_rarity');
                 const sort_by = options.getString('sort_by');
 
                 const filters = {filter_id, filter_name, filter_rarity, sort_by};
-                currentBox = await createBox(user.pokebox, filters);
+                const [filteredBox, originalBoxIndex] = await createBox(user.pokebox, filters);
 
-                const embed = await createBoxEmbed(currentBox, boxMin);
+                const embed = await createBoxEmbed(filteredBox, boxMin, originalBoxIndex);
                 const rows = createBoxRows();
                 const response = await interaction.reply({
                     embeds: [embed],
@@ -173,21 +171,52 @@ module.exports = {
                     flags: MessageFlags.Ephemeral
                 });
 
+                const buttonIds = new Set([
+                    'itemsLeft',
+                    'itemsRight',
+                    'items100Left',
+                    'items100Right',
+                    'itemsFirst',
+                    'itemsLast'
+                ]);
                 const collector = response.createMessageComponentCollector({
-                    filter: i => i.user.id === interaction.user.id,
+                    filter: i => (i.user.id === interaction.user.id) && buttonIds.has(i.customId),
                     time: 600000
                 });
 
                 collector.on('collect', async i => {
-                    boxMin = updateBoxMin(i.customId, boxMin, currentBox.length);
-                    const updatedEmbed = await createBoxEmbed(currentBox, boxMin);
+                    if (i.customId === `itemsLeft`) {
+                        boxMin = Math.max(0, boxMin - 20);
+                    } else if (i.customId === `itemsRight`) {
+                        if (boxMin + 20 < filteredBox.length) {
+                            boxMin = Math.min(filteredBox.length - 20, boxMin + 20);
+                        }
+                    } else if (i.customId === `items100Left`) {
+                        boxMin = Math.max(0, boxMin - 100);
+                    } else if (i.customId === `items100Right`) {
+                        if (boxMin + 100 < filteredBox.length) {
+                            boxMin = Math.min(filteredBox.length - 20, boxMin + 100);
+                        } else {
+                            boxMin = Math.max(0, filteredBox.length - 20);
+                        }
+                    } else if (i.customId === `itemsFirst`) {
+                        boxMin = 0;
+                    } else if (i.customId === `itemsLast`) {
+                        boxMin = Math.max(0, filteredBox.length - 20);
+                    }
+
+
+                    const updatedEmbed = await createBoxEmbed(filteredBox, boxMin, originalBoxIndex);
                     await response.edit({embeds: [updatedEmbed], components: rows});
-                    await i.deferUpdate();
+                    try {
+                        await i.deferUpdate();
+                    } catch (e) {
+                        console.error("Couldn't update box", e)
+                    }
                 });
 
-                collector.on('end', async () => {
-                    await interaction.editReply({
-                        content: "Time limit exceeded.",
+                collector.on('end', () => {
+                    interaction.editReply({
                         components: []
                     });
                 });
@@ -195,7 +224,7 @@ module.exports = {
                 break;
 
             default:
-                interaction.reply({
+                await interaction.reply({
                     content: "Couldn't process command.",
                     flags: MessageFlags.Ephemeral
                 });
@@ -208,31 +237,40 @@ module.exports = {
  * Filters the Pokémon box based on given filters and sorting preferences.
  * @param {Array} pokebox - The Pokémon box array to filter.
  * @param {Object} filters - An object containing the filtering criteria.
- * @returns {Promise<Array>} - The filtered Pokémon box.
+ * @returns {Promise<[Array, Map]>} - A promise that resolves to an array containing:
+ *   1. The filtered Pokémon box (Array).
+ *   2. A Map of original indices where keys are Pokémon IDs and values are their original positions in the filtered box.
  */
 async function createBox(pokebox, filters = {}) {
-    //TODO: when showing filtered box results also show the total box number
+    let originalBoxIndex = new Map();
     const {filter_id, filter_name, filter_rarity, sort_by} = filters;
 
     try {
-        let filteredBox = pokebox.filter(pokemon => {
+        let filteredBox = pokebox.filter((pokemon, index) => {
+            originalBoxIndex.set(pokemon.uniqueId, index);
             return !((filter_id && pokemon.pokeId !== filter_id) || (filter_name && pokemon.name !== filter_name));
         });
 
+        // Check if we need to filter by rarity and do so asynchronously
         if (filter_rarity) {
             filteredBox = await Promise.all(
-                filteredBox.map(async pokemon => {
+                filteredBox.map(async (pokemon) => {
                     const fullDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
                     return fullDetails.spawnRate === filter_rarity ? pokemon : null;
                 })
             ).then(results => results.filter(pokemon => pokemon !== null));
         }
 
+        // Sort by reverse if specified
         if (sort_by === "reverse") {
             filteredBox.reverse();
         }
 
-        return filteredBox;
+        // Return as an array containing filteredBox and originalBoxIndex as a Map
+        return [
+            filteredBox,
+            originalBoxIndex
+        ];
     } catch (err) {
         console.error("Error filtering Pokémon box:", err);
         return [];
@@ -243,9 +281,10 @@ async function createBox(pokebox, filters = {}) {
  * Creates an embed displaying the Pokémon in the box.
  * @param {Array} currentBox - The filtered or full Pokémon box.
  * @param {number} boxMin - The starting index for the Pokémon to be displayed.
+ * @param {Map} originalBoxIndex - The original index of the Pokémon.
  * @returns {Promise<EmbedBuilder>} - The embed object with Pokémon details.
  */
-async function createBoxEmbed(currentBox, boxMin) {
+async function createBoxEmbed(currentBox, boxMin, originalBoxIndex) {
     const embed = new EmbedBuilder()
         .setColor('Random')
         .setTitle('Pokemon Box:')
@@ -262,11 +301,24 @@ async function createBoxEmbed(currentBox, boxMin) {
                 ? await emojiListFunctions.getShinyGif(pokemon.pokeId)
                 : await emojiListFunctions.getNormalGif(pokemon.pokeId);
 
-            return {
-                name: `${boxMin + index + 1}) ${sprite} ${pokemon.nickname || pokemon.name}`,
-                value: `Level: ${pokemon.level}\nHealth: ${currentHP}/${maxHP}`,
-                inline: true,
-            };
+            // return {
+            //     name: `${boxMin + index + 1}) ${sprite} ${pokemon.nickname || pokemon.name}`,
+            //     value: `Level: ${pokemon.level}\nHealth: ${currentHP}/${maxHP}`,
+            //     inline: true,
+            // };
+
+            return (originalBoxIndex.get(pokemon.uniqueId) === boxMin + index) ?
+                {
+                    name: `${boxMin + index + 1}) ${sprite} ${pokemon.nickname || pokemon.name}`,
+                    value: `Level: ${pokemon.level}\nHealth: ${currentHP}/${maxHP}`,
+                    inline: true,
+                } :
+                {
+                    name: `${boxMin + index + 1}) ${sprite} ${pokemon.nickname || pokemon.name}
+                    \nOriginal box index: ${originalBoxIndex.get(pokemon.uniqueId) + 1}`,
+                    value: `Level: ${pokemon.level}\nHealth: ${currentHP}/${maxHP}`,
+                    inline: true,
+                };
         })
     );
 
@@ -297,30 +349,4 @@ function createBoxRows() {
             .setStyle(button.style));
         return rows;
     }, []);
-}
-
-/**
- * Updates the index for pagination when navigating through the Pokémon box.
- * @param {string} customId - The ID of the button pressed.
- * @param {number} boxMin - The current starting index for pagination.
- * @param {number} total - The total number of Pokémon in the box.
- * @returns {number} - The updated index for pagination.
- */
-function updateBoxMin(customId, boxMin, total) {
-    switch (customId) {
-        case 'itemsLeft':
-            return Math.max(0, boxMin - 20);
-        case 'itemsRight':
-            return Math.min(total - 20, boxMin + 20);
-        case 'items100Left':
-            return Math.max(0, boxMin - 100);
-        case 'items100Right':
-            return Math.min(total - 20, boxMin + 100);
-        case 'itemsFirst':
-            return 0;
-        case 'itemsLast':
-            return Math.max(0, total - 20);
-        default:
-            return boxMin;
-    }
 }

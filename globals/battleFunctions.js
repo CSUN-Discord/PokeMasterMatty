@@ -204,15 +204,78 @@ module.exports = {
                 }
 
                 if (escapeCalculation(userOneEffectiveSpeed, userTwoEffectiveSpeed, battlingDetails.fleeCount || 0)) {
-                    //TODO: make a list of responses and generate one ie. fled the battle, ran with tail between legs, got scared etc.
-                    inputChannel.send("Escaped the battle.")
+
+                    const escapeMessages = [
+                        "You escaped the battle!",
+                        "You fled the battlefield in a hurry.",
+                        "You ran with your tail between your legs!",
+                        "You got scared and ran away.",
+                        "You decided to live to fight another day.",
+                        "You left the battlefield with a sense of regret.",
+                        "You made a strategic retreat.",
+                        "You turned and fled, avoiding further conflict.",
+                        "You abandoned the fight and ran for safety.",
+                        "You chose to retreat rather than face defeat.",
+                        "You ran for the hills, leaving the battle behind.",
+                        "You bolted away, refusing to face the challenge.",
+                        "You scurried off, unwilling to continue the fight.",
+                        "You dashed away in panic, leaving your opponent confused.",
+                        "You withdrew from the battle without looking back.",
+                        "You opted for a tactical retreat, avoiding further damage.",
+                        "You disappeared into the distance, leaving your opponent victorious.",
+                        "You surrendered to fear and escaped the confrontation.",
+                        "You turned your back on the battle and ran.",
+                        "You retreated hastily, leaving the conflict unresolved.",
+                        "You made a desperate dash for safety.",
+                        "You chose to save yourself rather than risk defeat.",
+                        "You vanished from the battlefield like a shadow.",
+                        "You left the battle unfinished, your courage faltering.",
+                        "You decided it was better to run than to lose.",
+                        "You exited the battlefield, preferring peace over conflict.",
+                        "You scampered away, avoiding the clash altogether.",
+                        "You hurriedly left the fight, your heart racing with fear.",
+                        "You chickened out and left the battle.",
+                        "You ran away like a coward!",
+                        "You fled faster than a Rattata on caffeine!",
+                        "You turned tail and bolted—pathetic!",
+                        "You couldn't handle the pressure and ran off crying!",
+                        "You abandoned the battle like a scared little Meowth!",
+                        "You ran away, leaving your dignity behind.",
+                        "You sprinted off, proving you're no warrior.",
+                        "You chickened out—cluck, cluck, cluck!",
+                        "You bolted like a scared Pidgey in a thunderstorm!",
+                        "You turned your back on the battle and whimpered away.",
+                        "You slithered out of the fight like a spineless Ekans.",
+                        "You ran away with a tear in your eye. So sad.",
+                        "You showed your true colors and ran like a baby Togepi!",
+                        "You left faster than a Rapidash at full gallop—weak!",
+                        "You were no match and you knew it. Run, little one!",
+                        "You abandoned your honor and escaped in disgrace.",
+                        "You scurried off like a frightened Diglett!",
+                        "You fled like a Zubat avoiding daylight!",
+                        "You couldn't even muster the courage to stand your ground.",
+                        "You ran away, proving you're all bark and no bite.",
+                        "You slunk off into the shadows, ashamed of your fear.",
+                        "You bolted like a Magikarp out of water—flopping uselessly!",
+                        "You bailed faster than a Paras avoiding a fire-type!",
+                        "You ran so fast, even a Dodrio couldn't catch you—coward!",
+                        "You left the fight with your pride shattered into pieces.",
+                        "You dashed away, proving you're not cut out for battles.",
+                        "You escaped with a whimper, leaving your bravery behind.",
+                        "You fled like a Farfetch’d who forgot its leek!",
+                        "You scrambled off, humiliated and defeated.",
+                        "You retreated like a Wimpod facing a stiff breeze."
+                    ];
+                    const escapeMessage = escapeMessages[Math.floor(Math.random() * escapeMessages.length)];
+                    inputChannel.send(escapeMessage);
+
                     const gif = new AttachmentBuilder(`./python/battle_image_outputs/battle_gifs/${battlingDetails.userOne.userId}.gif`);
 
                     await module.exports.endRandomBattleEncounter("fled", battlingDetails);
                     return {
                         content: "_ _",
                         embedDetails: [new EmbedBuilder()
-                            .setTitle(`You have successfully fled the battle.`)
+                            .setTitle(escapeMessage)
                             .setImage(`attachment://${battlingDetails.userOne.userId}.gif`),
                             gif,
                             false],
@@ -1120,7 +1183,7 @@ module.exports = {
             [`${inp.user.id}X Defense`]: actions.usedBattleEffect,
         };
         //TODO: add functions for items, can add pokeballs (timer ball)
-        if (battleFunctions.hasOwnProperty(inp.customId)) {
+        if (inp.customId in battleFunctions) {
             return battleFunctions[inp.customId](inp.customId);
         } else if (inp.customId.includes(`${inp.user.id}itemUsed`)) {
             const splitString = inp.customId.replace(`${inp.user.id}itemUsed`, "");
@@ -1230,6 +1293,74 @@ module.exports = {
             }
 
             for (let i = 0; i < battledAndAlive.length; i++) {
+                //TODO test refactored code
+                // async function handleLevelUpAndEvolution(battlingDetails, battledAndAlive, i, inputChannel) {
+                //     const userId = battlingDetails.userOne.userId;
+                //     const pokemonIndex = battledAndAlive[i] - 1;
+                //     const pokemon = battlingDetails.userOneTeam[pokemonIndex];
+                //
+                //     const updateUserData = async () => {
+                //         await trainerFunctions.setBag(userId, battlingDetails.userOneBag);
+                //         await trainerFunctions.setTeam(userId, battlingDetails.userOneTeam);
+                //     };
+                //
+                //     // Check if Pokémon leveled up and needs to evolve
+                //     if (leveledUp && isPokemonEvolving(pokemon)) {
+                //         const stopEvolutionButton = new ActionRowBuilder().addComponents(
+                //             new ButtonBuilder()
+                //                 .setCustomId(`${userId}stop${battledAndAlive[i]}`)
+                //                 .setLabel('Stop Evolving')
+                //                 .setStyle('Danger')
+                //         );
+                //
+                //         const messageContent = `${pokemon.nickname || pokemon.name} is evolving! You have 10 seconds to respond.`;
+                //         const evolvingMsg = await inputChannel.send({
+                //             content: messageContent,
+                //             components: [stopEvolutionButton],
+                //             flags: MessageFlags.Ephemeral,
+                //         });
+                //
+                //         let evolving = true;
+                //
+                //         try {
+                //             const collector = evolvingMsg.createMessageComponentCollector({
+                //                 filter: i => i.user.id === userId && i.customId === `${userId}stop${battledAndAlive[i]}`,
+                //                 time: 10000,
+                //             });
+                //
+                //             collector.on('collect', async i => {
+                //                 evolving = false;
+                //                 collector.stop();
+                //             });
+                //
+                //             collector.on('end', async () => {
+                //                 await evolvingMsg.delete();
+                //                 const pokemonDetails = await pokemonListFunctions.getPokemonFromId(pokemon.pokeId);
+                //                 const evolutionDetails = await pokemonListFunctions.getPokemonFromId(pokemonDetails.evolution);
+                //
+                //                 if (evolving) {
+                //                     // Update Pokémon to its evolved form
+                //                     Object.assign(pokemon, {
+                //                         pokeId: evolutionDetails.pokeId,
+                //                         name: evolutionDetails.name,
+                //                         base: evolutionDetails.baseStats,
+                //                     });
+                //                     await inputChannel.send(`${pokemon.nickname || pokemonDetails.name} evolved into ${evolutionDetails.name}.`);
+                //                 } else {
+                //                     await inputChannel.send(`${pokemon.nickname || pokemonDetails.name} stopped evolving.`);
+                //                 }
+                //
+                //                 await updateUserData();
+                //             });
+                //         } catch (e) {
+                //             console.error("Error during evolution handling:", e);
+                //         }
+                //     } else {
+                //         // If not evolving, just update user data
+                //         await updateUserData();
+                //     }
+                // }
+
                 //increase pokemon xp
                 let newXp = await getGainedXpFromBattle(battlingDetails.userTwoTeam[battlingDetails.userTwoCurrentPokemon - 1], battlingDetails.userOneTeam[battledAndAlive[i] - 1]);
                 newXp = Math.floor(newXp / battledAndAlive.length);
@@ -1264,22 +1395,16 @@ module.exports = {
 
                             let evolving = true;
 
+                            //TODO check if filter works
                             try {
                                 const collector = evolvingMsg.createMessageComponentCollector({
+                                    filter: i => (i.user.id === battlingDetails.userOne.userId) && (i.customId === `${battlingDetails.userOne.userId}stop${pokemonNum}`),
                                     time: 10000
                                 });
 
                                 collector.on('collect', async i => {
-                                    if (battlingDetails.userOne.userId !== i.user.id) return;
-                                    // console.log(i.customId)
-                                    // console.log(`${battlingDetails.userOne.userId}stop${pokemonNum}`)
-
-                                    if (i.customId === `${battlingDetails.userOne.userId}stop${pokemonNum}`) {
-                                        // console.log("stopped")
-                                        evolving = false;
-
-                                        collector.stop();
-                                    }
+                                    evolving = false;
+                                    collector.stop();
                                 })
 
                                 collector.on('end', async () => {
@@ -1421,7 +1546,6 @@ function setRowAttacks(row, battlingDetails, inp) {
 
     //TODO: check torment
 
-    //TODO: check disable
     if (battlingDetails.userOneVolatileStatus.disable.length > 0) {
         currentMoves = currentMoves.filter(move => {
             return move.name !== battlingDetails.userOneVolatileStatus.disable.name;
@@ -2300,7 +2424,6 @@ async function useMove(user, randomPokemon, userMove, randomPokemonMove, battleD
         }
     }
 
-    //TODO: account for destiny bond, if user dies against bonded pokemon, the bonded pokemon dies too
     if (user.damageTaken >= userTotalHp && battleDetails.userOneVolatileStatus.destinyBond === battleDetails.userOneCurrentPokemon) {
         inputChannel.send("Due to destiny bond both pokemon have feinted.")
         randomPokemon.damageTaken = pokemonTotalHp;
@@ -2516,7 +2639,6 @@ async function executeMove(attacker, defender, move, attackerStatStage, defender
     if (attackerVolatileStatus.infatuation && infatuation === 0) {
         inputChannel.send(`${attacker.nickname || attacker.name} is in love.`)
         return;
-        // TODO: if any pokemon switches out infatuation is removed
     }
 
     if (attackerVolatileStatus.confusionLength) {

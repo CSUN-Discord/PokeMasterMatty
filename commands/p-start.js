@@ -10,7 +10,8 @@ const {
     AttachmentBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    PermissionsBitField
+    PermissionsBitField,
+    ChannelType
 } = require("discord.js");
 
 const pokemonGameFunctions = require("../db/functions/pokemonGameFunctions");
@@ -149,175 +150,175 @@ module.exports = {
                             })
 
                             try {
-                                const filter = i => i.customId === 'spawnBattle';
 
                                 collector = channel.createMessageComponentCollector({
-                                    filter,
+                                    filter: i => i.customId === 'spawnBattle',
                                     time: 840000
                                     // time: 5000
                                 });
 
                                 collector.on('collect', async i => {
-                                        if (i.customId === 'spawnBattle') {
-                                            await i.deferUpdate()
+                                        // if (i.customId === 'spawnBattle') {
+                                        await i.deferUpdate()
 
-                                            const user = await trainerFunctions.getUser(i.user.id);
+                                        const user = await trainerFunctions.getUser(i.user.id);
 
-                                            if (user == null) return i.channel.send({
+                                        if (user == null) {
+                                            return i.followUp({
                                                 content: "Join the game first before battling.",
-                                            }).then((msg) => {
-                                                setTimeout(() => msg.delete(), 5000);
+                                                ephemeral: true
                                             });
+                                        }
 
-                                            //check if user is in battle
-                                            if (user.battling) return i.channel.send({
+                                        //check if user is in battle
+                                        if (user.battling) {
+                                            return i.followUp({
                                                 content: "Already in battle.",
-                                            }).then((msg) => {
-                                                setTimeout(() => msg.delete(), 5000);
+                                                ephemeral: true
                                             });
+                                        }
 
-                                            //check if user has a usable pokemon
-                                            const currentPokemon = user.team[0];
-                                            const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
-                                            const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
-                                            const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
+                                        //check if user has a usable pokemon
+                                        const currentPokemon = user.team[0];
+                                        const pokemonHpMultiplier = Math.round(pokemonFunctions.multiplierCalculation(currentPokemon.evLevels.hp));
+                                        const pokemonElb = Math.round(pokemonFunctions.elbCalculation(currentPokemon.base.hp, pokemonHpMultiplier, currentPokemon.level));
+                                        const maxHP = Math.round(pokemonFunctions.hpCalculation(currentPokemon.level, currentPokemon.base.hp, pokemonElb));
 
-                                            let currentHP = maxHP - currentPokemon.damageTaken;
-                                            if (currentHP < 1) return i.channel.send({
-                                                content: "Current starting pokemon is too weak to battle.",
-                                            }).then((msg) => {
-                                                setTimeout(() => msg.delete(), 5000);
-                                            });
+                                        let currentHP = maxHP - currentPokemon.damageTaken;
+                                        if (currentHP < 1) return i.channel.send({
+                                            content: "Current starting pokemon is too weak to battle.",
+                                        }).then((msg) => {
+                                            setTimeout(() => msg.delete(), 5000);
+                                        });
 
-                                            await trainerFunctions.setBattling(i.user.id, true);
+                                        await trainerFunctions.setBattling(i.user.id, true);
 
-                                            quantity--;
+                                        quantity--;
 
-                                            const battlePokemon = await pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
-                                            // const battlePokemon = await pokemonFunctions.createPokemonDetails(5, pokemon[0]);
+                                        const battlePokemon = await pokemonFunctions.createPokemonDetails(pokemonFunctions.setLevel(pokemon[0].spawnRate), pokemon[0]);
+                                        // const battlePokemon = await pokemonFunctions.createPokemonDetails(5, pokemon[0]);
 
-                                            await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
+                                        await battlingFunctions.addPokemonRandomEncounter(i.user.id, battlePokemon)
+
+                                        //TODO create a job check every hour to delete threads inactive for an hour, make sure it checks for threads only in the game channel
+                                        const thread = await channel.threads.create({
+                                            name: `${pokemon[0].name} vs ${i.user.username}`,
+                                            autoArchiveDuration: 60,
+                                            type: ChannelType.PrivateThread,
+                                            reason: 'Battle thread.',
+                                            invitable: false
+                                        });
+                                        thread.members.add(i.user.id);
+                                        // await thread.setLocked(true);
+                                        let row = await battleFunctions.setRowDefault(new ActionRowBuilder(), i)
+                                        thread.send({content: "You have 10 minutes for this battle."})
+                                        thread.send(`🔴🔴🔴 TURN 1 🔴🔴🔴`);
+
+                                        let message;
+
+                                        let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                        battlingDetails = battlingDetails[0];
+                                        const embedDetails = battleFunctions.createEmbedPVM(battlingDetails);
+
+                                        await sleep(1500);
+
+                                        thread.send({
+                                            embeds: [embedDetails[0]],
+                                            components: [row],
+                                            files: [embedDetails[1]],
+                                        }).then(msg => {
+                                            message = msg;
+                                        })
 
 
-                                            const thread = await channel.threads.create({
-                                                name: `${pokemon[0].name} vs ${i.user.username}`,
-                                                autoArchiveDuration: 60,
-                                                // type: 'GUILD_PRIVATE_THREAD',
-                                                reason: 'Battle thread.',
-                                                // invitable: false
-                                            });
-                                            thread.members.add(i.user.id);
-                                            // await thread.setLocked(true);
-                                            let row = await battleFunctions.setRowDefault(new ActionRowBuilder(), i)
-                                            thread.send({content: "You have 10 minutes for this battle."})
-                                            thread.send(`🔴🔴🔴 TURN 1 🔴🔴🔴`);
+                                        const battleCollector = thread.createMessageComponentCollector({
+                                            // battleFilter,
+                                            filter: input => input.user.id === i.user.id,
+                                            time: 600000
+                                            // time: 10000
+                                        });
 
-                                            let message;
+                                        battleCollector.on('collect', async inp => {
+                                            // if (inp.user.id !== i.user.id) return;
+                                            try {
+                                                if (i.customId !== `${battlingDetails.userOne.id}stop`) {
+                                                    console.log("deleting here")
+                                                    message.delete();
+                                                }
 
-                                            let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                            } catch (e) {
+                                                console.log("Error on collecting battle collector" + e)
+                                            }
+
+                                            battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
                                             battlingDetails = battlingDetails[0];
-                                            const embedDetails = battleFunctions.createEmbedPVM(battlingDetails);
 
-                                            await sleep(1500)
-
+                                            const messageValues = await battleFunctions.battlingOptions(inp, battlingDetails);
+                                            if (messageValues.embedDetails[2])
+                                                await sleep(1500)
                                             thread.send({
-                                                embeds: [embedDetails[0]],
-                                                components: [row],
-                                                files: [embedDetails[1]],
+                                                content: messageValues.content,
+                                                embeds: [messageValues.embedDetails[0]],
+                                                files: [messageValues.embedDetails[1]],
+                                                components: messageValues.components
                                             }).then(msg => {
                                                 message = msg;
                                             })
 
-                                            // const battleFilter = inp => inp.customId === 'primary' && inp.user.id === '122157285790187530';
-                                            // const battleFilter = userin => userin.customId === `${i.user.id}spawnBattleAttack` || userin.customId === `${i.user.id}spawnBattlePokemon` ||
-                                            //     userin.customId === `${i.user.id}spawnBattleBag` || userin.customId === `${i.user.id}spawnBattleBag`;
+                                            if (messageValues.content.includes("The battle has ended")) {
+                                                battleCollector.stop();
+                                                // battleCollector = null;
+                                            }
+                                        });
 
-                                            const battleCollector = thread.createMessageComponentCollector({
-                                                // battleFilter,
-                                                time: 600000
-                                                // time: 10000
-                                            });
-
-                                            battleCollector.on('collect', async inp => {
-                                                if (inp.user.id !== i.user.id) return;
+                                        battleCollector.on('end', async () => {
+                                            // console.log("ended")
+                                            let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
+                                            if (battlingDetails.length > 0) {
+                                                // console.log("ended_2")
                                                 try {
-                                                    if (i.customId !== `${battlingDetails.userOne.id}stop`) {
-                                                        console.log("deleting here")
-                                                        message.delete();
-                                                    }
+                                                    const receivedEmbed = message.embeds[0];
+                                                    const exampleEmbed = new EmbedBuilder(receivedEmbed)
+                                                        .setTitle('The pokemon fled before you had a chance to capture or kill it!')
+                                                    message.channel.send({embeds: [exampleEmbed], components: []});
 
+                                                    await battleFunctions.endRandomBattleEncounter("time", battlingDetails[0]);
+                                                    // console.log("delete 2")
+                                                    message.delete();
                                                 } catch (e) {
-                                                    console.log("Error on collecting battle collector" + e)
+                                                    console.log(e)
                                                 }
+                                            }
+                                        });
 
-                                                battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
-                                                battlingDetails = battlingDetails[0];
+                                        if (quantity <= 0) {
+                                            spawnedMessage.channel.send(`All the ${pokemon[0].name}s have fled, been killed, or caught.`);
+                                            // try {
+                                            //     spawnedMessage.delete();
+                                            //     spawnedMessage = null;
+                                            // } catch (e) {
+                                            //     console.log("error while deleting embeds" + e)
+                                            // }
+                                            collector.stop()
+                                            collector = null;
+                                        } else {
+                                            //TODO: does this need to be here if the message gets deleted on collecter end, update and test code
+                                            if (collector != null) {
+                                                const spawnedPokemonEmbed = new EmbedBuilder()
+                                                    .setColor('Random')
+                                                    .setTitle(`${pokemon[0].name} has appeared.`)
+                                                    .setDescription(`Quantity: ${quantity}`)
+                                                    .setThumbnail(`attachment://${pokemon[0].pokeId}.png`)
+                                                    .setImage(`attachment://${pokemon[0].pokeId}.gif`)
+                                                    .setTimestamp()
 
-                                                const messageValues = await battleFunctions.battlingOptions(inp, battlingDetails);
-                                                if (messageValues.embedDetails[2])
-                                                    await sleep(1500)
-                                                thread.send({
-                                                    content: messageValues.content,
-                                                    embeds: [messageValues.embedDetails[0]],
-                                                    files: [messageValues.embedDetails[1]],
-                                                    components: messageValues.components
-                                                }).then(msg => {
-                                                    message = msg;
-                                                })
-
-                                                if (messageValues.content.includes("The battle has ended")) {
-                                                    battleCollector.stop();
-                                                    // battleCollector = null;
-                                                }
-                                            });
-
-                                            battleCollector.on('end', async (collected, reason) => {
-                                                // console.log("ended")
-                                                let battlingDetails = await battlingFunctions.getBattleFromUserId(i.user.id);
-                                                if (battlingDetails.length > 0) {
-                                                    // console.log("ended_2")
-                                                    try {
-                                                        const receivedEmbed = message.embeds[0];
-                                                        const exampleEmbed = new EmbedBuilder(receivedEmbed)
-                                                            .setTitle('The pokemon fled before you had a chance to capture or kill it!')
-                                                        message.channel.send({embeds: [exampleEmbed], components: []});
-
-                                                        await battleFunctions.endRandomBattleEncounter("time", battlingDetails[0]);
-                                                        console.log("delete 2")
-                                                        message.delete();
-                                                    } catch (e) {
-                                                        console.log(e)
-                                                    }
-                                                }
-                                            });
-
-                                            if (quantity <= 0) {
-                                                spawnedMessage.channel.send(`All the ${pokemon[0].name}s have fled, been killed, or caught.`);
-                                                // try {
-                                                //     spawnedMessage.delete();
-                                                //     spawnedMessage = null;
-                                                // } catch (e) {
-                                                //     console.log("error while deleting embeds" + e)
-                                                // }
-                                                collector.stop()
-                                                collector = null;
-                                            } else {
-                                                if (collector != null) {
-                                                    const spawnedPokemonEmbed = new EmbedBuilder()
-                                                        .setColor('Random')
-                                                        .setTitle(`${pokemon[0].name} has appeared.`)
-                                                        .setDescription(`Quantity: ${quantity}`)
-                                                        .setThumbnail(`attachment://${pokemon[0].pokeId}.png`)
-                                                        .setImage(`attachment://${pokemon[0].pokeId}.gif`)
-                                                        .setTimestamp()
-
-                                                    await i.editReply({
-                                                        embeds: [spawnedPokemonEmbed],
-                                                    });
-                                                }
+                                                await i.editReply({
+                                                    embeds: [spawnedPokemonEmbed],
+                                                });
                                             }
                                         }
                                     }
+                                    // }
                                 )
                             } catch
                                 (e) {
